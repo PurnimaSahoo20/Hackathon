@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-change-this')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -201,3 +201,17 @@ ONEDRIVE_BASE_FOLDER = _clean_env('ONEDRIVE_BASE_FOLDER', default='assetMonitori
 ONEDRIVE_TOKEN_CACHE = _clean_env(
     'ONEDRIVE_TOKEN_CACHE', default=str(BASE_DIR / '.onedrive_token_cache.json')
 )
+
+
+
+# CORS
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default='http://hackathon.okcl.org',
+    ).split(',')
+    if origin.strip()
+]
