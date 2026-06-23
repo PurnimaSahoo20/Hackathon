@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Dashboard - HackNexus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar {
+            background: #fff;
+            border-right: 4px solid #fcd34d;
+        }
+
+        .sidebar-logo {
+            color: #ea580c;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-user {
+            display: inline-flex;
+            width: 100%;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            padding-left: 10px;
+        }
+
+        .stat-card {
+            border: 1px solid #fcd34d;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .stat-card .plus-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            background: #2563eb;
+            color: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .stat-card .sc-value {
+            font-size: 36px;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .badge-pill {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1px solid #eee;
+            background: white;
+        }
+
+        .badge-live {
+            color: #dc2626;
+            background: #fee2e2;
+            border: none;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            display: grid;
+        }
+
+        @media (max-width: 1200px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .activity-item {
+            padding: 16px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: white;
+        }
+
+        .activity-item .ai-dot {
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+        }
+
+        .chart-container {
+            background: white;
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+
+        .nav-item.active {
+            background: #ffedd5 !important;
+            color: #ea580c !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+        }
+
+        /* Responsive Dashboard Layout */
+        @media (max-width: 992px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100% !important;
+                border-right: none;
+                border-bottom: 4px solid #fcd34d;
+                height: auto !important;
+                padding-bottom: 20px;
+            }
+            .main-content {
+                padding: 20px !important;
+            }
+        }
+
+        /* Events Tab Specific Responsiveness */
+        .events-container {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .full-width-form {
+            max-width: 1200px !important;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .stats-row {
+                grid-template-columns: 1fr !important;
+            }
+            .header-badges {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+<body style="background: #fffbf7;">
+    <div class="dashboard">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" style="width: 250px;">
+            <div class="sidebar-head" style="border-bottom: none;">
+                <div class="sidebar-logo">Hack<span>Nexus</span></div>
+                <div class="sidebar-user">
+                    <div class="avatar" style="--ac: #ffedd5; background: #ffedd5; font-size: 20px;">👑</div>
+                    <div class="user-info" style="margin-left: 10px;">
+                        <div class="user-name" style="font-size: 14px; font-weight: 800;">Dr. Rajesh Kumar</div>
+                        <div class="user-role" style="color: #ea580c; font-size: 11px;">SUPER ADMIN</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label" style="letter-spacing: normal;">OVERVIEW</div>
+                <a href="?tab=overview" class="nav-item {% if tab == 'overview' %}active{% endif %}">
+                    <div class="nav-icon">⚡</div> Dashboard
+                </a>
+                <a href="?tab=events" class="nav-item {% if tab == 'events' %}active{% endif %}">
+                    <div class="nav-icon">🎯</div> Events
+                </a>
+                <a href="?tab=users" class="nav-item {% if tab == 'users' %}active{% endif %}">
+                    <div class="nav-icon">🏢</div> Users & Admin
+                </a>
+                <a href="?tab=problem_statements" class="nav-item {% if tab == 'problem_statements' %}active{% endif %}">
+                    <div class="nav-icon">📝</div> Problem Statements
+                </a>
+            </div>
+            <div class="nav-section" style="margin-top: 10px;">
+                <div class="nav-section-label" style="letter-spacing: normal;">SETTINGS</div>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">📊</div> Analytics
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="page-header" style="align-items: flex-start;">
+                <div>
+                    <h1 class="page-title" style="font-size: 32px;">{{ live_hackathon.name|default:"No Live Event" }}
+                    </h1>
+                    <p class="page-subtitle" style="color: #6b7280; font-weight: 500;">Control Panel • HackNexus v2.4
+                    </p>
+                </div>
+                <div class="header-badges">
+                    {% if live_hackathon %}
+                    <div class="badge-pill">{{ live_hackathon.name }}</div>
+                    <div class="badge-pill badge-live">● LIVE</div>
+                    {% else %}
+                    <div class="badge-pill">No Event</div>
+                    <div class="badge-pill" style="background:#e5e7eb; color:#6b7280;">● OFFLINE</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="messages" style="margin-bottom: 24px;">
+                {% for message in messages %}
+                <div
+                    style="padding: 16px; border-radius: 12px; background: white; border: 1px solid {% if message.tags == 'success' %}#059669{% else %}#dc2626{% endif %}; border-left: 4px solid {% if message.tags == 'success' %}#059669{% else %}#dc2626{% endif %}; margin-bottom:10px;">
+                    <strong>{{ message }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if tab == 'overview' %}
+            <!-- 8 STATS CARDS -->
+            <div class="stats-row">
+                <div class="stat-card" style="background: white;">
+                    <a href="?tab=events" class="plus-btn"><ion-icon name="add"></ion-icon></a>
+                    <div class="sc-icon">🎯</div>
+                    <div class="sc-value" style="color: #ea580c;">{{ events_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Events</div>
+                </div>
+
+                <div class="stat-card" style="background: white;">
+                    <a href="?tab=users&role=Admin" class="plus-btn"><ion-icon name="add"></ion-icon></a>
+                    <div class="sc-icon">🏢</div>
+                    <div class="sc-value" style="color: #2563eb;">{{ admins_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Admins</div>
+                </div>
+
+                <div class="stat-card" style="background: white;">
+                    <a href="?tab=users&role=Jury" class="plus-btn"><ion-icon name="add"></ion-icon></a>
+                    <div class="sc-icon">⚖️</div>
+                    <div class="sc-value" style="color: #7c3aed;">{{ expert_jury_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Jury / Expert</div>
+                </div>
+
+                <div class="stat-card" style="background: white;">
+                    <a href="#" class="plus-btn"><ion-icon name="add"></ion-icon></a>
+                    <div class="sc-icon">🏫</div>
+                    <div class="sc-value" style="color: #059669;">{{ colleges_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Colleges Onboarded</div>
+                </div>
+
+                <div class="stat-card" style="background: white;">
+                    <div class="sc-icon">👫</div>
+                    <div class="sc-value" style="color: #0891b2;">{{ teams_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Teams</div>
+                </div>
+                <div class="stat-card" style="background: white;">
+                    <a href="?tab=users&role=Executive" class="plus-btn"><ion-icon name="add"></ion-icon></a>
+                    <div class="sc-icon">🚀</div>
+                    <div class="sc-value" style="color: #db2777;">{{ executives_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Executives</div>
+                </div>
+                <div class="stat-card" style="background: white;">
+                    <div class="sc-icon">📋</div>
+                    <div class="sc-value" style="color: #ea580c;">{{ problem_statements_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Problem Statements</div>
+                </div>
+                <div class="stat-card" style="background: white;">
+                    <div class="sc-icon">📍</div>
+                    <div class="sc-value" style="color: #2563eb;">{{ venues_count }}</div>
+                    <div class="sc-label" style="color: #4b5563;">Venue</div>
+                </div>
+            </div>
+
+            <!-- BOTTOM SECTION: EVENTS & ACTIVITY -->
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; margin-top: 32px;">
+                <div>
+                    <h2 class="section-title" style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">Top
+                        Hackathon Events</h2>
+                    <div class="table-wrap" style="border: 1px solid #fcd34d; border-radius: 12px;">
+                        <table>
+                            <thead style="background: #fffbf7;">
+                                <tr>
+                                    <th>EVENT</th>
+                                    <th>STATUS</th>
+                                    <th>REGISTERED</th>
+                                </tr>
+                            </thead>
+                            <tbody style="background: white;">
+                                {% for hack in hackathons %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 800; color: #111827; font-size: 14px;">{{ hack.name }}
+                                        </div>
+                                        <div style="color: #6b7280; font-size: 12px;">{{ hack.organization_name }}</div>
+                                    </td>
+                                    <td><span class="badge badge-green">{{ hack.status }}</span></td>
+                                    <td style="font-weight: 600;">{{ hack.team_set.count|default:"0" }} Teams</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" style="text-align:center;">No hackathons found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="section-title" style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">Recent
+                        Activity</h2>
+                    <div class="activity-list">
+                        {% for item in recent_activity %}
+                        <div class="activity-item">
+                            <div style="display: flex; gap: 16px; align-items: center; width: 100%;">
+                                <div class="ai-dot" style="background: {{ item.color }}15; color: {{ item.color }};">
+                                    <ion-icon name="{{ item.icon }}"></ion-icon>
+                                </div>
+                                <div class="ai-text" style="font-size: 13px;">{{ item.text }}</div>
+                                <div class="ai-time" style="margin-left: auto;">{{ item.time }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS CHARTS SECTION -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 32px;">
+                <div class="chart-container" style="margin-top: 0;">
+                    <h2 class="section-title">Users by Role Distribution</h2>
+                    <canvas id="roleChart" style="max-height: 250px;"></canvas>
+                </div>
+                <div class="chart-container" style="margin-top: 0;">
+                    <h2 class="section-title">Hackathon Statuses</h2>
+                    <canvas id="statusChart" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+
+            <script>
+                const roleData = JSON.parse('{{ role_chart_data|escapejs }}');
+                new Chart(document.getElementById('roleChart').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: roleData.labels,
+                        datasets: [{
+                            data: roleData.data,
+                            backgroundColor: ['#ea580c', '#2563eb', '#059669', '#7c3aed', '#db2777', '#0891b2']
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+                });
+
+                const statusData = JSON.parse('{{ status_chart_data|escapejs }}');
+                new Chart(document.getElementById('statusChart').getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: statusData.labels,
+                        datasets: [{
+                            data: statusData.data,
+                            backgroundColor: ['#fbbf24', '#059669', '#dc2626']
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+                });
+            </script>
+
+
+            {% elif tab == 'events' %}
+
+            <div class="events-container">
+                <!-- TOP: CREATE FORM -->
+                <div>
+                    <div class="login-box full-width-form"
+                        style="margin: 0 auto; border-color: #fcd34d; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); background: white;">
+                        <h2 class="section-title" style="margin-bottom: 24px; font-size: 24px; color: #ea580c; border-bottom: 2px solid #ffedd5; padding-bottom: 12px;">Create Hackathon Event</h2>
+                        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Hackathon Name</label>
+                                    <input type="text" name="name" required style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Organization Name</label>
+                                    <input type="text" name="organization_name" required style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Organization Logo</label>
+                                <input type="file" name="organization_logo" accept="image/*" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: white;">
+                            </div>
+
+                            <hr style="border: none; border-top: 1px dashed #e5e7eb; margin: 32px 0;">
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Approval Date</label>
+                                    <input type="date" name="approval_date" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Approval Letter</label>
+                                    <input type="file" name="approval_letter" accept=".pdf,.doc,.docx" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: white;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Poster Launch Date</label>
+                                    <input type="date" name="poster_launching_date" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Website Launch Date</label>
+                                    <input type="date" name="website_launching_date" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Team Reg. Open</label>
+                                    <input type="date" name="registration_open" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Team Reg. Close</label>
+                                    <input type="date" name="registration_close" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none;">
+                                </div>
+                            </div>
+
+                            <hr style="border: none; border-top: 1px dashed #e5e7eb; margin: 32px 0;">
+
+                            <div id="rounds-container">
+                                <!-- Dynamic rounds will be inserted here -->
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-top: 24px;">
+                                <div class="form-group">
+                                    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Status</label>
+                                    <select name="status" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; background: white;">
+                                        <option value="Draft">Draft</option>
+                                        <option value="Live">Live</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: flex-end;">
+                                    <button type="submit" class="cta-btn" style="width: 100%; background: #ea580c; border-radius: 8px; padding: 14px; font-weight: 700; font-size: 16px; border: none; color: white; cursor: pointer; transition: background 0.2s;">Create Hackathon Event</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- BOTTOM: LIST -->
+                <div style="margin-top: 16px;">
+                    <h2 class="section-title" style="margin-bottom: 16px; font-size: 20px; font-weight: 800;">All Hackathon Events</h2>
+                    <div class="table-wrap" style="border: 1px solid #fcd34d; border-radius: 12px; background: white;">
+                        <table>
+                            <thead style="background: #fffbf7;">
+                                <tr>
+                                    <th>EVENT</th>
+                                    <th>STATUS</th>
+                                    <th>TEAM SIZES</th>
+                                    <th>TEAM REG. OPEN</th>
+                                    <th>REGISTRATION CLOSE</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for hack in hackathons_list %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 800; color: #111827;">{{ hack.name }}</div>
+                                        <div style="color: #6b7280; font-size: 12px;">{{ hack.organization_name }}</div>
+                                    </td>
+                                    <td><span class="badge badge-amber">{{ hack.status }}</span></td>
+                                    <td>{{ hack.min_team_size }} - {{ hack.max_team_size }} Members</td>
+                                    <td>{{ hack.registration_open|default:"Not Set" }}</td>
+                                    <td>{{ hack.registration_close|default:"Not Set" }}</td>
+                                    <td>
+                                        <a href="/events/view-hackathon/{{ hack.id }}/"
+                                            style="color: #059669; text-decoration: none; font-weight: 600; font-size: 13px; margin-right: 12px;">View</a>
+                                        <a href="/events/edit-hackathon/{{ hack.id }}/"
+                                            style="color: #4f46e5; text-decoration: none; font-weight: 600; font-size: 13px; margin-right: 12px;">Edit</a>
+                                        <form action="/events/delete-hackathon/{{ hack.id }}/" method="POST"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('Are you sure you want to delete this hackathon?');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                style="background:none; border:none; color: #ef4444; font-weight: 600; font-size: 13px; cursor: pointer; padding: 0;">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" style="text-align:center; padding: 40px; color: #6b7280;">No hackathons found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% elif tab == 'users' %}
+
+            <div style="display: grid; grid-template-columns: 1fr 350px; gap: 32px;">
+                <!-- LEFT: LIST -->
+                <div>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="section-title" style="margin:0;">User Management</h2>
+                        <form method="GET" style="display:flex; gap: 10px;">
+                            <input type="hidden" name="tab" value="users">
+                            <select name="role" onchange="this.form.submit()"
+                                style="padding: 6px 12px; border-radius: 8px; border: 1px solid #eee;">
+                                <option value="">All Roles</option>
+                                {% for r in roles %}
+                                <option value="{{ r.name }}">{{ r.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap" style="border: 1px solid #fcd34d; border-radius: 12px;">
+                        <table>
+                            <thead style="background: #fffbf7;">
+                                <tr>
+                                    <th>NAME</th>
+                                    <th>USERNAME</th>
+                                    <th>ROLE</th>
+                                    <th>JOINED</th>
+                                </tr>
+                            </thead>
+                            <tbody style="background: white;">
+                                {% for user in users_list %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 800; color: #111827;">{{ user.first_name }}
+                                            {{user.last_name }}</div>
+                                        <div style="color: #6b7280; font-size: 12px;">{{ user.email }}</div>
+                                    </td>
+                                    <td style="font-weight: 600;">{{ user.username }}</td>
+                                    <td>
+                                        {% if user.role %}
+                                        <span class="badge badge-purple">{{ user.role.name }}</span>
+                                        {% else %}
+                                        <span class="badge badge-gray">No Role</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align:center; padding: 40px; color: #6b7280;">No users
+                                        found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RIGHT: CREATE FORM -->
+                <div>
+                    <div class="login-box"
+                        style="width: 100%; border-color: #2563eb; padding: 32px; background: white;">
+                        <h2 class="section-title" style="margin-bottom: 24px; font-size: 20px;">Onboard New Admin / User
+                        </h2>
+                        <form action="/accounts/create-user/" method="POST">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <input type="text" name="first_name" placeholder="First Name" required
+                                        style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none;">
+                                    <input type="text" name="last_name" placeholder="Last Name" required
+                                        style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" name="username" placeholder="johndoe123" required
+                                    style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" name="email" placeholder="john@university.edu" required
+                                    style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" name="password" required
+                                    style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label>Select Role</label>
+                                <select name="role" required
+                                    style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none; background: white;">
+                                    <option value="">-- Choose Role --</option>
+                                    {% for r in roles %}
+                                    <option value="{{ r.id }}">{{ r.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p style="font-size: 11px; color: #6b7280; margin-top: 6px;">
+                                    Roles define permissions within HackNexus.
+                                </p>
+                            </div>
+                            <button type="submit" class="cta-btn" style="width: 100%;">Create User</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            

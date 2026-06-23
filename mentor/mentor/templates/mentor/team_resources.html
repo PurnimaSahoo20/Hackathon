@@ -1,0 +1,88 @@
+{% extends "mentor/base.html" %}
+{% block title %}Podcast & Documentary - {{ team.team_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Podcast & Documentary</div>
+        <div class="page-subtitle">{{ team.team_name }} · resources linked with the selected PS</div>
+    </div>
+    <a href="{% url 'mentor_dashboard' %}" class="section-btn">Back to Dashboard</a>
+</div>
+
+{% if problem_statement %}
+<div class="info-box">
+    <strong>Problem Statement:</strong> {{ problem_statement.title }}
+    {% if problem_statement.domain %} · {{ problem_statement.domain }}{% endif %}
+</div>
+{% endif %}
+
+<div class="two-grid">
+    <div class="table-wrap" style="padding:20px">
+        <div class="section-header" style="margin-bottom:14px">
+            <div class="section-title">Podcasts</div>
+            <span class="badge badge-blue">{{ podcasts|length }}</span>
+        </div>
+        {% if podcasts %}
+        <div class="stack">
+            {% for podcast in podcasts %}
+            <div class="resource-card">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:var(--text)">{{ podcast.title }}</div>
+                        <div class="meta-text">{{ podcast.hackathon.name }}</div>
+                    </div>
+                    <span class="badge badge-green">Podcast</span>
+                </div>
+                <div class="meta-text" style="margin-top:10px">{{ podcast.description|default:"No description available." }}</div>
+                <div style="margin-top:14px">
+                    {% if podcast.video_url %}
+                    <a href="{{ podcast.video_url }}" target="_blank" class="section-btn">Open Link</a>
+                    {% elif podcast.video_file %}
+                    <a href="{{ podcast.video_file.url }}" target="_blank" class="section-btn">Open Media</a>
+                    {% else %}
+                    <span class="meta-text">No media link attached.</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No podcast resources are linked with this problem statement.</div>
+        {% endif %}
+    </div>
+
+    <div class="table-wrap" style="padding:20px">
+        <div class="section-header" style="margin-bottom:14px">
+            <div class="section-title">Documentaries</div>
+            <span class="badge badge-purple">{{ documentaries|length }}</span>
+        </div>
+        {% if documentaries %}
+        <div class="stack">
+            {% for doc in documentaries %}
+            <div class="resource-card">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:var(--text)">{{ doc.title }}</div>
+                        <div class="meta-text">{{ doc.get_doc_type_display }}</div>
+                    </div>
+                    <span class="badge badge-purple">Documentary</span>
+                </div>
+                <div class="meta-text" style="margin-top:10px">{{ doc.description|default:"No description available." }}</div>
+                <div style="margin-top:14px">
+                    {% if doc.file %}
+                    <a href="{{ doc.file.url }}" target="_blank" class="section-btn">Open File</a>
+                    {% elif doc.external_url %}
+                    <a href="{{ doc.external_url }}" target="_blank" class="section-btn">Visit Link</a>
+                    {% else %}
+                    <span class="meta-text">No file or link attached.</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No documentary resources are linked with this problem statement.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

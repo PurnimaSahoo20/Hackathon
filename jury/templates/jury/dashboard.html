@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ dashboard_title }} - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .overview-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 24px;
+    }
+    .hero-card,
+    .panel-card,
+    .mini-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(251, 146, 60, 0.28);
+        border-radius: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    .hero-card {
+        padding: 28px;
+        background: linear-gradient(135deg, #fff5e9, #ffe6c8);
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        background: #ea580c;
+        color: white;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+    }
+    .mini-card {
+        padding: 20px;
+    }
+    .mini-value {
+        font-size: 30px;
+        font-weight: 900;
+        color: #111827;
+    }
+    .mini-label {
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .panel-card {
+        padding: 22px;
+    }
+    .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .section-head h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: #111827;
+    }
+    .section-head p {
+        margin: 4px 0 0;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .action-link {
+        color: #ea580c;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+    .snapshot-list {
+        display: grid;
+        gap: 14px;
+    }
+    .snapshot-item,
+    .message-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        border: 1px solid #f3e2cc;
+        border-radius: 18px;
+        padding: 16px;
+        background: #fffdfa;
+    }
+    .message-item {
+        align-items: center;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+    .status-pill.pending {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+    .status-pill.done {
+        background: #ecfdf5;
+        color: #059669;
+    }
+    .cta-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+    }
+    .cta-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration: none;
+        border: 1px solid rgba(234, 88, 12, 0.18);
+    }
+    .cta-btn.primary {
+        background: #ea580c;
+        color: white;
+        box-shadow: 0 8px 18px rgba(234, 88, 12, 0.2);
+    }
+    .cta-btn.secondary {
+        background: white;
+        color: #ea580c;
+    }
+    .video-note {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #fff7ed;
+        border: 1px dashed rgba(234, 88, 12, 0.35);
+        color: #9a3412;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    @media (max-width: 1100px) {
+        .overview-grid,
+        .quick-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-card">
+    <div class="hero-badge">
+        <ion-icon name="{% if role == 'jury' %}scale-outline{% else %}star-outline{% endif %}"></ion-icon>
+        {{ role_label }}
+    </div>
+    <h1 style="margin:16px 0 8px; font-size:30px; font-weight:900; color:#111827;">
+        Welcome, {{ request.user.first_name|default:request.user.username }}
+    </h1>
+    <p style="margin:0; font-size:14px; color:#6b7280; font-weight:600; max-width:760px;">
+        Use this workspace to review assigned teams, continue evaluations, raise queries with admin contacts, and keep your profile, testimonial, and payout details updated.
+    </p>
+    <div class="cta-row">
+        <a href="{% url 'jury_team_evaluations' %}" class="cta-btn primary">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            Open Team Evaluation
+        </a>
+        <a href="{% url 'jury_messages' %}" class="cta-btn secondary">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+            Communication
+        </a>
+        <a href="{% url 'jury_profile' %}" class="cta-btn secondary">
+            <ion-icon name="person-circle-outline"></ion-icon>
+            My Profile
+        </a>
+    </div>
+    {% if evaluator_profile.testimonial_video %}
+    <div class="video-note">
+        Testimonial video uploaded successfully. You can replace it anytime from your profile page.
+    </div>
+    {% endif %}
+</div>
+
+<div class="quick-grid">
+    <div class="mini-card">
+        <div class="mini-value">{{ total_assigned }}</div>
+        <div class="mini-label">Assigned Teams</div>
+    </div>
+    <div class="mini-card">
+        <div class="mini-value" style="color:#059669;">{{ total_evaluated }}</div>
+        <div class="mini-label">Completed Evaluations</div>
+    </div>
+    <div class="mini-card">
+        <div class="mini-value" style="color:#ea580c;">{{ total_pending }}</div>
+        <div class="mini-label">Pending Reviews</div>
+    </div>
+</div>
+
+<div class="overview-grid">
+    <div class="panel-card">
+        <div class="section-head">
+            <div>
+                <h2>Evaluation Snapshot</h2>
+                <p>Your next teams to review are listed here.</p>
+            </div>
+            <a href="{% url 'jury_team_evaluations' %}" class="action-link">See all</a>
+        </div>
+        <div class="snapshot-list">
+            {% for card in team_cards %}
+            <div class="snapshot-item">
+                <div>
+                    <div style="font-size:16px; font-weight:800; color:#111827;">{{ card.team_name }}</div>
+                    <div style="margin-top:4px; font-size:13px; color:#6b7280; font-weight:600;">
+                        {{ card.hackathon_name }} · {{ card.round_name }}
+                    </div>
+                    <div style="margin-top:10px; font-size:12px; color:#9ca3af; font-weight:700;">
+                        {{ card.scored_params }}/{{ card.total_params }} parameters scored · {{ card.doc_count }} docs
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="status-pill {% if card.is_complete %}done{% else %}pending{% endif %}">
+                        {% if card.is_complete %}Done{% else %}Pending{% endif %}
+                    </span>
+                    <div style="margin-top:16px;">
+                        <a href="{% url 'jury_team_detail' card.team.id %}" class="action-link">Open evaluation</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:36px 18px; color:#9ca3af; font-weight:600;">
+                No assigned teams yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="section-head">
+            <div>
+                <h2>Communication</h2>
+                <p>Recent conversations with super admins, admins, and executives.</p>
+            </div>
+            <a href="{% url 'jury_messages' %}" class="action-link">Open inbox</a>
+        </div>
+        <div style="display:grid; gap:12px;">
+            {% for convo in latest_conversations %}
+            <a href="{% url 'jury_conversation' convo.user.id %}" class="message-item" style="text-decoration:none;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:44px; height:44px; border-radius:14px; background:#fff1de; color:#ea580c; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900;">
+                        {{ convo.user.first_name.0|upper|default:convo.user.username.0|upper }}
+                    </div>
+                    <div>
+                        <div style="font-size:14px; font-weight:800; color:#111827;">
+                            {{ convo.user.get_full_name|default:convo.user.username }}
+                        </div>
+                        <div style="font-size:12px; color:#6b7280; font-weight:600;">
+                            {{ convo.role_label }} contact
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    {% if convo.unread_count %}
+                    <div style="font-size:11px; font-weight:800; color:#ea580c;">{{ convo.unread_count }} unread</div>
+                    {% endif %}
+                    <div style="font-size:12px; color:#9ca3af; font-weight:600; margin-top:4px;">
+                        {% if convo.last_message %}{{ convo.last_message.sent_at|date:"M d, g:i A" }}{% else %}No messages yet{% endif %}
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div style="text-align:center; padding:36px 18px; color:#9ca3af; font-weight:600;">
+                No conversations yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

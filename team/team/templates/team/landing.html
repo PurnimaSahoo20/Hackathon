@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Team Registration — HackNexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 40%,#eff6ff 100%);min-height:100vh}
+        header{padding:20px 40px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.7);backdrop-filter:blur(8px);border-bottom:1px solid #bfdbfe}
+        .brand{font-size:22px;font-weight:900;color:#f97316}.brand span{color:#2563eb}
+        .header-actions{display:flex;gap:12px}
+        .btn-outline{padding:9px 20px;border:1.5px solid #2563eb;border-radius:10px;color:#2563eb;font-size:13px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;background:none;cursor:pointer;transition:all 0.2s}
+        .btn-outline:hover{background:#2563eb;color:#fff}
+        .btn-solid{padding:9px 20px;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s}
+        .btn-solid:hover{background:#1d4ed8}
+        .hero{max-width:900px;margin:0 auto;padding:80px 24px 60px;text-align:center}
+        .hero h1{font-size:52px;font-weight:900;color:#111827;letter-spacing:-0.03em;line-height:1.1;margin-bottom:20px}
+        .hero h1 span{color:#2563eb}
+        .hero p{font-size:18px;color:#4b5563;max-width:560px;margin:0 auto 36px;line-height:1.6}
+        .cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+        .cta-primary{padding:16px 36px;background:#2563eb;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s;box-shadow:0 8px 20px rgba(37,99,235,0.3)}
+        .cta-primary:hover{background:#1d4ed8;transform:translateY(-2px)}
+        .cta-secondary{padding:16px 36px;background:rgba(255,255,255,0.8);color:#374151;border:1.5px solid #bfdbfe;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s}
+        .cta-secondary:hover{border-color:#2563eb;color:#2563eb}
+        .steps{max-width:900px;margin:0 auto 60px;padding:0 24px}
+        .steps h2{font-size:28px;font-weight:800;color:#111827;margin-bottom:32px;text-align:center;letter-spacing:-0.02em}
+        .steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+        .step-card{background:#fff;border:1px solid #bfdbfe;border-radius:16px;padding:24px 20px;text-align:center}
+        .step-num{width:40px;height:40px;border-radius:50%;background:rgba(37,99,235,0.1);color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin:0 auto 14px}
+        .step-icon{font-size:28px;margin-bottom:10px}
+        .step-title{font-size:14px;font-weight:700;color:#111827;margin-bottom:6px}
+        .step-desc{font-size:12px;color:#6b7280;line-height:1.5}
+        .hackathons{max-width:900px;margin:0 auto 60px;padding:0 24px}
+        .hackathons h2{font-size:22px;font-weight:800;color:#111827;margin-bottom:20px}
+        .hcard{background:#fff;border:1px solid #bfdbfe;border-radius:14px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+        .hcard-name{font-size:15px;font-weight:700;color:#111827}
+        .hcard-meta{font-size:12px;color:#6b7280;margin-top:3px}
+        .badge-live{background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+        @media(max-width:600px){.hero h1{font-size:36px}.cta-row{flex-direction:column;align-items:center}.steps-grid{grid-template-columns:1fr 1fr}}
+    </style>
+</head>
+<body>
+<header>
+    <div class="brand">Hack<span>Nexus</span></div>
+    <div class="header-actions">
+        <a href="{% url 'team_login' %}" class="btn-outline">Sign In</a>
+        <a href="{% url 'team_register' %}" class="btn-solid">Register Your Team →</a>
+    </div>
+</header>
+
+<div class="hero">
+    <h1>Register Your Team for<br><span>HackNexus 2025</span></h1>
+    <p>Build innovative solutions, get mentored by industry experts, and compete with the best teams across institutions.</p>
+    <div class="cta-row">
+        <a href="{% url 'team_register' %}" class="cta-primary">🚀 Register Your Team</a>
+        <a href="{% url 'team_login' %}" class="cta-secondary">Already registered? Login →</a>
+    </div>
+</div>
+
+<div class="steps">
+    <h2>How It Works</h2>
+    <div class="steps-grid">
+        <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-icon">📝</div>
+            <div class="step-title">Register</div>
+            <div class="step-desc">Sign up as team lead and create your team profile</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-icon">👥</div>
+            <div class="step-title">Add Members</div>
+            <div class="step-desc">Invite your team members and fill in their details</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-icon">🎓</div>
+            <div class="step-title">Invite Mentor</div>
+            <div class="step-desc">Send a mentor invitation by email with team details</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-icon">✅</div>
+            <div class="step-title">Get Approved</div>
+            <div class="step-desc">SPOC and admin review and approve your registration</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">5</div>
+            <div class="step-icon">🏆</div>
+            <div class="step-title">Compete!</div>
+            <div class="step-desc">Access your full dashboard and submit your solution</div>
+        </div>
+    </div>
+</div>
+
+{% if hackathons %}
+<div class="hackathons">
+    <h2>Open Hackathons</h2>
+    {% for h in hackathons %}
+    <div class="hcard">
+        <div>
+            <div class="hcard-name">{{ h.name }}</div>
+            <div class="hcard-meta">{% if h.round_1_start_date %}{{ h.round_1_start_date }}{% endif %}</div>
+        </div>
+        <span class="badge-live">🟢 Live</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+</body>
+</html>

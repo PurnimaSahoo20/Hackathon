@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ team_name }} - Evaluation - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #ea580c;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: gap 0.2s;
+    }
+    .back-link:hover { gap: 10px; }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+    .team-content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+    @media (max-width: 1100px) {
+        .team-content-grid { grid-template-columns: 1fr; }
+    }
+
+    .info-card {
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(251,146,60,0.28);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15,23,42,0.05);
+    }
+    .info-card-header {
+        background: linear-gradient(135deg, #fff4e6, #ffe7c7);
+        padding: 22px 24px;
+        border-bottom: 1px solid rgba(251,146,60,0.2);
+    }
+    .info-card-body { padding: 22px 24px; }
+
+    .team-hero-name {
+        font-size: 22px;
+        font-weight: 900;
+        color: #111827;
+        margin: 0 0 6px;
+    }
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+        font-weight: 800;
+        color: #6b7280;
+        min-width: 120px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .info-value { font-weight: 700; color: #111827; }
+
+    .doc-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: #fffbf7;
+        border: 1px solid rgba(251,146,60,0.2);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+    }
+    .doc-item:hover {
+        border-color: #ea580c;
+        background: #fff4e6;
+    }
+    .doc-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #fff7ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #ea580c;
+        flex-shrink: 0;
+    }
+    .doc-name { font-size: 13px; font-weight: 700; color: #111827; }
+    .doc-meta { font-size: 11px; color: #9ca3af; font-weight: 600; }
+    .doc-download {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #ea580c;
+        color: white;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .doc-download:hover { background: #d97706; }
+
+    .problem-card { margin-bottom: 0; }
+    .problem-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .problem-view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(234,88,12,0.2);
+        background: #fff7ed;
+        color: #ea580c;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+    }
+    .problem-detail-panel {
+        display: none;
+        margin-top: 14px;
+        padding: 16px;
+        background: #fffbf7;
+        border: 1px solid rgba(251,146,60,0.2);
+        border-radius: 14px;
+    }
+    .problem-detail-panel.open { display: block; }
+    .resource-stack {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+    }
+    .resource-card {
+        border: 1px solid #f3e2cc;
+        border-radius: 12px;
+        background: white;
+        padding: 12px 14px;
+    }
+    .resource-open {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        color: #ea580c;
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .eval-toggle-bar {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:14px;
+        flex-wrap:wrap;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(251,146,60,0.28);
+        border-radius: 22px;
+        padding: 20px 24px;
+        box-shadow: 0 8px 24px rgba(15,23,42,0.05);
+    }
+    .eval-toggle-btn {
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        border:none;
+        background: linear-gradient(135deg, #ea580c, #f97316);
+        color:white;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 8px 20px rgba(234,88,12,0.2);
+    }
+    .eval-toggle-btn:hover { transform: translateY(-1px); }
+    .eval-sheet-shell.hidden-form { margin-bottom: 0; }
+
+    .eval-form-card {
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(251,146,60,0.28);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15,23,42,0.05);
+    }
+    .eval-form-header {
+        background: linear-gradient(135deg, #ea580c, #f97316);
+        padding: 20px 24px;
+        color: white;
+    }
+    .eval-form-header h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 900;
+    }
+    .eval-form-body { padding: 20px 24px; }
+
+    .param-row {
+        background: #fffbf7;
+        border: 1px solid rgba(251,146,60,0.2);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+        transition: border-color 0.2s;
+    }
+    .param-row:hover { border-color: rgba(234,88,12,0.4); }
+    .param-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .param-number {
+        width: 24px;
+        height: 24px;
+        background: #ea580c;
+        color: white;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 900;
+        flex-shrink: 0;
+    }
+    .param-inputs {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 10px;
+    }
+    @media (max-width: 900px) {
+        .param-inputs { grid-template-columns: 1fr; }
+    }
+    .param-score-wrap { position: relative; }
+    .param-score-wrap input[type="number"] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 2px solid #fcd34d;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: 'Outfit', sans-serif;
+        color: #111827;
+        outline: none;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    .param-score-wrap input[type="number"]:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 3px rgba(234,88,12,0.1);
+    }
+    .param-score-wrap input[type="number"].filled {
+        border-color: #059669;
+        background: #f0fdf4;
+    }
+    .param-remarks {
+        width: 100%;
+        padding: 10px 14px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: 'Outfit', sans-serif;
+        color: #374151;
+        outline: none;
+        resize: none;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    .param-remarks:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 3px rgba(234,88,12,0.08);
+    }
+    .score-label { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 5px; }
+    .progress-bar-track {
+        height: 6px;
+        background: #f3f4f6;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ea580c, #f97316);
+    }
+    .progress-bar-fill.complete {
+        background: linear-gradient(90deg, #059669, #10b981);
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #ea580c, #f97316);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 6px 16px rgba(234,88,12,0.25);
+        margin-top: 8px;
+    }
+    .submit-btn:hover {
+        background: linear-gradient(135deg, #d97706, #ea580c);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(234,88,12,0.3);
+    }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn.already-done {
+        background: linear-gradient(135deg, #059669, #10b981);
+        box-shadow: 0 6px 16px rgba(5,150,105,0.25);
+    }
+
+    .completion-banner {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border: 1px solid rgba(5,150,105,0.3);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #065f46;
+    }
+
+    .no-params-notice {
+        text-align: center;
+        padding: 30px;
+        color: #9ca3af;
+        font-size: 13px;
+    }
+    .no-docs-notice {
+        text-align: center;
+        padding: 20px;
+        color: #9ca3af;
+        font-size: 12px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'jury_team_evaluations' %}" class="back-link">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+    Back to Team Evaluation
+</a>
+
+<div style="margin-bottom: 24px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <h1 style="font-size:26px; font-weight:900; color:#111827; margin:0;">{{ team_name }}</h1>
+        <span style="background:#fff7ed; color:#ea580c; border:1px solid rgba(234,88,12,0.2);
+                     border-radius:999px; padding:4px 12px; font-size:12px; font-weight:800;">
+            {{ round_name }}
+        </span>
+        {% if all_scored %}
+        <span style="background:#ecfdf5; color:#059669; border:1px solid rgba(5,150,105,0.2);
+                     border-radius:999px; padding:4px 12px; font-size:12px; font-weight:800;">
+            Evaluation Complete
+        </span>
+        {% endif %}
+    </div>
+    <p style="margin:6px 0 0; font-size:13px; color:#6b7280; font-weight:600;">
+        {{ hackathon.name }} &nbsp;·&nbsp; {{ role_label }} Evaluation Panel
+    </p>
+</div>
+
+<div class="detail-grid">
+    <div class="team-content-grid">
+        <div class="info-card">
+            <div class="info-card-header">
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <div style="width:52px; height:52px; border-radius:14px; background:white;
+                                display:flex; align-items:center; justify-content:center;
+                                font-size:22px; font-weight:900; color:#ea580c;
+                                box-shadow:0 4px 10px rgba(234,88,12,0.15);">
+                        {{ team_name|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <h2 class="team-hero-name">{{ team_name }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="info-card-body">
+                <div class="form-section-title" style="margin-top:0;">Team Information</div>
+                <div class="info-row">
+                    <span class="info-label">Team Name</span>
+                    <span class="info-value">{{ team_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Problem Statement</span>
+                    <span class="info-value">{{ problem_statement.title|default:"Not assigned" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <div style="font-size:16px; font-weight:800; color:#111827;">
+                            Team Documents
+                        </div>
+                        <div style="font-size:12px; color:#6b7280; margin-top:2px;">
+                            {{ documents.count }} file{{ documents.count|pluralize }} uploaded
+                        </div>
+                    </div>
+                    <ion-icon name="folder-open-outline" style="font-size:28px; color:#ea580c;"></ion-icon>
+                </div>
+            </div>
+            <div class="info-card-body">
+                {% if documents %}
+                    {% for doc in documents %}
+                    <div class="doc-item">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="doc-icon">
+                                {% if doc.doc_type == 'presentation' %}📊
+                                {% elif doc.doc_type == 'report' %}📄
+                                {% elif doc.doc_type == 'project' %}💻
+                                {% elif doc.doc_type == 'id_proof' %}🪪
+                                {% else %}📎{% endif %}
+                            </div>
+                            <div>
+                                <div class="doc-name">{{ doc.title }}</div>
+                                <div class="doc-meta">
+                                    {{ doc.get_doc_type_display }}
+                                    &nbsp;·&nbsp;
+                                    {{ doc.uploaded_at|date:"M d, Y" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if doc.file %}
+                        <a href="{{ doc.file.url }}" target="_blank" class="doc-download">
+                            <ion-icon name="download-outline"></ion-icon> View
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-docs-notice">
+                        <ion-icon name="cloud-upload-outline" style="font-size:32px; display:block; margin:0 auto 8px;"></ion-icon>
+                        No documents uploaded by this team yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if problem_statement %}
+    <div class="info-card problem-card">
+        <div class="info-card-body">
+            <div class="problem-header">
+                <div>
+                    <div class="form-section-title" style="margin:0;">Problem Statement</div>
+                    <div style="font-size:16px; font-weight:800; color:#111827;">{{ problem_statement.title }}</div>
+                    <div style="font-size:12px; color:#6b7280; font-weight:700; margin-top:4px;">
+                        {{ problem_statement.domain|default:"General" }}
+                    </div>
+                </div>
+                <button type="button" class="problem-view-btn" id="toggleProblemStatement">
+                    <ion-icon name="eye-outline"></ion-icon>
+                    View
+                </button>
+            </div>
+
+            <div class="problem-detail-panel" id="problemStatementPanel">
+                <div style="font-size:13px; color:#4b5563; line-height:1.7;">
+                    {{ problem_statement.description|default:"No description available for this problem statement." }}
+                </div>
+
+                {% if problem_statement.pdf_file %}
+                <a href="{{ problem_statement.pdf_file.url }}" target="_blank" class="resource-open" style="margin-top:12px;">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    Open Problem Statement
+                </a>
+                {% endif %}
+
+                <div class="resource-stack">
+                    <div>
+                        <div style="font-size:13px; font-weight:800; color:#111827;">Podcasts for this problem statement</div>
+                        {% if problem_podcasts %}
+                            {% for podcast in problem_podcasts %}
+                            <div class="resource-card">
+                                <div style="font-size:14px; font-weight:800; color:#111827;">{{ podcast.title }}</div>
+                                <div style="font-size:12px; color:#6b7280; font-weight:600; margin-top:4px;">
+                                    {{ podcast.description|default:"No description provided." }}
+                                </div>
+                                {% if podcast.video_url %}
+                                <a href="{{ podcast.video_url }}" target="_blank" class="resource-open">
+                                    <ion-icon name="open-outline"></ion-icon>
+                                    Open Podcast
+                                </a>
+                                {% elif podcast.video_file %}
+                                <a href="{{ podcast.video_file.url }}" target="_blank" class="resource-open">
+                                    <ion-icon name="play-circle-outline"></ion-icon>
+                                    Open Podcast Media
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div style="font-size:12px; color:#9ca3af; margin-top:8px;">No podcasts linked to this problem statement yet.</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div style="font-size:13px; font-weight:800; color:#111827;">Documentation for this problem statement</div>
+                        {% if problem_documentation %}
+                            {% for doc in problem_documentation %}
+                            <div class="resource-card">
+                                <div style="font-size:14px; font-weight:800; color:#111827;">{{ doc.title }}</div>
+                                <div style="font-size:12px; color:#6b7280; font-weight:600; margin-top:4px;">
+                                    {{ doc.get_doc_type_display }}{% if doc.description %} · {{ doc.description }}{% endif %}
+                                </div>
+                                {% if doc.file %}
+                                <a href="{{ doc.file.url }}" target="_blank" class="resource-open">
+                                    <ion-icon name="document-outline"></ion-icon>
+                                    Open Document
+                                </a>
+                                {% elif doc.external_url %}
+                                <a href="{{ doc.external_url }}" target="_blank" class="resource-open">
+                                    <ion-icon name="open-outline"></ion-icon>
+                                    Visit Resource
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div style="font-size:12px; color:#9ca3af; margin-top:8px;">No documentation linked to this problem statement yet.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="eval-toggle-bar">
+        <div>
+            <div class="form-section-title" style="margin:0 0 10px;">Evaluation Sheet</div>
+            <div style="font-size:14px; color:#6b7280; font-weight:700;">
+                {{ round_name }} · {{ param_data|length }} marking parameter{{ param_data|length|pluralize }}
+            </div>
+        </div>
+        <button type="button" class="eval-toggle-btn" id="toggleEvaluationSheet">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            View Evaluation Sheet
+        </button>
+    </div>
+
+    <div id="evaluationSheetPanel" class="hidden-form eval-sheet-shell">
+        <div class="form-card" style="padding:0; overflow:hidden;">
+            <div class="eval-form-card">
+                <div class="eval-form-header">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:4px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <ion-icon name="clipboard-outline" style="font-size:22px;"></ion-icon>
+                            <h3>Evaluation Sheet</h3>
+                        </div>
+                        <button type="button" class="problem-view-btn" id="hideEvaluationSheet" style="background:rgba(255,255,255,0.16); border-color:rgba(255,255,255,0.24); color:white;">
+                            <ion-icon name="eye-off-outline"></ion-icon>
+                            Hide
+                        </button>
+                    </div>
+                    <p style="margin:0; font-size:13px; opacity:0.85;">
+                        {{ round_name }} &nbsp;·&nbsp;
+                        {{ param_data|length }} marking parameter{{ param_data|length|pluralize }}
+                    </p>
+                </div>
+                <div class="eval-form-body">
+
+                    {% if all_scored %}
+                    <div class="completion-banner">
+                        <ion-icon name="checkmark-circle-outline" style="font-size:20px; color:#059669; flex-shrink:0;"></ion-icon>
+                        You have completed evaluation for this team. You can update scores below.
+                    </div>
+                    {% endif %}
+
+                    {% if param_data %}
+                    <form method="POST" action="{% url 'jury_submit_marks' team.id %}" id="evalForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="round_number" value="{{ round_number }}">
+
+                        {% for item in param_data %}
+                        <div class="param-row" id="param-row-{{ forloop.counter }}">
+                            <div class="param-name">
+                                <span class="param-number">{{ forloop.counter }}</span>
+                                {{ item.param.name }}
+                                {% if item.score %}
+                                <span style="margin-left:auto; background:#ecfdf5; color:#059669;
+                                             border-radius:6px; padding:2px 8px; font-size:11px;">
+                                    Scored
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="param-inputs">
+                                <div>
+                                    <div class="score-label">Score (0-100)</div>
+                                    <div class="param-score-wrap">
+                                        <input type="number"
+                                               name="score_{{ item.param.id }}"
+                                               id="score_{{ item.param.id }}"
+                                               placeholder="0-100"
+                                               min="0" max="100" step="0.5"
+                                               value="{{ item.score }}"
+                                               class="{% if item.score %}filled{% endif %}"
+                                               oninput="markFilled(this)">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="score-label">Remarks (optional)</div>
+                                    <textarea name="remarks_{{ item.param.id }}"
+                                              class="param-remarks"
+                                              rows="2"
+                                              placeholder="Brief evaluation note...">{{ item.remarks }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div style="margin-top:20px; padding-top:16px; border-top:1px solid #f3f4f6;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;
+                                        margin-bottom:12px; font-size:12px; color:#6b7280; font-weight:700;">
+                                <span>Progress</span>
+                                <span id="scoreCount">Calculating...</span>
+                            </div>
+                            <div class="progress-bar-track" style="height:8px; margin-bottom:16px;">
+                                <div id="formProgressBar"
+                                     class="progress-bar-fill"
+                                     style="width:0%; transition: width 0.4s;"></div>
+                            </div>
+                            <button type="submit" class="submit-btn {% if all_scored %}already-done{% endif %}">
+                                <ion-icon name="{% if all_scored %}refresh-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+                                {% if all_scored %}Update Evaluation{% else %}Submit Evaluation{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="no-params-notice">
+                        <ion-icon name="information-circle-outline" style="font-size:36px; display:block; margin:0 auto 10px; color:#9ca3af;"></ion-icon>
+                        <strong style="color:#374151;">No marking parameters defined</strong><br>
+                        The super admin has not set up any marking parameters for {{ round_name }} yet.<br>
+                        Please contact the administrator.
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleProblemStatementPanel() {
+        const panel = document.getElementById('problemStatementPanel');
+        const button = document.getElementById('toggleProblemStatement');
+        if (!panel || !button) return;
+        panel.classList.toggle('open');
+        const isOpen = panel.classList.contains('open');
+        button.innerHTML = isOpen
+            ? '<ion-icon name="eye-off-outline"></ion-icon> Hide'
+            : '<ion-icon name="eye-outline"></ion-icon> View';
+    }
+
+    function toggleEvaluationSheet(forceOpen) {
+        const panel = document.getElementById('evaluationSheetPanel');
+        const button = document.getElementById('toggleEvaluationSheet');
+        if (!panel || !button) return;
+        const willOpen = typeof forceOpen === 'boolean' ? forceOpen : window.getComputedStyle(panel).display === 'none';
+        panel.style.display = willOpen ? 'block' : 'none';
+        button.innerHTML = willOpen
+            ? '<ion-icon name="eye-off-outline"></ion-icon> Hide Evaluation Sheet'
+            : '<ion-icon name="clipboard-outline"></ion-icon> View Evaluation Sheet';
+        if (willOpen) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function markFilled(input) {
+        if (input.value.trim() !== '') {
+            input.classList.add('filled');
+        } else {
+            input.classList.remove('filled');
+        }
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const scoreInputs = document.querySelectorAll('input[type="number"][name^="score_"]');
+        const total = scoreInputs.length;
+        if (!total) return;
+        let filled = 0;
+        scoreInputs.forEach(function (inp) {
+            if (inp.value.trim() !== '') filled++;
+        });
+        const pct = Math.round((filled / total) * 100);
+        const bar = document.getElementById('formProgressBar');
+        const label = document.getElementById('scoreCount');
+        if (bar) bar.style.width = pct + '%';
+        if (bar) bar.className = 'progress-bar-fill' + (pct === 100 ? ' complete' : '');
+        if (label) label.textContent = filled + ' / ' + total + ' parameters scored';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateProgress();
+
+        const toggleButton = document.getElementById('toggleProblemStatement');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', toggleProblemStatementPanel);
+        }
+
+        const evalToggleButton = document.getElementById('toggleEvaluationSheet');
+        if (evalToggleButton) {
+            evalToggleButton.addEventListener('click', function () { toggleEvaluationSheet(); });
+        }
+
+        const evalHideButton = document.getElementById('hideEvaluationSheet');
+        if (evalHideButton) {
+            evalHideButton.addEventListener('click', function () { toggleEvaluationSheet(false); });
+        }
+
+        const form = document.getElementById('evalForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const scoreInputs = form.querySelectorAll('input[type="number"][name^="score_"]');
+                let allFilled = true;
+                scoreInputs.forEach(function (inp) {
+                    if (inp.value.trim() === '') allFilled = false;
+                });
+                if (!allFilled) {
+                    const go = confirm('Some parameters have not been scored. Submit partial evaluation?');
+                    if (!go) e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

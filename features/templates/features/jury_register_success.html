@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Registration Submitted — HackNexus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#4c1d95,#7c3aed);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .box{background:#fff;border-radius:20px;padding:48px 40px;max-width:480px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(76,29,149,.3);}
+    .icon{font-size:64px;margin-bottom:20px;}
+    h1{font-size:26px;font-weight:900;color:#111827;margin-bottom:12px;}
+    p{color:#6b7280;font-size:15px;line-height:1.6;margin-bottom:8px;}
+    .badge{display:inline-block;background:#ede9fe;color:#7c3aed;border-radius:8px;padding:6px 16px;font-weight:700;font-size:14px;margin:16px 0;}
+    .note{background:#f5f3ff;border-radius:12px;padding:16px 20px;font-size:13px;color:#5b21b6;margin-top:20px;line-height:1.6;}
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="icon">✅</div>
+  <h1>Application Submitted!</h1>
+  <p>Thank you for completing your jury registration.</p>
+  <div class="badge">{{ email }}</div>
+  <p>Your application is now under review by the hackathon team. You will receive an email with your login credentials once approved.</p>
+  <div class="note">
+    <strong>What happens next?</strong><br>
+    The organizing team will verify your details and approve your account. Once approved, your username and password will be sent to this email address.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+{% extends "mentor/base.html" %}
+{% block title %}{{ team.team_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ team.team_name }}</div>
+        <div class="page-subtitle">{{ team.hackathon.name }} team overview</div>
+    </div>
+    <a href="{% url 'mentor_dashboard' %}" class="section-btn">Back to Dashboard</a>
+</div>
+
+<div class="two-grid" style="margin-bottom:24px">
+    <div class="table-wrap" style="padding:20px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Team Information</div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Team Name</span>
+            <span style="font-size:13px;font-weight:700">{{ team.team_name }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Leader</span>
+            <span style="font-size:13px;font-weight:700">{{ team.team_leader.get_full_name|default:team.team_leader.username }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Institution</span>
+            <span style="font-size:13px;font-weight:700">{{ team.institution.name|default:"Not provided" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Hackathon</span>
+            <span style="font-size:13px;font-weight:700">{{ team.hackathon.name }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Declared Members</span>
+            <span style="font-size:13px;font-weight:700">{{ team.declared_member_count }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span class="meta-text" style="font-weight:700">Status</span>
+            <span class="badge badge-green">{{ team.status }}</span>
+        </div>
+        <div style="padding:14px 0 6px">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+                <div>
+                    <div class="meta-text" style="font-weight:700;margin-bottom:6px">Problem Statement</div>
+                    {% if problem_statement %}
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">{{ problem_statement.title }}</div>
+                    <div class="meta-text" style="margin-top:4px">{{ problem_statement.description|default:"No description available."|truncatechars:180 }}</div>
+                    {% else %}
+                    <div style="font-size:13px;color:var(--muted)">No problem statement assigned yet.</div>
+                    {% endif %}
+                </div>
+                {% if problem_statement %}
+                <a href="{% url 'mentor_team_problem_statement' team.id %}" class="section-btn ghost">View PS</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="stack">
+        <div class="table-wrap" style="padding:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Team Members</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(5,150,105,0.04);border:1px solid rgba(5,150,105,0.2);border-radius:10px;margin-bottom:8px">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(5,150,105,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#059669">{{ team.team_leader.first_name.0|upper|default:"L" }}</div>
+                <div>
+                    <div style="font-size:13px;font-weight:700">{{ team.team_leader.get_full_name|default:team.team_leader.username }} <span style="color:#059669;font-size:11px">(Leader)</span></div>
+                    <div class="meta-text">{{ team.team_leader.email }}</div>
+                </div>
+            </div>
+            {% for tm in members %}
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(37,99,235,0.1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#2563eb">{{ tm.user.first_name.0|upper|default:"M" }}</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600">{{ tm.user.get_full_name|default:tm.user.username }}</div>
+                    <div class="meta-text">{{ tm.user.email }} · {{ tm.role_in_team }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No additional members yet</div>
+            {% endfor %}
+        </div>
+
+        <div class="table-wrap" style="padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px">
+                <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Quick Links</div>
+                <span class="badge badge-blue">{{ resource_count }} resource{{ resource_count|pluralize }}</span>
+            </div>
+            <div class="stack">
+                <a href="{% url 'mentor_team_problem_statement' team.id %}" class="section-btn {% if problem_statement %}primary{% endif %}" style="text-align:center">Open PS Section</a>
+                <a href="{% url 'mentor_team_resources' team.id %}" class="section-btn" style="text-align:center">Open Podcast & Documentary</a>
+                <a href="{% url 'mentor_conversation' team.team_leader.id %}" class="section-btn" style="text-align:center">Message Team Lead</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header"><div class="section-title">Submitted Documents & Solutions</div></div>
+    <div class="table-wrap">
+        {% if documents %}
+        <table>
+            <thead><tr><th>Title</th><th>Type</th><th>Uploaded By</th><th>Date</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td><strong>{{ doc.title }}</strong></td>
+                    <td><span class="badge badge-blue">{{ doc.get_doc_type_display }}</span></td>
+                    <td>{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username|default:"-" }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ doc.uploaded_at|date:"M j, Y" }}</td>
+                    <td><a href="{{ doc.file.url }}" target="_blank" class="act-btn act-view">Download</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No documents submitted yet</div>
+            <div>The team has not uploaded any solutions or supporting documents.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

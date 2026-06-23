@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit SPOC — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:#ea580c;font-weight:700;text-decoration:none;margin-bottom:24px;font-size:14px;}
+    .back-link:hover{text-decoration:underline;}
+    .card{background:#fff;border-radius:20px;border:1px solid #f3f4f6;padding:36px;box-shadow:0 4px 20px rgba(0,0,0,0.04);}
+    .card-title{font-size:22px;font-weight:900;color:#111827;margin:0 0 6px;}
+    .card-sub{color:#6b7280;font-size:14px;margin:0 0 28px;}
+    .section-title{font-size:14px;font-weight:800;color:#ea580c;border-left:4px solid #ea580c;padding-left:10px;margin:24px 0 14px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .fg{margin-bottom:14px;}
+    .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+    .fg input,.fg select{width:100%;border:1px solid #fcd34d;border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;}
+    .fg input:focus,.fg select:focus{border-color:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,0.1);}
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+    .btn:hover{background:#d97706;}
+    .btn-outline{background:#fff;color:#ea580c;border:2px solid #ea580c;border-radius:10px;padding:10px 22px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+    .btn-outline:hover{background:#fff7ed;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:780px;margin:0 auto;padding:12px 0;">
+    <a href="{% url 'view_spoc' spoc.id %}" class="back-link"><ion-icon name="arrow-back-outline"></ion-icon> Back to SPOC Profile</a>
+
+    <div class="card">
+        <h1 class="card-title">Edit SPOC</h1>
+        <p class="card-sub">Updating: <strong>{{ spoc.user.username }}</strong> ({{ spoc.user.email }})</p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="section-title" style="margin-top:0;">Personal Details</div>
+            <div class="form-row">
+                <div class="fg"><label>First Name</label><input type="text" name="first_name" value="{{ spoc.user.first_name }}"></div>
+                <div class="fg"><label>Last Name</label><input type="text" name="last_name" value="{{ spoc.user.last_name }}"></div>
+                <div class="fg"><label>Email Address</label><input type="email" name="email" value="{{ spoc.user.email }}"></div>
+                <div class="fg"><label>Phone Number</label><input type="tel" name="phone_number" value="{{ spoc.user.phone_number|default:'' }}"></div>
+            </div>
+            <div class="fg" style="max-width:300px;">
+                <label>Gender</label>
+                <select name="gender">
+                    <option value="">-- Select --</option>
+                    <option value="Male" {% if spoc.user.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if spoc.user.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if spoc.user.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+
+            <div class="section-title">Institution Details</div>
+            <div class="fg">
+                <label>Institution Name</label>
+                <input type="text" name="institution_name" value="{{ spoc.institution_name }}">
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:24px;">
+                <button type="submit" class="btn"><ion-icon name="save-outline"></ion-icon> Save Changes</button>
+                <a href="{% url 'view_spoc' spoc.id %}" class="btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "spoc/base.html" %}
+{% block title %}Mentor Verifications{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Mentor Verifications</div>
+        <div class="page-subtitle">Verify mentor identities before forwarding to Admin for final approval</div>
+    </div>
+</div>
+
+<div class="info-box">
+    <strong>Your Role:</strong> After a team invites a mentor and the mentor accepts, you must verify the mentor's identity and institution. Once you approve, the Admin will create the mentor's account.
+</div>
+
+<!-- PENDING VERIFICATION -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">⏳ Awaiting Your Verification</div>
+        <span class="badge badge-amber">{{ pending|length }} Pending</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Mentor Name</th><th>Email</th><th>Team</th><th>Designation</th><th>Expertise</th><th>ID Proof</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for invite in pending %}
+                <tr>
+                    <td><strong>{{ invite.mentor_name }}</strong></td>
+                    <td style="font-size:12px;color:var(--muted)">{{ invite.mentor_email }}</td>
+                    <td>{% if invite.registration %}<span class="badge badge-blue">{{ invite.registration.team_name }}</span>{% else %}—{% endif %}</td>
+                    <td>{{ invite.mentor_designation|default:"—" }}</td>
+                    <td>{{ invite.mentor_expertise|default:"—" }}</td>
+                    <td>
+                        {% if invite.id_proof %}
+                        <a href="{{ invite.id_proof.url }}" target="_blank" class="act-btn act-view">View ID</a>
+                        {% else %}<span style="color:var(--muted);font-size:12px">Not uploaded</span>{% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{% url 'spoc_approve_mentor' invite.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="act-btn act-approve">✓ Approve</button>
+                        </form>
+                        <button class="act-btn act-reject" onclick="openRejectMentor({{ invite.id }}, '{{ invite.mentor_name }}')">✕ Reject</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No mentors awaiting verification 🎉</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RESOLVED -->
+{% if resolved %}
+<div class="section">
+    <div class="section-header"><div class="section-title">✅ Recently Resolved</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Mentor</th><th>Team</th><th>Decision</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for invite in resolved %}
+                <tr>
+                    <td><strong>{{ invite.mentor_name }}</strong><br><span style="font-size:11px;color:var(--muted)">{{ invite.mentor_email }}</span></td>
+                    <td>{% if invite.registration %}{{ invite.registration.team_name }}{% else %}—{% endif %}</td>
+                    <td>
+                        {% if invite.status == 'spoc_approved' or invite.status == 'admin_approved' or invite.status == 'active' %}
+                        <span class="badge badge-green">✓ SPOC Approved</span>
+                        {% elif invite.status == 'spoc_rejected' %}
+                        <span class="badge badge-red">✗ Rejected</span>
+                        {% else %}
+                        <span class="badge badge-gray">{{ invite.status|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ invite.spoc_decided_at|date:"M j, Y"|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="reject-mentor-modal">
+    <div class="modal" style="max-width:460px">
+        <div class="modal-head">
+            <div class="modal-title">❌ Reject Mentor</div>
+            <button class="modal-close" onclick="document.getElementById('reject-mentor-modal').classList.remove('open')">✕</button>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Provide a reason for rejection. It will be shared with the team lead.</p>
+        <form method="POST" id="reject-mentor-form" action="">
+            {% csrf_token %}
+            <div class="field">
+                <label>Rejection Reason</label>
+                <textarea name="rejection_reason" rows="3" placeholder="e.g. ID proof invalid, not from this institution..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="section-btn" onclick="document.getElementById('reject-mentor-modal').classList.remove('open')">Cancel</button>
+                <button type="submit" class="act-btn act-reject" style="padding:9px 20px;font-size:13px">Submit Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRejectMentor(id, name) {
+    document.getElementById('reject-mentor-form').action = `/spoc/mentors/${id}/reject/`;
+    document.getElementById('reject-mentor-modal').classList.add('open');
+}
+</script>
+{% endblock %}

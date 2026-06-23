@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── Layout helpers ─── */
+.profile-wrap   { display:grid; grid-template-columns:320px 1fr; gap:28px; align-items:start; }
+@media(max-width:900px){ .profile-wrap{ grid-template-columns:1fr; } }
+
+/* ─── Avatar card ─── */
+.avatar-card {
+    background:#fff;
+    border-radius:20px;
+    border:1px solid #f3f4f6;
+    box-shadow:0 4px 20px rgba(0,0,0,.04);
+    padding:32px 24px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+}
+.avatar-card::before {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:100px;
+    background:linear-gradient(135deg,#ea580c 0%,#d97706 100%);
+}
+.avatar-ring {
+    width:110px; height:110px;
+    border-radius:50%;
+    border:4px solid #fff;
+    background:#ffedd5;
+    display:flex; align-items:center; justify-content:center;
+    font-size:46px;
+    margin:0 auto 14px;
+    position:relative; z-index:1;
+    box-shadow:0 8px 24px rgba(234,88,12,.2);
+    overflow:hidden;
+}
+.avatar-ring img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.avatar-name { font-size:20px; font-weight:900; color:#111827; margin-bottom:4px; }
+.avatar-role {
+    display:inline-block;
+    background:linear-gradient(135deg,#ea580c,#d97706);
+    color:#fff; font-size:11px; font-weight:800; letter-spacing:.8px;
+    padding:4px 14px; border-radius:20px; margin-bottom:18px;
+    text-transform:uppercase;
+}
+.avatar-upload-btn {
+    background:#fff7ed; color:#ea580c;
+    border:2px dashed #fbbf24;
+    border-radius:10px; padding:10px 16px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+    transition:all .2s; font-family:'Outfit',sans-serif;
+    width:100%; justify-content:center;
+}
+.avatar-upload-btn:hover{ background:#ffedd5; }
+
+/* Info chips */
+.info-chip {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid #f3f4f6;
+    font-size:13px; color:#374151;
+}
+.info-chip:last-child{ border-bottom:none; }
+.info-chip ion-icon{ font-size:16px; color:#ea580c; flex-shrink:0; }
+.info-chip strong{ font-weight:700; color:#111827; }
+
+/* ─── Form card ─── */
+.form-card {
+    background:#fff;
+    border-radius:20px;
+    border:1px solid #f3f4f6;
+    box-shadow:0 4px 20px rgba(0,0,0,.04);
+    padding:30px;
+}
+.form-card + .form-card{ margin-top:22px; }
+
+.section-head {
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:22px; padding-bottom:14px;
+    border-bottom:2px solid #fff7ed;
+}
+.section-head h2{ font-size:17px; font-weight:900; color:#111827; margin:0; }
+.section-icon {
+    width:36px; height:36px;
+    background:linear-gradient(135deg,#ea580c,#d97706);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:18px;
+}
+
+/* Form grid */
+.fg-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:600px){ .fg-grid{ grid-template-columns:1fr; } }
+.fg { margin-bottom:16px; }
+.fg label {
+    display:block; font-weight:700; font-size:12px;
+    color:#6b7280; text-transform:uppercase; letter-spacing:.5px;
+    margin-bottom:6px;
+}
+.fg input, .fg select {
+    width:100%; border:1.5px solid #e5e7eb;
+    border-radius:10px; padding:11px 14px;
+    font-size:14px; font-family:'Outfit',sans-serif;
+    outline:none; transition:all .2s; box-sizing:border-box;
+    color:#111827; background:#fff;
+}
+.fg input:focus, .fg select:focus {
+    border-color:#ea580c;
+    box-shadow:0 0 0 3px rgba(234,88,12,.1);
+}
+.fg input[readonly] {
+    background:#f9fafb; color:#6b7280; cursor:default;
+}
+
+/* Password strength */
+.pwd-meter { height:4px; border-radius:2px; background:#e5e7eb; margin-top:6px; overflow:hidden; }
+.pwd-fill  { height:100%; border-radius:2px; transition:width .3s,background .3s; }
+
+/* Buttons */
+.save-btn {
+    background:linear-gradient(135deg,#ea580c,#d97706);
+    color:#fff; border:none; border-radius:11px;
+    padding:13px 32px; font-weight:800; font-size:14px;
+    cursor:pointer; font-family:'Outfit',sans-serif;
+    display:inline-flex; align-items:center; gap:8px;
+    box-shadow:0 4px 14px rgba(234,88,12,.3);
+    transition:all .2s;
+}
+.save-btn:hover{ opacity:.88; transform:translateY(-1px); }
+.cancel-btn {
+    background:#fff; color:#ea580c;
+    border:2px solid #ea580c;
+    border-radius:11px; padding:12px 24px;
+    font-weight:700; font-size:14px; cursor:pointer;
+    font-family:'Outfit',sans-serif;
+    display:inline-flex; align-items:center; gap:6px;
+    transition:all .2s; text-decoration:none;
+}
+.cancel-btn:hover{ background:#fff7ed; }
+
+/* Warning box */
+.warn-box {
+    background:#fef3c7; border:1px solid #fbbf24;
+    border-radius:10px; padding:12px 16px; font-size:13px;
+    color:#92400e; display:flex; align-items:flex-start; gap:8px;
+    margin-bottom:20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:28px;">
+    <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">👤 My Profile</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0;">View and manage your Super Admin account details</p>
+</div>
+
+<div class="profile-wrap">
+
+    {# ══ LEFT: Avatar + Quick Info ══ #}
+    <div>
+        <div class="avatar-card">
+            <div class="avatar-ring">
+                {% if profile_user.profile_image %}
+                    <img src="{{ profile_user.profile_image.url }}" alt="Profile Photo">
+                {% else %}
+                    👑
+                {% endif %}
+            </div>
+            <div class="avatar-name">{{ profile_user.get_full_name|default:profile_user.username }}</div>
+            <div class="avatar-role">{{ profile_user.role.name|default:"Super Admin" }}</div>
+
+            {# Avatar upload (inline small form) #}
+            <form method="POST" action="{% url 'update_superadmin_profile' %}" enctype="multipart/form-data" id="avatarForm">
+                {% csrf_token %}
+                <label class="avatar-upload-btn" for="avatarInput">
+                    <ion-icon name="camera-outline"></ion-icon>
+                    Change Photo
+                </label>
+                <input type="file" id="avatarInput" name="profile_image" accept="image/*"
+                       style="display:none;" onchange="document.getElementById('avatarForm').submit()">
+                {# Pass current values so the minimal POST doesn't blank them #}
+                <input type="hidden" name="first_name"  value="{{ profile_user.first_name }}">
+                <input type="hidden" name="last_name"   value="{{ profile_user.last_name }}">
+                <input type="hidden" name="email"       value="{{ profile_user.email }}">
+                <input type="hidden" name="phone_number" value="{{ profile_user.phone_number|default:'' }}">
+                <input type="hidden" name="gender"      value="{{ profile_user.gender|default:'' }}">
+                <input type="hidden" name="date_of_birth" value="{{ profile_user.date_of_birth|date:'Y-m-d'|default:'' }}">
+            </form>
+        </div>
+
+        {# Quick info chips #}
+        <div class="form-card" style="margin-top:18px; padding:20px 24px;">
+            <div class="info-chip">
+                <ion-icon name="at-outline"></ion-icon>
+                <span><strong>Username</strong><br>{{ profile_user.username }}</span>
+            </div>
+            <div class="info-chip">
+                <ion-icon name="mail-outline"></ion-icon>
+                <span><strong>Email</strong><br>{{ profile_user.email|default:"—" }}</span>
+            </div>
+            <div class="info-chip">
+                <ion-icon name="call-outline"></ion-icon>
+                <span><strong>Phone</strong><br>{{ profile_user.phone_number|default:"—" }}</span>
+            </div>
+            <div class="info-chip">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <span><strong>Joined</strong><br>{{ profile_user.date_joined|date:"d M Y" }}</span>
+            </div>
+            <div class="info-chip">
+                <ion-icon name="time-outline"></ion-icon>
+                <span><strong>Last Login</strong><br>{{ profile_user.last_login|date:"d M Y, h:i A"|default:"—" }}</span>
+            </div>
+            <div class="info-chip">
+                <ion-icon name="shield-checkmark-outline"></ion-icon>
+                <span><strong>2FA</strong><br>{{ profile_user.is_2fa_enabled|yesno:"Enabled,Disabled" }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ══ RIGHT: Edit Forms ══ #}
+    <div>
+
+        {# ─── Personal Information Form ─── #}
+        <div class="form-card">
+            <div class="section-head">
+                <div class="section-icon"><ion-icon name="person-outline"></ion-icon></div>
+                <h2>Personal Information</h2>
+            </div>
+
+            <form method="POST" action="{% url 'update_superadmin_profile' %}" enctype="multipart/form-data" id="profileForm">
+                {% csrf_token %}
+
+                <div class="fg-grid">
+                    <div class="fg">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" id="id_first_name"
+                               value="{{ profile_user.first_name }}" placeholder="e.g. Rajesh">
+                    </div>
+                    <div class="fg">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" id="id_last_name"
+                               value="{{ profile_user.last_name }}" placeholder="e.g. Kumar">
+                    </div>
+                </div>
+
+                <div class="fg-grid">
+                    <div class="fg">
+                        <label>Email Address</label>
+                        <input type="email" name="email" id="id_email"
+                               value="{{ profile_user.email }}" placeholder="admin@example.com">
+                    </div>
+                    <div class="fg">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" id="id_phone"
+                               value="{{ profile_user.phone_number|default:'' }}"
+                               placeholder="+91 98765 43210">
+                    </div>
+                </div>
+
+                <div class="fg-grid">
+                    <div class="fg">
+                        <label>Gender</label>
+                        <select name="gender" id="id_gender">
+                            <option value="">-- Select --</option>
+                            <option value="Male"   {% if profile_user.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if profile_user.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other"  {% if profile_user.gender == 'Other' %}selected{% endif %}>Other</option>
+                            <option value="Prefer not to say" {% if profile_user.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label>Date of Birth</label>
+                        <input type="date" name="date_of_birth" id="id_dob"
+                               value="{{ profile_user.date_of_birth|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="fg">
+                    <label>Username (read-only)</label>
+                    <input type="text" value="{{ profile_user.username }}" readonly>
+                </div>
+
+                <div class="fg">
+                    <label>Role (read-only)</label>
+                    <input type="text" value="{{ profile_user.role.name|default:'Super Admin' }}" readonly>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+                    <a href="{% url 'superadmin_dashboard' %}" class="cancel-btn">
+                        <ion-icon name="arrow-back-outline"></ion-icon> Cancel
+                    </a>
+                    <button type="submit" class="save-btn">
+                        <ion-icon name="save-outline"></ion-icon> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# ─── Change Password Form ─── #}
+        <div class="form-card">
+            <div class="section-head">
+                <div class="section-icon"><ion-icon name="lock-closed-outline"></ion-icon></div>
+                <h2>Change Password</h2>
+            </div>
+
+            <div class="warn-box">
+                <ion-icon name="warning-outline" style="flex-shrink:0;margin-top:1px;"></ion-icon>
+                Leave password fields empty if you don't want to change it. Changing your password will keep you logged in.
+            </div>
+
+            <form method="POST" action="{% url 'update_superadmin_profile' %}" id="passwordForm">
+                {% csrf_token %}
+                {# Carry over personal data so update view doesn't blank them #}
+                <input type="hidden" name="first_name"   value="{{ profile_user.first_name }}">
+                <input type="hidden" name="last_name"    value="{{ profile_user.last_name }}">
+                <input type="hidden" name="email"        value="{{ profile_user.email }}">
+                <input type="hidden" name="phone_number" value="{{ profile_user.phone_number|default:'' }}">
+                <input type="hidden" name="gender"       value="{{ profile_user.gender|default:'' }}">
+                <input type="hidden" name="date_of_birth" value="{{ profile_user.date_of_birth|date:'Y-m-d'|default:'' }}">
+
+                <div class="fg-grid">
+                    <div class="fg">
+                        <label>New Password</label>
+                        <input type="password" name="new_password" id="id_new_password"
+                               placeholder="Min. 8 characters" autocomplete="new-password"
+                               oninput="updateStrength(this.value)">
+                        <div class="pwd-meter"><div class="pwd-fill" id="pwdFill" style="width:0%;"></div></div>
+                    </div>
+                    <div class="fg">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirm_password" id="id_confirm_password"
+                               placeholder="Re-enter new password" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button type="submit" class="save-btn" id="pwdSaveBtn">
+                        <ion-icon name="key-outline"></ion-icon> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# ─── Account Info (read-only) ─── #}
+        <div class="form-card">
+            <div class="section-head">
+                <div class="section-icon"><ion-icon name="information-circle-outline"></ion-icon></div>
+                <h2>Account Information</h2>
+            </div>
+            <div class="fg-grid">
+                <div class="fg">
+                    <label>Account Status</label>
+                    <input type="text" value="{% if profile_user.is_active %}Active{% else %}Inactive{% endif %}" readonly>
+                </div>
+                <div class="fg">
+                    <label>Superuser Access</label>
+                    <input type="text" value="{{ profile_user.is_superuser|yesno:'Yes,No' }}" readonly>
+                </div>
+                <div class="fg">
+                    <label>Staff Access</label>
+                    <input type="text" value="{{ profile_user.is_staff|yesno:'Yes,No' }}" readonly>
+                </div>
+                <div class="fg">
+                    <label>Email Verified</label>
+                    <input type="text" value="{{ profile_user.is_verified|yesno:'Yes,No' }}" readonly>
+                </div>
+                <div class="fg">
+                    <label>Account Created</label>
+                    <input type="text" value="{{ profile_user.date_joined|date:'d M Y, h:i A' }}" readonly>
+                </div>
+                <div class="fg">
+                    <label>Last Login</label>
+                    <input type="text" value="{{ profile_user.last_login|date:'d M Y, h:i A'|default:'Never' }}" readonly>
+                </div>
+            </div>
+        </div>
+
+    </div>{# end right col #}
+</div>{# end profile-wrap #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ─── Password strength meter ─── */
+function updateStrength(val) {
+    const fill = document.getElementById('pwdFill');
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+    const widths = ['25%','50%','75%','100%'];
+    fill.style.width   = val.length ? widths[score - 1] || '10%' : '0%';
+    fill.style.background = val.length ? colors[score - 1] || '#ef4444' : 'transparent';
+}
+
+/* ─── Avatar preview ─── */
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const ring = document.querySelector('.avatar-ring');
+        ring.innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
+    };
+    reader.readAsDataURL(file);
+});
+
+/* ─── Confirm before password submit ─── */
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    const np = document.getElementById('id_new_password').value;
+    const cp = document.getElementById('id_confirm_password').value;
+    if (!np) { e.preventDefault(); return; }
+    if (np !== cp) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "team/base.html" %}
+{% block title %}Team Details{% endblock %}
+{% block content %}
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+        <div class="page-title">Team Details</div>
+        <div class="page-subtitle">Manage your team members and leader details.</div>
+    </div>
+    <div style="display:flex; gap:12px;">
+        <button type="button" class="section-btn" onclick="document.getElementById('team-info-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
+            {% if can_edit_registration %}
+            <ion-icon name="create-outline" style="font-size:16px;"></ion-icon> Edit Team Info
+            {% else %}
+            <ion-icon name="eye-outline" style="font-size:16px;"></ion-icon> View Team Info
+            {% endif %}
+        </button>
+    </div>
+</div>
+
+<!-- Current Members List (Moved to top) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">Current Members ({{ members|length|add:1 }} total)</div>
+        {% if can_edit_registration %}
+        <button type="button" class="section-btn primary" onclick="document.getElementById('add-member-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
+            <ion-icon name="add-outline" style="font-size:16px;"></ion-icon> Add Member
+        </button>
+        {% endif %}
+    </div>
+    {% if not can_edit_registration %}
+    <div class="info-box" style="background:rgba(220,38,38,0.07);border-color:rgba(220,38,38,0.2);margin-bottom:18px">
+        <strong style="color:#dc2626">Registration deadline passed.</strong> These details are now final for SPOC review.
+    </div>
+    {% elif registration_deadline %}
+    <div class="info-box" style="margin-bottom:18px">
+        <strong>Edit window open.</strong> You can update team details until {{ registration_deadline|date:"M j, Y" }}.
+    </div>
+    {% endif %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Gender</th><th>DOB</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><strong>{{ request.user.get_full_name|default:request.user.username }} <span style="color:#f97316;font-size:11px">(You)</span></strong></td>
+                    <td>{{ request.user.email }}</td>
+                    <td>{{ request.user.phone_number|default:"—" }}</td>
+                    <td><span class="badge badge-amber">{{ leader_details.role_in_team|default:"Team Lead" }}</span></td>
+                    <td>{{ request.user.gender|default:"—" }}</td>
+                    <td>{% if request.user.date_of_birth %}{{ request.user.date_of_birth|date:"d M Y" }}{% else %}—{% endif %}</td>
+                </tr>
+                {% for m in members %}
+                <tr>
+                    <td><strong>{{ m.name|default:"—" }}</strong></td>
+                    <td>{{ m.email }}</td>
+                    <td>{{ m.phone_number|default:"—" }}</td>
+                    <td><span class="badge badge-blue">{{ m.role_in_team|default:m.role|default:"Member" }}</span></td>
+                    <td>{{ m.gender|default:"—" }}</td>
+                    <td>{{ m.date_of_birth|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No members added yet. Add your first member above.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Team Info Form (Hidden by default) -->
+<div id="team-info-form-wrap" class="table-wrap" style="display:none; padding:24px;margin-bottom:24px; position:relative;">
+    <button type="button" onclick="document.getElementById('team-info-form-wrap').style.display='none'" style="position:absolute; top:20px; right:20px; background:none; border:none; cursor:pointer; font-size:24px; color:var(--muted); transition:color 0.2s;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--muted)'">
+        <ion-icon name="close-outline"></ion-icon>
+    </button>
+    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Team Information & Team Lead Details</div>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <fieldset {% if not can_edit_registration %}disabled{% endif %} style="border:0;padding:0;margin:0">
+        <div class="two-grid">
+            <div class="field">
+                <label>Team Name</label>
+                <input type="text" name="team_name" value="{{ reg.team_name }}" required>
+            </div>
+            <div class="field">
+                <label>Team Lead Role</label>
+                <input type="text" name="leader_role_in_team" value="{{ leader_details.role_in_team|default:'Team Lead' }}">
+            </div>
+            <div class="field">
+                <label>Select Problem Statement</label>
+                <select name="problem_statement">
+                    <option value="">— Select Problem Statement —</option>
+                    {% for ps in problem_statements %}
+                    <option value="{{ ps.id }}" {% if reg.problem_statement_id == ps.id %}selected{% endif %}>{{ ps.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Institution</label>
+                <select name="institution" required>
+                    <option value="">— Select Approved Institution —</option>
+                    {% for inst in institutions %}
+                    <option value="{{ inst.id }}" {% if reg.institution_id == inst.id %}selected{% endif %}>{{ inst.name }}</option>
+                    {% endfor %}
+                </select>
+                <div style="font-size:12px;color:var(--muted);margin-top:6px">This college selection decides which SPOC receives your team after mentor acceptance.</div>
+            </div>
+        </div>
+
+        <div style="font-size:15px;font-weight:800;margin:12px 0 18px">Team Lead Personal Details</div>
+        <div class="two-grid">
+            <div class="field"><label>First Name</label><input type="text" name="leader_first_name" value="{{ request.user.first_name|default:'' }}"></div>
+            <div class="field"><label>Last Name</label><input type="text" name="leader_last_name" value="{{ request.user.last_name|default:'' }}"></div>
+            <div class="field"><label>Email</label><input type="email" value="{{ request.user.email }}" disabled></div>
+            <div class="field"><label>Phone Number</label><input type="text" name="leader_phone_number" value="{{ request.user.phone_number|default:'' }}"></div>
+            <div class="field"><label>Date of Birth</label><input type="date" name="leader_date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d' }}"></div>
+            <div class="field">
+                <label>Gender</label>
+                <select name="leader_gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {% if request.user.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if request.user.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if request.user.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Cast</label>
+                <select name="leader_cast">
+                    <option value="">Select Cast</option>
+                    <option value="General" {% if leader_details.cast == 'General' %}selected{% endif %}>General</option>
+                    <option value="OBC" {% if leader_details.cast == 'OBC' %}selected{% endif %}>OBC</option>
+                    <option value="SC" {% if leader_details.cast == 'SC' %}selected{% endif %}>SC</option>
+                    <option value="ST" {% if leader_details.cast == 'ST' %}selected{% endif %}>ST</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>T-Shirt Size</label>
+                <select name="leader_tshirt_size">
+                    <option value="">Select Size</option>
+                    <option value="S" {% if leader_details.tshirt_size == 'S' %}selected{% endif %}>S</option>
+                    <option value="M" {% if leader_details.tshirt_size == 'M' %}selected{% endif %}>M</option>
+                    <option value="L" {% if leader_details.tshirt_size == 'L' %}selected{% endif %}>L</option>
+                    <option value="XL" {% if leader_details.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
+                    <option value="XXL" {% if leader_details.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
+                </select>
+            </div>
+            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="leader_aadhaar_number" value="{{ leader_details.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX"></div>
+            <div class="field"><label>Bank Account Number</label><input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number"></div>
+            <div class="field"><label>IFSC Code</label><input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234"></div>
+            <div class="field"><label>Bank Name</label><input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name"></div>
+            <div class="field">
+                <label>Aadhaar Proof</label>
+                <input type="file" name="leader_aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png">
+                {% if leader_details.aadhaar_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
+            </div>
+            <div class="field">
+                <label>College ID Proof</label>
+                <input type="file" name="leader_college_id_proof" accept=".pdf,.jpg,.jpeg,.png">
+                {% if leader_details.college_id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.college_id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
+            </div>
+            <div class="field">
+                <label>ID Proof (Upload)</label>
+                <input type="file" name="leader_id_proof" accept=".pdf,.jpg,.jpeg,.png">
+                {% if leader_details.id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
+            </div>
+        </div>
+        </fieldset>
+
+        {% if can_edit_registration %}
+        <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Save Team Lead Details</button>
+        {% else %}
+        <button type="button" class="section-btn" style="width:100%;padding:12px;opacity:.65;cursor:not-allowed">Editing Locked</button>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Add Member Form (Hidden by default) -->
+{% if can_edit_registration %}
+<div id="add-member-form-wrap" class="table-wrap" style="display:none; padding:24px;margin-bottom:24px; position:relative;">
+    <button type="button" onclick="document.getElementById('add-member-form-wrap').style.display='none'" style="position:absolute; top:20px; right:20px; background:none; border:none; cursor:pointer; font-size:24px; color:var(--muted); transition:color 0.2s;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--muted)'">
+        <ion-icon name="close-outline"></ion-icon>
+    </button>
+    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Add Team Member</div>
+    <form method="POST" action="{% url 'team_add_member' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="two-grid">
+            <div class="field"><label>First Name</label><input type="text" name="first_name" placeholder="First name"></div>
+            <div class="field"><label>Last Name</label><input type="text" name="last_name" placeholder="Last name"></div>
+            <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="member@email.com"></div>
+            <div class="field"><label>Phone Number</label><input type="text" name="phone_number" placeholder="Phone number"></div>
+            <div class="field"><label>Role in Team</label>
+                <select name="role">
+                    <option>Member</option>
+                    <option>Co-Lead</option>
+                    <option>Developer</option>
+                    <option>Designer</option>
+                    <option>Researcher</option>
+                </select>
+            </div>
+            <div class="field"><label>Date of Birth</label><input type="date" name="date_of_birth"></div>
+            <div class="field"><label>Gender</label>
+                <select name="gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field"><label>Cast</label>
+                <select name="cast">
+                    <option value="">Select Cast</option>
+                    <option value="General">General</option>
+                    <option value="OBC">OBC</option>
+                    <option value="SC">SC</option>
+                    <option value="ST">ST</option>
+                </select>
+            </div>
+            <div class="field"><label>T-Shirt Size</label>
+                <select name="tshirt_size">
+                    <option value="">Select Size</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                </select>
+            </div>
+            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="aadhaar_number" placeholder="XXXX-XXXX-XXXX"></div>
+            <div class="field"><label>Bank Account Number</label><input type="text" name="bank_account" placeholder="Account Number"></div>
+            <div class="field"><label>IFSC Code</label><input type="text" name="ifsc" placeholder="SBIN0001234"></div>
+            <div class="field"><label>Bank Name</label><input type="text" name="bank_name" placeholder="Bank Name"></div>
+            <div class="field"><label>Aadhaar Proof</label><input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="field"><label>College ID Proof</label><input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="field"><label>ID Proof (Upload)</label><input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
+        </div>
+        <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Add Member</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

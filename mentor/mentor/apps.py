@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+class MentorConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'mentor.mentor'
+    label = 'mentor'
+    def ready(self):
+        import mentor.mentor.signals  # noqa

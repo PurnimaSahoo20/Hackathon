@@ -1,0 +1,172 @@
+{% load static %}
+<aside class="sidebar">
+    <div class="sidebar-head" style="padding: 24px 24px 18px;">
+        <div class="sidebar-logo" style="margin-bottom: 0;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <img src="{% static 'images/logo.png' %}" alt="HackNexus Logo" style="width: 60px; height: 60px; border-radius: 18px; box-shadow: 0 14px 24px rgba(234,88,12,0.14);">
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: .12em; text-transform: uppercase;">Workspace</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #ea580c; line-height: 1.05;">HackNexus</div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-user">
+            <div class="avatar" style="background: linear-gradient(135deg, #fff1de, #ffe7c7); font-size: 20px; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(234,88,12,.12);">
+                {% if request.user.profile_image %}
+                    <img src="{{ request.user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                    ðŸ‘‘
+                {% endif %}
+            </div>
+            <div style="margin-left: 12px; text-align: left;">
+                <div style="font-size: 15px; font-weight: 800; color:#132238;">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div style="color: #ea580c; font-size: 11px; font-weight:800; letter-spacing:.10em;">{{ request.user.role.name|upper|default:"SUPER ADMIN" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="flex: 1; overflow-y: auto; padding: 6px 14px 0;">
+        {% if request.user.role.name == 'Jury' or request.user.role.name == 'Expert' %}
+        <div class="nav-section">
+            <div class="nav-section-label">Main</div>
+            <a href="{% url 'jury_dashboard' %}" class="nav-item {% if active_nav == 'jury_dashboard' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="grid-outline"></ion-icon></div> Dashboard</a>
+            <a href="{% url 'jury_team_evaluations' %}" class="nav-item {% if active_nav == 'jury_evaluations' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="clipboard-outline"></ion-icon></div> Team Evaluation</a>
+            <a href="{% url 'jury_problem_statements' %}" class="nav-item {% if active_nav == 'jury_problem_statements' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="document-text-outline"></ion-icon></div> Problem Statements</a>
+            <a href="{% url 'jury_media_resources' %}" class="nav-item {% if active_nav == 'jury_media_resources' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="videocam-outline"></ion-icon></div> Podcasts & Documentaries</a>
+            <a href="{% url 'jury_travel' %}" class="nav-item {% if active_nav == 'jury_travel' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="airplane-outline"></ion-icon></div> Travel Details</a>
+            <a href="{% url 'jury_messages' %}" class="nav-item {% if active_nav == 'jury_messages' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="chatbubbles-outline"></ion-icon></div> Communication</a>
+        </div>
+        <div class="nav-section" style="margin-top: 12px;">
+            <div class="nav-section-label">Settings</div>
+            <a href="{% url 'jury_profile' %}" class="nav-item {% if active_nav == 'jury_profile' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="person-circle-outline"></ion-icon></div> My Profile</a>
+        </div>
+        {% else %}
+        {% if request.user.is_superuser or request.user.role.name == 'Super Admin' %}
+        <div class="nav-section">
+            <div class="nav-section-label">Overview</div>
+            <a href="{% url 'superadmin_dashboard' %}?tab=overview" class="nav-item {% if tab == 'overview' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="flash-outline"></ion-icon></div> Dashboard</a>
+            <a href="{% url 'superadmin_dashboard' %}?tab=events" class="nav-item {% if tab == 'events' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="calendar-outline"></ion-icon></div> Events</a>
+            <a href="{% url 'superadmin_dashboard' %}?tab=problem_statements" class="nav-item {% if tab == 'problem_statements' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="document-text-outline"></ion-icon></div> Problem Statements</a>
+            <a href="{% url 'superadmin_dashboard' %}?tab=creatives" class="nav-item {% if tab == 'creatives' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="image-outline"></ion-icon></div> Creative Elements</a>
+        </div>
+
+        <div class="nav-section" style="margin-top: 12px;">
+            <div class="nav-section-label">User Management</div>
+            <a href="{% url 'superadmin_dashboard' %}?tab=admin_mgt" class="nav-item {% if tab == 'admin_mgt' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="business-outline"></ion-icon></div> Admin Management</a>
+            <a href="{% url 'superadmin_dashboard' %}?tab=exec_mgt" class="nav-item {% if tab == 'exec_mgt' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="rocket-outline"></ion-icon></div> Executive Management</a>
+            <a href="{% url 'superadmin_dashboard' %}?tab=user_mgt" class="nav-item {% if tab == 'user_mgt' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="people-outline"></ion-icon></div> Other Users</a>
+        </div>
+        {% else %}
+        {% if request.user.role.name == 'Executive' %}
+        <div class="nav-section">
+            <div class="nav-section-label">Main</div>
+            <a href="{% url 'executive_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'executive_dashboard' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="grid-outline"></ion-icon></div> Executive Home</a>
+            <a href="{% url 'executive_user_status' %}" class="nav-item {% if request.resolver_match.url_name == 'executive_user_status' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="people-outline"></ion-icon></div> User Status</a>
+            <a href="{% url 'executive_inbox' %}" class="nav-item {% if request.resolver_match.url_name == 'executive_inbox' or request.resolver_match.url_name == 'executive_message_detail' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="chatbubbles-outline"></ion-icon></div> Communication</a>
+        </div>
+        {% else %}
+        <div class="nav-section">
+            <div class="nav-section-label">Main</div>
+            <a href="{% url 'admin_dashboard' %}" class="nav-item {% if active_nav == 'admin_dashboard' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="grid-outline"></ion-icon></div> Admin Home</a>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="nav-section" style="margin-top: 12px;">
+            <div class="nav-section-label">Features</div>
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'spoc_college_mgt' in permissions %}
+            <a href="{% url 'spoc_college_management' %}" class="nav-item {% if request.resolver_match.url_name == 'spoc_college_management' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="school-outline"></ion-icon></div>
+                SPOC & College Mgt
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'team_event_monitoring' in permissions %}
+            <a href="{% url 'team_event_monitoring' %}" class="nav-item {% if request.resolver_match.url_name == 'team_event_monitoring' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="people-circle-outline"></ion-icon></div>
+                Team & Event Monitor
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'problem_statement_content_mgt' in permissions %}
+            <a href="{% url 'content_management' %}" class="nav-item {% if request.resolver_match.url_name == 'content_management' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="library-outline"></ion-icon></div>
+                Podcast Management
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'venue_logistics_mgt' in permissions %}
+            <a href="{% url 'venue_logistics_management' %}" class="nav-item {% if request.resolver_match.url_name == 'venue_logistics_management' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="business-outline"></ion-icon></div>
+                Venue & Logistics Management
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'financial_mgt' in permissions %}
+            <a href="{% url 'finance_management' %}" class="nav-item {% if request.resolver_match.url_name == 'finance_management' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="cash-outline"></ion-icon></div>
+                Financial Management
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' %}
+            <a href="{% url 'superadmin_dashboard' %}?tab=evaluator_payouts" class="nav-item {% if tab == 'evaluator_payouts' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="card-outline"></ion-icon></div>
+                Evaluator Payouts
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'jury_onboarding_mgt' in permissions or 'evaluation_coordination' in permissions %}
+            <a href="{% url 'jury_management' %}" class="nav-item {% if request.resolver_match.url_name == 'jury_management' or request.resolver_match.url_name == 'save_jury_member' or request.resolver_match.url_name == 'toggle_jury_member_status' or request.resolver_match.url_name == 'save_marking_parameter' or request.resolver_match.url_name == 'delete_marking_parameter' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="people-outline"></ion-icon></div>
+                Jury & Evaluation
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'feedback_support_mgt' in permissions or 'accommodation_health_mgt' in permissions %}
+            <a href="{% url 'support_operations_management' %}" class="nav-item {% if request.resolver_match.url_name == 'support_operations_management' or request.resolver_match.url_name == 'update_support_message' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="help-buoy-outline"></ion-icon></div>
+                Support & Stay Ops
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'social_media_creative_mgt' in permissions or 'media_sponsorship_mgt' in permissions or 'announcement_communication_sys' in permissions %}
+            <a href="{% url 'media_communications_management' %}" class="nav-item {% if request.resolver_match.url_name == 'media_communications_management' or request.resolver_match.url_name == 'save_creative_asset' or request.resolver_match.url_name == 'toggle_creative_asset_status' or request.resolver_match.url_name == 'delete_creative_asset' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="megaphone-outline"></ion-icon></div>
+                Media & Communications
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'reporting_result_mgt' in permissions or 'awards_certification_mgt' in permissions %}
+            <a href="{% url 'results_reporting_management' %}" class="nav-item {% if request.resolver_match.url_name == 'results_reporting_management' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="trophy-outline"></ion-icon></div>
+                Results & Awards
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="nav-section" style="margin-top: 12px;">
+            <div class="nav-section-label">Settings</div>
+            <a href="{% url 'superadmin_dashboard' %}?tab=analytics" class="nav-item {% if tab == 'analytics' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="bar-chart-outline"></ion-icon></div> Analytics</a>
+            
+            {% if request.user.is_superuser or request.user.role.name == 'Super Admin' %}
+            <a href="{% url 'superadmin_profile' %}" class="nav-item {% if tab == 'profile' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="person-circle-outline"></ion-icon></div> My Profile
+            </a>
+            {% else %}
+            <a href="{% if request.user.role.name == 'Executive' %}{% url 'executive_profile' %}{% else %}{% url 'admin_profile' %}{% endif %}" class="nav-item {% if active_nav == 'admin_profile' or active_nav == 'executive_profile' %}active{% endif %}">
+                <div class="nav-icon-wrap"><ion-icon name="person-circle-outline"></ion-icon></div> My Profile
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="padding: 18px 16px 20px; border-top: 1px solid rgba(148,163,184,.14);">
+        <a href="{% url 'logout' %}" class="nav-item" style="color: #ef4444;">
+            <div class="nav-icon-wrap" style="color:#ef4444;"><ion-icon name="log-out-outline"></ion-icon></div>
+            Logout
+        </a>
+    </div>
+</aside>

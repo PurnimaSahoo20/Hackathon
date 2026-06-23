@@ -1,0 +1,93 @@
+{% extends "spoc/base.html" %}
+{% block title %}Modification Requests{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Modification Requests</div>
+        <div class="page-subtitle">Review team composition and detail change requests</div>
+    </div>
+</div>
+<div class="info-box">Teams can request member replacements, additions, or detail changes. Review each request carefully. After approving modifications, upload a fresh <strong>Authorization Letter</strong> if membership changed.</div>
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">⏳ Pending Requests</div>
+        <span class="badge badge-amber">{{ pending.count }} Pending</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team</th><th>Requested Change</th><th>Reason</th><th>Requested On</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for mod in pending %}
+                <tr>
+                    <td><strong>{{ mod.team_name }}</strong></td>
+                    <td>{{ mod.requested_change }}</td>
+                    <td style="color:var(--muted)">{{ mod.reason|truncatechars:50 }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ mod.requested_at|date:"M j, Y" }}</td>
+                    <td><span class="badge badge-amber">Pending</span></td>
+                    <td>
+                        <button class="act-btn act-view" onclick="openMod({{ mod.id }}, '{{ mod.team_name }}')">Details</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No pending modification requests 🎉</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if resolved %}
+<div class="section">
+    <div class="section-header"><div class="section-title">✅ Recently Resolved</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team</th><th>Change</th><th>Decision</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for mod in resolved %}
+                <tr>
+                    <td>{{ mod.team_name }}</td>
+                    <td>{{ mod.requested_change }}</td>
+                    <td>{% if mod.status == 'approved' %}<span class="badge badge-green">✓ Approved</span>{% else %}<span class="badge badge-red">✗ Rejected</span>{% endif %}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ mod.decided_at|date:"M j, Y"|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- MOD DETAIL MODAL -->
+<div class="modal-overlay" id="mod-modal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title">Modification Request Details</div>
+            <button class="modal-close" onclick="document.getElementById('mod-modal').classList.remove('open')">✕</button>
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px" id="mod-team-name">—</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="mod-change-text">—</div>
+        <div class="info-box">If the modification affects team membership, upload a new <strong>Authorization Letter</strong> after approving.</div>
+        <div class="two-grid">
+            <form method="POST" id="approve-form" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="font-size:14px;font-weight:700;color:#059669;margin-bottom:8px">✅ Approve</div>
+                <div class="field"><label>Auth Letter (optional for non-member changes)</label><input type="file" name="auth_letter" accept=".pdf"></div>
+                <button type="submit" class="section-btn primary" style="width:100%">Approve Modification</button>
+            </form>
+            <form method="POST" id="reject-form" action="">
+                {% csrf_token %}
+                <div style="font-size:14px;font-weight:700;color:#dc2626;margin-bottom:8px">❌ Reject</div>
+                <div class="field"><label>Rejection Reason</label><textarea name="rejection_reason" rows="3"></textarea></div>
+                <button type="submit" class="section-btn" style="width:100%;background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.2);color:#dc2626">Reject Modification</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function openMod(id, name) {
+    document.getElementById('mod-team-name').textContent = name;
+    document.getElementById('approve-form').action = `/spoc/modifications/${id}/approve/`;
+    document.getElementById('reject-form').action = `/spoc/modifications/${id}/reject/`;
+    document.getElementById('mod-modal').classList.add('open');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "spoc/base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Announcements</div><div class="page-subtitle">Official event communications from admin</div></div></div>
+<div class="section">
+    {% for h in hackathons %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">📢 {{ h.name }}</div>
+            <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">{{ h.created_at|date:"M j, Y" }}</div>
+        </div>
+        <div style="font-size:13px;color:var(--muted2);line-height:1.55">Status: <strong>{{ h.status }}</strong> · {% if h.round_1_start_date %}Round 1: {{ h.round_1_start_date }}{% endif %}</div>
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:48px;color:var(--muted)">
+        <div style="font-size:36px;margin-bottom:12px">📢</div>
+        <div style="font-size:15px;font-weight:600">No announcements yet</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}View Event - {{ hackathon.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card { background: white; border: 2px solid #fcd34d; border-radius: 16px; padding: 0; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    .detail-header { padding: 40px; background: linear-gradient(135deg, #fff 0%, #fff7ed 100%); border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 32px; }
+    .logo-box { width: 120px; height: 120px; border-radius: 16px; background: white; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .logo-box img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; padding: 40px; }
+    .info-item label { display: block; font-size: 11px; text-transform: uppercase; color: #9ca3af; font-weight: 800; margin-bottom: 6px; }
+    .info-item .val { font-size: 16px; font-weight: 700; color: #1f2937; }
+    
+    .round-item { background: #fffbf7; border: 1px solid #fed7aa; border-radius: 12px; padding: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .round-name { font-weight: 900; color: #ea580c; font-size: 18px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'superadmin_dashboard' %}?tab=events" style="text-decoration: none; color: #6b7280; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back to Events
+    </a>
+</div>
+
+<div class="detail-card">
+    <div class="detail-header">
+        <div class="logo-box">
+            {% if hackathon.organization_logo %}
+            <img src="{{ hackathon.organization_logo.url }}" alt="Logo">
+            {% else %}
+            <ion-icon name="business-outline" style="font-size: 48px; color: #ddd;"></ion-icon>
+            {% endif %}
+        </div>
+        <div>
+            <div style="color: #ea580c; font-weight: 800; font-size: 14px; text-transform: uppercase;">{{ hackathon.organization_name }}</div>
+            <h1 style="margin: 4px 0 12px 0; font-size: 36px; font-weight: 900;">{{ hackathon.name }}</h1>
+            <span class="badge badge-live">{{ hackathon.status|upper }}</span>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item"><label>Approval Date</label><div class="val">{{ hackathon.approval_date|default:"TBD" }}</div></div>
+        <div class="info-item"><label>Poster Launch</label><div class="val">{{ hackathon.poster_launching_date|default:"TBD" }}</div></div>
+        <div class="info-item"><label>Website Launch</label><div class="val">{{ hackathon.website_launching_date|default:"TBD" }}</div></div>
+        <div class="info-item"><label>Registration</label><div class="val">{{ hackathon.registration_open|default:"-" }} to {{ hackathon.registration_close|default:"-" }}</div></div>
+        <div class="info-item"><label>Team Size</label><div class="val">{{ hackathon.min_team_size }} - {{ hackathon.max_team_size }} members</div></div>
+        <div class="info-item"><label>Total Rounds</label><div class="val">{{ hackathon.number_of_rounds }} Stages</div></div>
+    </div>
+
+    <div style="padding: 0 40px 40px 40px;">
+        <h3 style="font-weight: 900; margin-bottom: 20px; border-left: 4px solid #ea580c; padding-left: 12px;">Timeline & Stages</h3>
+        {% for round in hackathon.get_rounds %}
+        <div class="round-item">
+            <div>
+                <div class="round-name">{{ round.name }}</div>
+                <span class="badge" style="{% if round.is_enabled %}background:#ecfdf5;color:#047857;{% else %}background:#f3f4f6;color:#64748b;{% endif %}">
+                    {% if round.is_enabled %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+            <div style="text-align: right;"><small style="color: #9ca3af; font-weight: 700;">DATES</small><br><strong>{{ round.start_date|default:"TBD" }} - {{ round.end_date|default:"TBD" }}</strong></div>
+        </div>
+        {% endfor %}
+        <div style="display:none;">
+        {% if hackathon.number_of_rounds >= 1 %}
+        <div class="round-item">
+            <div class="round-name">{{ hackathon.round_1_name }}</div>
+            <div style="text-align: right;"><small style="color: #9ca3af; font-weight: 700;">DATES</small><br><strong>{{ hackathon.round_1_start_date|default:"TBD" }} — {{ hackathon.round_1_end_date|default:"TBD" }}</strong></div>
+        </div>
+        {% endif %}
+        {% if hackathon.number_of_rounds >= 2 %}
+        <div class="round-item">
+            <div class="round-name">{{ hackathon.round_2_name }}</div>
+            <div style="text-align: right;"><small style="color: #9ca3af; font-weight: 700;">DATES</small><br><strong>{{ hackathon.round_2_start_date|default:"TBD" }} — {{ hackathon.round_2_end_date|default:"TBD" }}</strong></div>
+        </div>
+        {% endif %}
+        {% if hackathon.number_of_rounds >= 3 %}
+        <div class="round-item">
+            <div class="round-name">{{ hackathon.round_3_name }}</div>
+            <div style="text-align: right;"><small style="color: #9ca3af; font-weight: 700;">DATES</small><br><strong>{{ hackathon.round_3_start_date|default:"TBD" }} — {{ hackathon.round_3_end_date|default:"TBD" }}</strong></div>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+
+    {% if hackathon.approval_letter %}
+    <div style="padding: 0 40px 40px 40px;">
+        <h3 style="font-weight: 900; margin-bottom: 20px; border-left: 4px solid #ea580c; padding-left: 12px;">Documents</h3>
+        <div style="background: white; border: 1px solid #eee; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <div style="font-size: 32px; color: #ea580c;"><ion-icon name="document-attach-outline"></ion-icon></div>
+                <div>
+                    <div style="font-weight: 800;">Official Approval Letter</div>
+                    <div style="color: #9ca3af; font-size: 12px;">Verified Document</div>
+                </div>
+            </div>
+            <a href="{{ hackathon.approval_letter.url }}" target="_blank" style="background: #ea580c; color: white; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700;">Download PDF</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="padding: 24px 40px; background: #fff7ed; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 16px;">
+        <a href="{% url 'edit_hackathon' hackathon.id %}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><ion-icon name="create-outline"></ion-icon> Edit Event</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "spoc/base.html" %}
+{% block title %}Team Registrations{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Team Registrations</div>
+        <div class="page-subtitle">Review and verify student team requests for your college after mentor acceptance</div>
+    </div>
+</div>
+
+<!-- PENDING -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">⏳ Pending Approval</div>
+        <span class="badge badge-amber">{{ pending_regs.count }} Pending</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Team Name</th><th>Leader</th><th>Members</th><th>Hackathon</th><th>Problem Statement</th><th>Submitted</th><th>Status</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in pending_regs %}
+                <tr>
+                    <td><strong>{{ reg.team_name }}</strong></td>
+                    <td>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</td>
+                    <td>{{ reg.get_member_count }}</td>
+                    <td><span class="badge badge-blue">{{ reg.hackathon.name|truncatechars:20 }}</span></td>
+                    <td>{{ reg.problem_statement.title|default:"—"|truncatechars:30 }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.registered_at|date:"M j, Y" }}</td>
+                    <td><span class="badge badge-amber">Pending</span></td>
+                    <td>
+                        <a href="{% url 'spoc_team_detail' reg.id %}" class="act-btn act-view">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">No pending registrations 🎉</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- APPROVED -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">✅ Approved Teams</div>
+        <span class="badge badge-green">{{ approved_regs.count }} Teams</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Team Name</th><th>Leader</th><th>Members</th><th>Hackathon</th><th>Approved On</th><th>Dashboard</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                {% for reg in approved_regs %}
+                <tr>
+                    <td><strong>{{ reg.team_name }}</strong></td>
+                    <td>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</td>
+                    <td>{{ reg.get_member_count }}</td>
+                    <td>{{ reg.hackathon.name|truncatechars:20 }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.reviewed_at|date:"M j, Y"|default:"—" }}</td>
+                    <td><span class="badge badge-green">Active</span></td>
+                    <td><a href="{% url 'spoc_team_detail' reg.id %}" class="act-btn act-view">View</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No approved teams yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- REJECTED -->
+{% if rejected_regs %}
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">❌ Rejected Teams</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team Name</th><th>Leader</th><th>Hackathon</th><th>Reason</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for reg in rejected_regs %}
+                <tr>
+                    <td><strong>{{ reg.team_name }}</strong></td>
+                    <td>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</td>
+                    <td>{{ reg.hackathon.name|truncatechars:20 }}</td>
+                    <td style="color:var(--muted)">{{ reg.rejection_note|truncatechars:50|default:"—" }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.reviewed_at|date:"M j, Y"|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="reject-modal">
+    <div class="modal" style="max-width:460px">
+        <div class="modal-head">
+            <div class="modal-title">❌ Reject Team</div>
+            <button class="modal-close" onclick="document.getElementById('reject-modal').classList.remove('open')">✕</button>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Provide a reason. It will be emailed to the team leader.</p>
+        <form method="POST" id="reject-form" action="">
+            {% csrf_token %}
+            <div class="field">
+                <label>Rejection Reason</label>
+                <textarea name="rejection_reason" rows="4" placeholder="e.g. Student enrollment not verified..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="section-btn" onclick="document.getElementById('reject-modal').classList.remove('open')">Cancel</button>
+                <button type="submit" class="act-btn act-reject" style="padding:9px 20px;font-size:13px">Submit Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRejectModal(regId) {
+    document.getElementById('reject-form').action = `/spoc/teams/${regId}/reject/`;
+    document.getElementById('reject-modal').classList.add('open');
+}
+</script>
+{% endblock %}

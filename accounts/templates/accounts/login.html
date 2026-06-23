@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Sign In - {{ global_active_hackathon.name|default:'HackNexus' }}
+    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-1: #f8efe5;
+        --bg-2: #fdf8f2;
+        --card: rgba(255, 255, 255, 0.88);
+        --text: #1f2937;
+        --muted: #6b7280;
+        --line: rgba(31, 41, 55, 0.1);
+        --accent: #c2410c;
+        --accent-dark: #7c2d12;
+        --shadow: 0 30px 80px rgba(124, 45, 18, 0.14);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        .login-link {
+          text-align: center;
+          margin-top: 16px;
+          font-size: 13px;
+          color: #6b7280;
+        }
+        .login-link a {
+          color: #7c2d12;
+          font-weight: 700;
+          text-decoration: none;
+        }
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Manrope", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(194, 65, 12, 0.16),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(31, 41, 55, 0.1),
+            transparent 24%
+          ),
+          linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      }
+
+      .login-card {
+        width: min(100%, 440px);
+        padding: 42px 34px 34px;
+        border-radius: 28px;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2rem, 6vw, 3rem);
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .hero p {
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .messages-container {
+        margin-bottom: 16px;
+      }
+
+      .msg {
+        border-radius: 16px;
+        padding: 12px 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 10px;
+        border: 1px solid transparent;
+      }
+
+      .msg-error {
+        color: #991b1b;
+        background: rgba(254, 226, 226, 0.85);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .msg-success {
+        color: #166534;
+        background: rgba(220, 252, 231, 0.9);
+        border-color: rgba(34, 197, 94, 0.2);
+      }
+
+      .signin-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .signin-form input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px 18px;
+        font: inherit;
+        font-size: 15px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.92);
+        outline: none;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .signin-form input:focus {
+        border-color: rgba(194, 65, 12, 0.45);
+        box-shadow: 0 0 0 5px rgba(194, 65, 12, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .password-wrap {
+        position: relative;
+      }
+
+      .password-meta {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: -2px;
+      }
+
+      .forgot-link {
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+          color 0.2s ease,
+          opacity 0.2s ease;
+      }
+
+      .forgot-link:hover {
+        color: var(--accent-dark);
+        opacity: 0.9;
+      }
+
+      .toggle-password {
+        position: absolute;
+        top: 50%;
+        right: 14px;
+        transform: translateY(-50%);
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 4px;
+      }
+
+      .submit-btn {
+        border: 0;
+        border-radius: 18px;
+        padding: 16px 18px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 30px rgba(124, 45, 18, 0.18);
+      }
+
+      .footer-note {
+        margin-top: 22px;
+        text-align: center;
+        color: var(--accent-dark);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .footer-note a {
+        color: var(--accent-dark);
+      }
+
+      @media (max-width: 520px) {
+        body {
+          padding: 16px;
+        }
+
+        .login-card {
+          padding: 32px 20px 22px;
+          border-radius: 22px;
+        }
+
+        .hero p {
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="login-card">
+      <section class="hero">
+        <h1>{{ global_active_hackathon.name|default:'HackNexus' }}</h1>
+        <p>"Build boldly. Solve what matters."</p>
+      </section>
+
+      {% if messages %}
+      <div class="messages-container">
+        {% for message in messages %}
+        <div
+          class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}"
+        >
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="" class="signin-form" novalidate>
+        {% csrf_token %}
+
+        <label class="sr-only" for="identifier">Username</label>
+        <input
+          type="text"
+          id="identifier"
+          name="identifier"
+          placeholder="Username"
+          value="{{ identifier|default:'' }}"
+          autocomplete="username"
+          autofocus
+          required
+        />
+
+        <label class="sr-only" for="password">Password</label>
+        <div class="password-wrap">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            onclick="togglePassword()"
+            id="togglePasswordBtn"
+            aria-label="Show or hide password"
+          >
+            Show
+          </button>
+        </div>
+
+        <div class="password-meta">
+          <a class="forgot-link" href="{% url 'password_reset' %}"
+            >Forgot password?</a
+          >
+        </div>
+
+        <button type="submit" class="submit-btn">Login</button>
+
+        <p class="login-link">
+          Not registered? <a href="{% url 'team_register' %}">Sign up here</a>
+        </p>
+      </form>
+
+      <div class="footer-note">
+        <a href="{% url 'landing_page' %}"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 8h1v5a1 1 0 0 0 1 1h3V10h2v4h3a1 1 0 0 0 1-1V8h1a.5.5 0 0 0 .354-.854z"
+            /></svg
+        ></a>
+      </div>
+    </main>
+
+    <script>
+      function togglePassword() {
+        const input = document.getElementById("password");
+        const button = document.getElementById("togglePasswordBtn");
+        const shouldShow = input.type === "password";
+
+        input.type = shouldShow ? "text" : "password";
+        button.textContent = shouldShow ? "Hide" : "Show";
+      }
+
+      setTimeout(() => {
+        document.querySelectorAll(".msg").forEach((element) => {
+          element.style.transition = "opacity 0.4s ease";
+          element.style.opacity = "0";
+          setTimeout(() => element.remove(), 400);
+        });
+      }, 5000);
+    </script>
+  </body>
+</html>

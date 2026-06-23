@@ -1,0 +1,255 @@
+{% extends "spoc/base.html" %}
+{% block title %}{{ reg.team_name }} — Team Detail{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">{{ reg.team_name }}</div>
+        <div class="page-subtitle">Team Registration Detail · {{ reg.hackathon.name }}</div>
+    </div>
+    <a href="{% url 'spoc_teams' %}" class="section-btn">← Back to Teams</a>
+</div>
+
+<div class="info-box">
+    <strong>📋 Verification Required:</strong> Verify that all student enrollment details match college records before approving. Ensure the team meets all eligibility criteria. Upload a signed authorization letter from HOD/Principal to complete approval.
+</div>
+{% if reg.hackathon.registration_close %}
+<div class="info-box" style="background:{% if registration_deadline_passed %}rgba(5,150,105,0.07){% else %}rgba(37,99,235,0.06){% endif %};border-color:{% if registration_deadline_passed %}rgba(5,150,105,0.2){% else %}rgba(37,99,235,0.18){% endif %}">
+    {% if registration_deadline_passed %}
+    <strong style="color:#059669">Final team data locked.</strong> Registration closed on {{ reg.hackathon.registration_close|date:"M j, Y" }}; review and approve using the final details below.
+    {% else %}
+    <strong>Team edit window is still open.</strong> Registration closes on {{ reg.hackathon.registration_close|date:"M j, Y" }}.
+    {% endif %}
+</div>
+{% endif %}
+
+{% if mentor_invite %}
+<div class="table-wrap" style="padding:20px;margin-bottom:24px">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Mentor Details Forwarded To SPOC</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Mentor Name</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">{{ mentor_invite.mentor_name }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Mentor Email</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ mentor_invite.mentor_email }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Institution</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ mentor_invite.mentor_institution|default:"Not provided" }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Designation</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ mentor_invite.mentor_designation|default:"Not provided" }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Phone</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ mentor_invite.mentor_phone|default:"Not provided" }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Expertise</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ mentor_invite.mentor_expertise|default:"Not provided" }}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">ID Proof</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">
+                {% if mentor_invite.id_proof %}
+                <a href="{{ mentor_invite.id_proof.url }}" target="_blank" class="act-btn act-view">View ID Proof</a>
+                {% else %}
+                Not provided
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="two-grid" style="margin-bottom:24px">
+    <div class="table-wrap" style="padding:20px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Team Information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            {% with fields="Team Name:reg.team_name,Leader Email:reg.team_leader.email,Members:reg.get_member_count,Status:reg.status,Hackathon:reg.hackathon.name,Registered:reg.registered_at" %}
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Team Name</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">{{ reg.team_name }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Leader</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Leader Email</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">{{ reg.team_leader.email }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Total Members</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">{{ reg.get_member_count }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Problem Statement</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">{{ reg.problem_statement.title|default:"Not selected" }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Status</div>
+                <div>
+                    {% if reg.status == 'pending' %}<span class="badge badge-amber">⏳ Pending</span>
+                    {% elif reg.status == 'approved' %}<span class="badge badge-green">✓ Approved</span>
+                    {% else %}<span class="badge badge-red">✗ Rejected</span>{% endif %}
+                </div>
+            </div>
+            {% endwith %}
+        </div>
+    </div>
+
+    <!-- Members -->
+    <div class="table-wrap" style="padding:20px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Team Members ({{ members|length }} + 1 Leader)</div>
+        <!-- Leader -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.2);border-radius:10px;margin-bottom:8px">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#f97316;flex-shrink:0">
+                {{ reg.team_leader.first_name.0|upper|default:"L" }}
+            </div>
+            <div style="flex:1">
+                <div style="font-size:13px;font-weight:700;color:var(--text)">{{ reg.team_leader.get_full_name|default:reg.team_leader.username }} <span style="color:#f97316;font-size:11px">(Leader)</span></div>
+                <div style="font-size:11px;color:var(--muted)">{{ reg.team_leader.email }}</div>
+            </div>
+            <span class="badge badge-amber">Leader</span>
+        </div>
+        {% for member in members %}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(37,99,235,0.1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#2563eb;flex-shrink:0">
+                {{ member.first_name.0|upper|default:"M" }}
+            </div>
+            <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:var(--text)">{{ member.first_name }} {{ member.last_name }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ member.email }} · {{ member.role|default:"Member" }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No additional members data</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="table-wrap" style="padding:20px;margin-bottom:24px">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Final Team Lead Details</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Full Name</div><div style="font-size:13px;font-weight:700">{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Email</div><div style="font-size:13px;font-weight:600">{{ reg.team_leader.email }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Phone</div><div style="font-size:13px;font-weight:600">{{ reg.team_leader.phone_number|default:"-" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">DOB / Gender</div><div style="font-size:13px;font-weight:600">{% if reg.team_leader.date_of_birth %}{{ reg.team_leader.date_of_birth|date:"M j, Y" }}{% else %}-{% endif %} / {{ reg.team_leader.gender|default:"-" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Role / Cast</div><div style="font-size:13px;font-weight:600">{{ leader_details.role_in_team|default:"Team Lead" }} / {{ leader_details.cast|default:"-" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">T-Shirt Size</div><div style="font-size:13px;font-weight:600">{{ leader_details.tshirt_size|default:"-" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Aadhaar</div><div style="font-size:13px;font-weight:600">{{ leader_details.aadhaar_number|default:"-" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Bank</div><div style="font-size:13px;font-weight:600">{{ leader_details.bank_name|default:"-" }} {% if leader_details.bank_account %}({{ leader_details.bank_account }}){% endif %}</div><div style="font-size:11px;color:var(--muted)">{{ leader_details.ifsc|default:"" }}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Documents</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                {% if leader_details.aadhaar_proof %}<a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank" class="act-btn act-view">Aadhaar</a>{% endif %}
+                {% if leader_details.college_id_proof %}<a href="/media/{{ leader_details.college_id_proof }}" target="_blank" class="act-btn act-view">College ID</a>{% endif %}
+                {% if leader_details.id_proof %}<a href="/media/{{ leader_details.id_proof }}" target="_blank" class="act-btn act-view">ID Proof</a>{% endif %}
+                {% if not leader_details.aadhaar_proof and not leader_details.college_id_proof and not leader_details.id_proof %}<span style="font-size:13px;color:var(--muted)">No documents uploaded</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header"><div class="section-title">Final Member Data</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Gender</th><th>DOB</th><th>Cast</th><th>T-Shirt</th><th>Aadhaar</th><th>Bank</th><th>Docs</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><strong>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</strong></td>
+                    <td>{{ reg.team_leader.email }}</td>
+                    <td>{{ reg.team_leader.phone_number|default:"-" }}</td>
+                    <td>{{ leader_details.role_in_team|default:"Team Lead" }}</td>
+                    <td>{{ reg.team_leader.gender|default:"-" }}</td>
+                    <td>{% if reg.team_leader.date_of_birth %}{{ reg.team_leader.date_of_birth|date:"Y-m-d" }}{% else %}-{% endif %}</td>
+                    <td>{{ leader_details.cast|default:"-" }}</td>
+                    <td>{{ leader_details.tshirt_size|default:"-" }}</td>
+                    <td>{{ leader_details.aadhaar_number|default:"-" }}</td>
+                    <td>{{ leader_details.bank_name|default:"-" }} {{ leader_details.ifsc|default:"" }}</td>
+                    <td>
+                        {% if leader_details.aadhaar_proof %}<a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank">Aadhaar</a>{% endif %}
+                        {% if leader_details.college_id_proof %}<a href="/media/{{ leader_details.college_id_proof }}" target="_blank">College ID</a>{% endif %}
+                        {% if leader_details.id_proof %}<a href="/media/{{ leader_details.id_proof }}" target="_blank">ID</a>{% endif %}
+                    </td>
+                </tr>
+                {% for member in members %}
+                <tr>
+                    <td><strong>{{ member.name|default:member.email }}</strong></td>
+                    <td>{{ member.email }}</td>
+                    <td>{{ member.phone_number|default:"-" }}</td>
+                    <td>{{ member.role_in_team|default:member.role|default:"Member" }}</td>
+                    <td>{{ member.gender|default:"-" }}</td>
+                    <td>{{ member.date_of_birth|default:"-" }}</td>
+                    <td>{{ member.cast|default:"-" }}</td>
+                    <td>{{ member.tshirt_size|default:"-" }}</td>
+                    <td>{{ member.aadhaar_number|default:"-" }}</td>
+                    <td>{{ member.bank_name|default:"-" }} {{ member.ifsc|default:"" }}</td>
+                    <td>
+                        {% if member.aadhaar_proof %}<a href="/media/{{ member.aadhaar_proof }}" target="_blank">Aadhaar</a>{% endif %}
+                        {% if member.college_id_proof %}<a href="/media/{{ member.college_id_proof }}" target="_blank">College ID</a>{% endif %}
+                        {% if member.id_proof %}<a href="/media/{{ member.id_proof }}" target="_blank">ID</a>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted)">No additional members added.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if reg.status == 'pending' %}
+<!-- APPROVAL ACTIONS -->
+<div class="two-grid">
+    <!-- Approve with letter -->
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">✅ Approve Team</div>
+        {% if not can_approve_team %}
+        <div class="info-box" style="background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.18);margin-bottom:16px">
+            Approval opens after {{ reg.hackathon.registration_close|date:"M j, Y" }}, when team data is final.
+        </div>
+        {% endif %}
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Upload the signed authorization letter from your HOD/Principal to approve this team.</p>
+        <form method="POST" action="{% url 'spoc_approve_team' reg.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="field">
+                <label>Authorization Letter (PDF, required)</label>
+                <input type="file" name="auth_letter" accept=".pdf,.doc,.docx" {% if can_approve_team %}required{% else %}disabled{% endif %}>
+            </div>
+            <button type="submit" class="section-btn primary" style="width:100%;padding:12px;font-size:14px;{% if not can_approve_team %}opacity:.65;cursor:not-allowed{% endif %}" {% if not can_approve_team %}disabled{% endif %}>
+                ✓ Approve & Upload Letter
+            </button>
+        </form>
+    </div>
+
+    <!-- Reject -->
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;color:#dc2626;margin-bottom:6px">❌ Reject Team</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Reject this registration. A rejection email with your reason will be sent to the team leader.</p>
+        <form method="POST" action="{% url 'spoc_reject_team' reg.id %}">
+            {% csrf_token %}
+            <div class="field">
+                <label>Rejection Reason (required)</label>
+                <textarea name="rejection_reason" rows="3" placeholder="e.g. Student enrollment not verified, ineligible member..." required></textarea>
+            </div>
+            <button type="submit" class="section-btn" style="width:100%;padding:12px;font-size:14px;background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.2);color:#dc2626">
+                ✕ Reject Team
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="info-box" style="background:{% if reg.status == 'approved' %}rgba(5,150,105,0.07){% else %}rgba(220,38,38,0.07){% endif %};border-color:{% if reg.status == 'approved' %}rgba(5,150,105,0.2){% else %}rgba(220,38,38,0.2){% endif %}">
+    {% if reg.status == 'approved' %}
+    <strong style="color:#059669">✓ This team has been approved.</strong> The authorization letter was uploaded and the team dashboard is active.
+    {% else %}
+    <strong style="color:#dc2626">✕ This team was rejected.</strong> Reason: {{ reg.rejection_note|default:"No reason provided." }}
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

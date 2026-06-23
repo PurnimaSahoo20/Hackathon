@@ -1,0 +1,17 @@
+{% extends "team/base.html" %}
+{% block title %}Memories{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Memories</div><div class="page-subtitle">Published creative memories and gallery items</div></div></div>
+<div class="table-wrap" style="padding:24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+        {% for item in creatives %}
+        <div style="border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--bg)">
+            <div style="font-size:14px;font-weight:800;margin-bottom:8px">{{ item.title }}</div>
+            <a href="{{ item.file.url }}" target="_blank" class="section-btn">Open File</a>
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No memories published yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

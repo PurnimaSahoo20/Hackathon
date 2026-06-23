@@ -1,0 +1,20 @@
+{% extends "spoc/base.html" %}
+{% block title %}Activity Log{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Activity Log</div><div class="page-subtitle">Full history of actions on your college's registrations</div></div></div>
+<div class="section">
+    <div class="table-wrap" style="padding:16px 24px">
+        <div class="activity-list">
+            {% for act in activities %}
+            <div class="activity-item">
+                <div class="ai-dot" style="background:{{ act.color }}22;color:{{ act.color }}">{{ act.icon }}</div>
+                <div class="ai-text">{{ act.text|safe }}</div>
+                <div class="ai-time">{{ act.created_at|date:"M j · H:i" }}</div>
+            </div>
+            {% empty %}
+            <div style="text-align:center;padding:48px;color:var(--muted);font-size:13px">No activity recorded yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

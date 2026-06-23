@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}View User - {{ target_user.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-shell {display:grid;gap:24px;}
+    .back-link {text-decoration:none;color:#64748b;font-weight:800;display:inline-flex;align-items:center;gap:8px;}
+    .back-link:hover {color:#ea580c;}
+    .hero-card {background:#fff;border:1px solid #fed7aa;border-radius:28px;padding:30px;box-shadow:0 18px 40px rgba(234,88,12,.08);}
+    .hero-grid {display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;}
+    .avatar-panel {display:grid;justify-items:center;gap:14px;}
+    .avatar-huge {width:140px;height:140px;border-radius:32px;background:linear-gradient(135deg,#fff1de,#ffe2b6);display:flex;align-items:center;justify-content:center;border:6px solid #fff;box-shadow:0 14px 28px rgba(234,88,12,.12);overflow:hidden;}
+    .avatar-huge img {width:100%;height:100%;object-fit:cover;}
+    .avatar-fallback {font-size:52px;font-weight:900;color:#7c3aed;}
+    .role-badge {background:#fff1de;color:#ea580c;padding:8px 16px;border-radius:999px;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em;}
+    .status-inline {font-size:13px;font-weight:900;}
+    .status-inline.active {color:#059669;}
+    .status-inline.suspended {color:#dc2626;}
+    .hero-name {margin:0;font-size:40px;line-height:1.05;font-weight:900;color:#0f172a;}
+    .hero-username {margin:8px 0 0;color:#64748b;font-size:22px;font-weight:700;}
+    .hero-meta {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-top:28px;}
+    .meta-box {background:#fffaf4;border:1px solid #fde68a;border-radius:18px;padding:16px;}
+    .meta-label {display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:900;margin-bottom:6px;}
+    .meta-value {font-size:18px;font-weight:800;color:#0f172a;word-break:break-word;}
+    .summary-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
+    .summary-card {background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:22px;box-shadow:0 10px 24px rgba(15,23,42,.04);}
+    .summary-value {font-size:30px;font-weight:900;color:#0f172a;margin-bottom:6px;}
+    .summary-label {font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:900;}
+    .summary-card.pending {border-color:#fdba74;background:#fffaf5;}
+    .summary-card.complete {border-color:#86efac;background:#f0fdf4;}
+    .section-card {background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:24px;box-shadow:0 10px 24px rgba(15,23,42,.04);}
+    .section-title {margin:0 0 18px;font-size:18px;font-weight:900;color:#0f172a;display:flex;align-items:center;gap:10px;}
+    .field-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+    .field-card {border:1px solid #e2e8f0;border-radius:18px;padding:16px;background:#fcfcfd;}
+    .field-top {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .field-label {font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:900;}
+    .field-value {font-size:15px;font-weight:800;color:#0f172a;word-break:break-word;line-height:1.5;}
+    .field-value.muted {color:#94a3b8;}
+    .status-chip {display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
+    .status-chip.complete {background:#ecfdf5;color:#047857;}
+    .status-chip.pending {background:#fff7ed;color:#c2410c;}
+    .file-link {display:inline-flex;align-items:center;gap:8px;color:#0f766e;text-decoration:none;font-weight:800;}
+    .file-link:hover {text-decoration:underline;}
+    .missing-list {display:flex;flex-wrap:wrap;gap:10px;}
+    .missing-pill {display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#fff7ed;color:#c2410c;font-size:12px;font-weight:800;}
+    .action-row {display:flex;gap:14px;flex-wrap:wrap;}
+    .btn-primary, .btn-secondary {display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:13px 22px;border-radius:14px;font-weight:900;}
+    .btn-primary {background:#ea580c;color:#fff;}
+    .btn-secondary {background:#fff;color:#dc2626;border:1px solid #fecaca;}
+    @media (max-width: 900px) {
+        .hero-grid {grid-template-columns:1fr;}
+        .summary-grid {grid-template-columns:1fr;}
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-shell">
+    <a href="javascript:history.back()" class="back-link">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back
+    </a>
+
+    <div class="hero-card">
+        <div class="hero-grid">
+            <div class="avatar-panel">
+                <div class="avatar-huge">
+                    {% if target_user.profile_image %}
+                        <img src="{{ target_user.profile_image.url }}" alt="Profile Photo">
+                    {% else %}
+                        <div class="avatar-fallback">{{ target_user.first_name|default:target_user.username|slice:":1"|upper }}</div>
+                    {% endif %}
+                </div>
+                <span class="role-badge">{{ target_user.role.name|default:"User" }}</span>
+                <div class="status-inline {% if target_user.is_active %}active{% else %}suspended{% endif %}">
+                    {% if target_user.is_active %}Active{% else %}Suspended{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <h1 class="hero-name">{{ target_user.get_full_name|default:target_user.username }}</h1>
+                <div class="hero-username">@{{ target_user.username }}</div>
+
+                <div class="hero-meta">
+                    <div class="meta-box">
+                        <span class="meta-label">Email Address</span>
+                        <div class="meta-value">{{ target_user.email|default:"Not provided" }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <span class="meta-label">Phone Number</span>
+                        <div class="meta-value">{{ target_user.phone_number|default:"Not provided" }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <span class="meta-label">Member Since</span>
+                        <div class="meta-value">{{ target_user.date_joined|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <span class="meta-label">Last Login</span>
+                        <div class="meta-value">{{ target_user.last_login|date:"M d, H:i"|default:"Never" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-value">{{ tracked_total }}</div>
+            <div class="summary-label">Tracked Fields</div>
+        </div>
+        <div class="summary-card complete">
+            <div class="summary-value">{{ tracked_completed }}</div>
+            <div class="summary-label">Completed</div>
+        </div>
+        <div class="summary-card pending">
+            <div class="summary-value">{{ tracked_pending }}</div>
+            <div class="summary-label">Pending</div>
+        </div>
+    </div>
+
+    {% if missing_fields %}
+    <div class="section-card">
+        <h2 class="section-title">
+            <ion-icon name="alert-circle-outline" style="color:#ea580c;"></ion-icon>
+            Pending Field Summary
+        </h2>
+        <div class="missing-list">
+            {% for item in missing_fields %}
+                <span class="missing-pill"><ion-icon name="close-circle-outline"></ion-icon>{{ item|title }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% for section in sections %}
+    <div class="section-card">
+        <h2 class="section-title">
+            <ion-icon name="document-text-outline" style="color:#ea580c;"></ion-icon>
+            {{ section.title }}
+        </h2>
+        <div class="field-grid">
+            {% for field in section.fields %}
+            <div class="field-card">
+                <div class="field-top">
+                    <div class="field-label">{{ field.label }}</div>
+                    <span class="status-chip {% if field.is_complete %}complete{% else %}pending{% endif %}">
+                        {{ field.status_text }}
+                    </span>
+                </div>
+                {% if field.file_url %}
+                    <a href="{{ field.file_url }}" target="_blank" class="file-link">
+                        <ion-icon name="attach-outline"></ion-icon>{{ field.value }}
+                    </a>
+                {% else %}
+                    <div class="field-value {% if not field.is_complete %}muted{% endif %}">{{ field.value }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if can_manage_user %}
+    <div class="action-row">
+        <a href="{% url 'edit_user' target_user.id %}" class="btn-primary">
+            <ion-icon name="create-outline"></ion-icon> Edit Profile
+        </a>
+        <a href="{% url 'delete_user' target_user.id %}" onclick="return confirm('Suspend user?')" class="btn-secondary">
+            <ion-icon name="ban-outline"></ion-icon> Suspend Account
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

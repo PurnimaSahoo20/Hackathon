@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if active_hackathon %}{{ active_hackathon.name }}{% else %}HackNexus{% endif %} | Problem Statements
+    </title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Rajdhani:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fff8f2;
+            --bg-soft: #fff1e7;
+            --surface: rgba(255, 255, 255, 0.92);
+            --surface-strong: #ffffff;
+            --border: rgba(234, 88, 12, 0.16);
+            --text: #132238;
+            --muted: #667085;
+            --accent: #ea580c;
+            --accent-2: #f97316;
+            --accent-soft: rgba(234, 88, 12, 0.08);
+            --shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+            --shadow-soft: 0 12px 30px rgba(234, 88, 12, 0.08);
+            --radius: 24px;
+            --head: 'Exo 2', sans-serif;
+            --body: 'Rajdhani', sans-serif;
+            --mono: 'Space Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--body);
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(251, 146, 60, 0.20), transparent 24%),
+                radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.14), transparent 20%),
+                linear-gradient(180deg, #fffdf9 0%, var(--bg) 100%);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(234, 88, 12, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(234, 88, 12, 0.04) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(circle at center, black 25%, transparent 82%);
+            pointer-events: none;
+            opacity: .45;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page-shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .brand-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-soft);
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .brand-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #c53d22;
+            box-shadow: 0 0 0 0 rgba(197, 50, 34, 0.45);
+            animation: livePulse 1.8s infinite;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-soft);
+            color: var(--accent);
+            transition: all 0.2s ease;
+        }
+
+        .home-link:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+            color: var(--accent-2);
+            box-shadow: var(--shadow);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(197, 50, 34, 0.1);
+            border: 1px solid rgba(197, 50, 34, 0.2);
+            color: #c53d22;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            text-decoration: none;
+            box-shadow: var(--shadow-soft);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .live-pill::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c53d22;
+            box-shadow: 0 0 0 0 rgba(197, 50, 34, 0.45);
+            animation: livePulse 1.8s infinite;
+        }
+
+        .live-pill:hover {
+            transform: translateY(-1px);
+            border-color: #c53d22;
+            background: rgba(197, 50, 34, 0.15);
+            box-shadow: var(--shadow);
+        }
+
+        @keyframes livePulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(201, 22, 6, 0.45);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(201, 22, 6, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(201, 22, 6, 0);
+            }
+        }
+
+        .back-link {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 245, 235, 0.92));
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 34px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: auto -10% -35% auto;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(234, 88, 12, 0.18), transparent 72%);
+            pointer-events: none;
+        }
+
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(234, 88, 12, 0.08);
+            color: var(--accent);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            margin: 16px 0 12px;
+            font-family: var(--head);
+            font-size: clamp(28px, 4vw, 46px);
+            line-height: .95;
+            letter-spacing: -.05em;
+            max-width: 980px;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 760px;
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+        }
+
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-soft);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .stat-pill strong {
+            font-family: var(--head);
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .domain-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 24px 0;
+        }
+
+        .domain-chip {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            transition: all .2s ease;
+        }
+
+        .domain-chip.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 14px 28px rgba(234, 88, 12, 0.20);
+        }
+
+        .domain-chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(234, 88, 12, 0.34);
+            color: var(--accent);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .section {
+            margin-top: 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 22px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .section-title {
+            margin: 0 0 8px;
+            font-family: var(--head);
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -.03em;
+        }
+
+        .section-subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .section-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(234, 88, 12, 0.08);
+            color: var(--accent);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .group-block+.group-block {
+            margin-top: 18px;
+        }
+
+        .group-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: center;
+            padding: 18px 20px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 246, 238, 0.96));
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+            margin-bottom: 14px;
+        }
+
+        .accordion-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        details.problem-item {
+            background: var(--surface-strong);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
+        }
+
+        details.problem-item[open] {
+            border-color: rgba(234, 88, 12, 0.30);
+            box-shadow: 0 18px 34px rgba(234, 88, 12, 0.08);
+        }
+
+        summary.problem-summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 20px;
+        }
+
+        summary.problem-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .summary-copy {
+            min-width: 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .problem-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(234, 88, 12, 0.10);
+            color: var(--accent);
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .problem-title-wrap {
+            min-width: 0;
+        }
+
+        .problem-title {
+            margin: 0;
+            font-family: var(--head);
+            font-size: 18px;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+
+        .problem-meta {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .summary-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .chevron {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: rgba(234, 88, 12, 0.08);
+            color: var(--accent);
+            transition: transform .2s ease;
+        }
+
+        details[open] .chevron {
+            transform: rotate(180deg);
+        }
+
+        .problem-panel {
+            border-top: 1px solid rgba(234, 88, 12, 0.10);
+            padding: 18px 20px 20px;
+            background: linear-gradient(180deg, rgba(255, 248, 241, 0.55), rgba(255, 255, 255, 0.96));
+        }
+
+        .problem-desc {
+            margin: 0 0 18px;
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.7;
+            font-weight: 600;
+        }
+
+        .resource-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .resource-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 10px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(234, 88, 12, 0.18);
+            background: #fff;
+            color: var(--text);
+            font-family: var(--head);
+            font-size: 13px;
+            font-weight: 800;
+            transition: all .2s ease;
+        }
+
+        .resource-btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .resource-btn.primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .resource-btn.primary:hover {
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(234, 88, 12, 0.20);
+        }
+
+        .resource-btn.disabled {
+            cursor: not-allowed;
+            opacity: .55;
+            background: rgba(15, 23, 42, 0.04);
+        }
+
+        .empty-state {
+            padding: 34px 22px;
+            text-align: center;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px dashed rgba(234, 88, 12, 0.28);
+            border-radius: 22px;
+            font-weight: 600;
+        }
+
+        .footer-note {
+            margin-top: 22px;
+            text-align: center;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .page-shell {
+                width: min(100% - 20px, 1180px);
+                padding-top: 18px;
+            }
+
+            .hero,
+            .section {
+                padding: 20px;
+                border-radius: 24px;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+
+            .group-head,
+            summary.problem-summary {
+                padding: 16px;
+            }
+
+            .summary-copy {
+                flex-direction: column;
+            }
+
+            .summary-right {
+                display: none;
+            }
+
+            .problem-title {
+                font-size: 16px;
+            }
+
+            .resource-grid {
+                flex-direction: column;
+            }
+
+            .resource-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-shell">
+        <div class="topbar">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <a href="{% url 'landing_page' %}" class="home-link" aria-label="Home">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                </a>
+                <!-- <a href="{% url 'landing_page' %}" class="live-pill">Live</a> -->
+                <a href="{% url 'landing_page' %}" class="brand-link">
+                    <span class="brand-dot"></span>
+                    {% if active_hackathon %}{{ active_hackathon.name }}{% else %}HackNexus{% endif %}
+                </a>
+            </div>
+        </div>
+
+        <section class="hero">
+            <span class="hero-kicker">Problem Statement Library</span>
+            <h1>Browse published challenges, then open the PDF or podcast for each one.</h1>
+            <p>
+                Every statement below expands inline. Use the buttons inside each item to view the problem PDF and
+                any published podcast resources linked to that statement.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-pill"><strong>{{ total_problem_statements }}</strong> Published Statements</div>
+                <div class="stat-pill"><strong>{{ themes_count }}</strong> Active Domains</div>
+                <!-- <div class="stat-pill"><strong>{% if active_hackathon %}{{ active_hackathon.name }}{% else %}Public{% endif %}</strong> Source</div> -->
+            </div>
+        </section>
+
+        <div class="domain-nav">
+            <a class="domain-chip{% if not selected_domain or selected_domain == 'all' %} active{% endif %}"
+                href="{% url 'public_problem_statements' %}">All Problems</a>
+            {% for group in all_problem_statement_groups %}
+            <a class="domain-chip{% if selected_domain == group.slug %} active{% endif %}"
+                href="{% url 'public_problem_statements' %}?domain={{ group.slug|urlencode }}">{{ group.title }}</a>
+            {% endfor %}
+        </div>
+
+        <section class="section" id="all-problems">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title">Published Problem Statements</h2>
+                    <p class="section-subtitle">Click any item to expand its description and resource buttons.</p>
+                </div>
+                <div class="section-count">{{ total_problem_statements }} total</div>
+            </div>
+
+            {% if problem_statements %}
+            <div class="accordion-list">
+                {% for problem in problem_statements %}
+                <details class="problem-item" {% if selected_domain and forloop.first %}open{% endif %}>
+                    <summary class="problem-summary">
+                        <div class="summary-copy">
+                            <span class="problem-pill">{{ problem.id }}</span>
+                            <div class="problem-title-wrap">
+                                <h3 class="problem-title">{{ problem.title }}</h3>
+                                <div class="problem-meta">{{ problem.desc }}</div>
+                            </div>
+                        </div>
+                        <div class="summary-right">
+                            <span>{{ problem.domain_label }}</span>
+                            <span class="chevron">⌄</span>
+                        </div>
+                    </summary>
+                    <div class="problem-panel">
+                        <p class="problem-desc">{{ problem.desc }}</p>
+                        <div class="resource-grid">
+                            {% if problem.pdf_url %}
+                            <a href="{{ problem.pdf_url }}" target="_blank" rel="noopener noreferrer"
+                                class="resource-btn primary">View</a>
+                            {% else %}
+                            <span class="resource-btn disabled">PDF not uploaded yet</span>
+                            {% endif %}
+
+                            {% if problem.podcasts %}
+                            {% for podcast in problem.podcasts %}
+                            <a href="{{ podcast.url }}" target="_blank" rel="noopener noreferrer" class="resource-btn">
+                                Podcast
+                            </a>
+                            {% endfor %}
+                            {% else %}
+                            <span class="resource-btn disabled">No podcast published yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No published problem statements are available right now.</div>
+            {% endif %}
+        </section>
+
+        <div class="footer-note">
+            <a href="{% url 'landing_page' %}">Back to home</a>
+        </div>
+    </div>
+
+</body>
+
+</html>

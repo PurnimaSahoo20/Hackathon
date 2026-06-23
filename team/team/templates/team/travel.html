@@ -1,0 +1,43 @@
+{% extends "team/base.html" %}
+{% block title %}Travel Details{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Travel Details</div><div class="page-subtitle">Add tickets and travel information for admin visibility</div></div></div>
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Add Travel Entry</div>
+        <form method="POST" action="{% url 'team_add_travel' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="field"><label>From</label><input type="text" name="origin" required></div>
+            <div class="field"><label>To</label><input type="text" name="destination" required></div>
+            <div class="field"><label>Date of Journey</label><input type="date" name="journey_date" required></div>
+            <div class="field"><label>Travel Mode</label><select name="travel_mode"><option value="train">Train</option><option value="bus">Bus</option><option value="flight">Flight</option><option value="car">Car</option><option value="other">Other</option></select></div>
+            <div class="field"><label>Traveler Name</label><input type="text" name="traveler_name"></div>
+            <div class="two-grid">
+                <div class="field"><label>Ticket Number</label><input type="text" name="ticket_number" placeholder="PNR / Ticket No."></div>
+                <div class="field"><label>Ticket Amount (₹)</label><input type="number" step="0.01" name="ticket_amount" placeholder="e.g. 1500.00"></div>
+            </div>
+            <div class="field"><label>Notes</label><textarea name="notes" rows="4"></textarea></div>
+            <div class="field"><label>Ticket Upload</label><input type="file" name="ticket_file" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Save Travel Details</button>
+        </form>
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Saved Travel Entries</div>
+        {% for travel in travel_details %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:6px"><strong>{{ travel.origin }} to {{ travel.destination }}</strong>{% if travel.ticket_file %}<a href="{{ travel.ticket_file.url }}" target="_blank" class="section-btn">Open Ticket</a>{% endif %}</div>
+            <div style="font-size:12px;color:var(--muted)">{{ travel.get_travel_mode_display }} · {{ travel.journey_date|date:"M j, Y" }}{% if travel.traveler_name %} · {{ travel.traveler_name }}{% endif %}</div>
+            {% if travel.ticket_number or travel.ticket_amount %}
+            <div style="font-size:12px;color:var(--text);margin-top:6px;background:rgba(249,115,22,0.1);padding:6px 10px;border-radius:6px;display:inline-block;">
+                {% if travel.ticket_number %}<strong>Ticket No:</strong> {{ travel.ticket_number }} {% endif %}
+                {% if travel.ticket_amount %}<strong {% if travel.ticket_number %}style="margin-left:8px;"{% endif %}>Amount:</strong> ₹{{ travel.ticket_amount }} {% endif %}
+            </div>
+            {% endif %}
+            {% if travel.notes %}<div style="font-size:13px;color:var(--text);margin-top:8px">{{ travel.notes }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No travel details added yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

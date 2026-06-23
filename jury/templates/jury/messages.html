@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Communication - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comm-shell {
+        max-width: 1420px;
+        margin: 0 auto;
+    }
+    .comm-page {
+        display: grid;
+        grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+    }
+    .comm-card {
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(251, 146, 60, 0.24);
+        border-radius: 28px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+    .comm-card.pad {
+        padding: 28px;
+    }
+    .comm-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 900;
+        color: #111827;
+        letter-spacing: -0.02em;
+    }
+    .comm-subtitle {
+        margin: 10px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.6;
+        font-weight: 600;
+    }
+    .field {
+        margin-top: 18px;
+    }
+    .field label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 800;
+    }
+    .field select,
+    .field textarea {
+        width: 100%;
+        border: 1px solid #f4c99a;
+        background: #fffdfa;
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-sizing: border-box;
+        font-family: 'Outfit', sans-serif;
+        font-size: 14px;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .field select:focus,
+    .field textarea:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.12);
+    }
+    .field textarea {
+        min-height: 160px;
+        resize: vertical;
+    }
+    .action-btn {
+        margin-top: 18px;
+        width: 100%;
+        border: none;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #fff;
+        padding: 15px 18px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 14px 28px rgba(234, 88, 12, 0.18);
+    }
+    .action-btn:hover {
+        filter: brightness(0.98);
+    }
+    .helper-note {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 12px;
+        line-height: 1.6;
+        font-weight: 700;
+    }
+    .contact-pill-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .contact-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        border: 1px solid #fed7aa;
+        background: #fff7ed;
+        color: #c2410c;
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .chat-card {
+        display: grid;
+        grid-template-rows: auto minmax(360px, 1fr) auto;
+        min-height: 720px;
+    }
+    .chat-head {
+        padding: 24px 26px 20px;
+        border-bottom: 1px solid #f5dfc7;
+        background: linear-gradient(135deg, #fffaf4, #ffedd5);
+    }
+    .chat-head-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .chat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: rgba(255, 255, 255, 0.8);
+        color: #c2410c;
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .chat-body {
+        padding: 24px 26px;
+        display: grid;
+        gap: 14px;
+        align-content: start;
+        min-height: 0;
+        max-height: 430px;
+        overflow-y: auto;
+        background:
+            radial-gradient(circle at top right, rgba(251, 191, 36, 0.08), transparent 30%),
+            linear-gradient(180deg, #fffdfb 0%, #fff8f1 100%);
+    }
+    .bubble-wrap {
+        display: flex;
+    }
+    .bubble-wrap.me {
+        justify-content: flex-end;
+    }
+    .bubble {
+        max-width: min(440px, 78%);
+        padding: 14px 16px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    .bubble.me {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #fff;
+        border-bottom-right-radius: 8px;
+    }
+    .bubble.other {
+        background: #fff;
+        color: #7c2d12;
+        border: 1px solid #f4d4af;
+        border-bottom-left-radius: 8px;
+    }
+    .bubble-meta {
+        margin-top: 8px;
+        font-size: 11px;
+        opacity: 0.8;
+        font-weight: 700;
+    }
+    .conversation-list {
+        border-top: 1px solid #f5dfc7;
+        padding: 18px 20px 20px;
+        background: #fff;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    .conversation-list h3 {
+        margin: 0 0 14px;
+        font-size: 15px;
+        font-weight: 900;
+        color: #111827;
+    }
+    .conversation-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid #f3e2cc;
+        border-radius: 18px;
+        background: #fffdfa;
+        text-decoration: none;
+        margin-bottom: 10px;
+        transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+    .conversation-row:hover {
+        transform: translateY(-1px);
+        border-color: #fdba74;
+        background: #fff8f1;
+    }
+    .conversation-row.active {
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.12);
+        background: #fff7ed;
+    }
+    .avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #fff1de;
+        color: #ea580c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 900;
+        flex-shrink: 0;
+    }
+    .unread-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        padding: 0 8px;
+        background: #ea580c;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+    }
+    .empty-state {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 36px 18px;
+        color: #9ca3af;
+        font-weight: 700;
+    }
+    .chat-empty {
+        min-height: 100%;
+        border: 1px dashed #f4d4af;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.66);
+    }
+    @media (max-width: 1100px) {
+        .comm-page {
+            grid-template-columns: 1fr;
+        }
+        .chat-card {
+            min-height: 0;
+        }
+        .chat-body {
+            max-height: 380px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comm-shell">
+<div class="comm-page">
+    <div class="comm-card pad">
+        <h1 class="comm-title">Communication</h1>
+        <p class="comm-subtitle">
+            Select the admin type, choose the admin, and send your message from one place.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="field">
+                <label for="contactType">Admin Type</label>
+                <select id="contactType" name="contact_type" onchange="filterContacts()">
+                    <option value="">Select admin type</option>
+                    {% for item in available_contact_types %}
+                    <option value="{{ item.value }}" {% if selected_contact_type == item.value %}selected{% endif %}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="contactUser">Admin</label>
+                <select id="contactUser" name="contact_user_id" onchange="openSelectedConversation()">
+                    <option value="">Select admin</option>
+                    {% for contact in available_contacts %}
+                    <option
+                        value="{{ contact.user.id }}"
+                        data-type="{{ contact.contact_type }}"
+                        {% if selected_contact_user_id == contact.user.id|stringformat:"s" %}selected{% endif %}
+                    >
+                        {{ contact.user.get_full_name|default:contact.user.username }} - {{ contact.role_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="messageBody">Message</label>
+                <textarea id="messageBody" name="body" placeholder="Write your message to the selected admin..." required></textarea>
+            </div>
+
+            <button type="submit" class="action-btn">Send Message</button>
+        </form>
+
+        <div class="helper-note">
+            Use the dropdowns above to start or continue a conversation. The chat panel on the right updates for the selected admin.
+        </div>
+
+        <div class="contact-pill-list">
+            {% for item in available_contact_types %}
+            <div class="contact-pill">{{ item.label }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="comm-card chat-card">
+        <div class="chat-head">
+            {% if selected_contact %}
+            <div class="chat-head-row">
+                <div>
+                    <h2 style="margin:0; font-size:24px; font-weight:900; color:#111827;">
+                        {{ selected_contact.user.get_full_name|default:selected_contact.user.username }}
+                    </h2>
+                    <p style="margin:7px 0 0; color:#6b7280; font-size:13px; font-weight:700;">
+                        {{ selected_contact.role_label }} chat
+                    </p>
+                </div>
+                <div class="chat-badge">{{ selected_contact.user.email }}</div>
+            </div>
+            {% else %}
+            <div>
+                <h2 style="margin:0; font-size:22px; font-weight:900; color:#111827;">Chat With Admin</h2>
+                <p style="margin:7px 0 0; color:#6b7280; font-size:13px; font-weight:700;">
+                    Select an admin from the form to view the conversation.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="chat-body" id="chatBody">
+            {% if selected_contact %}
+                {% for msg in selected_thread %}
+                <div class="bubble-wrap {% if msg.sender_id == request.user.id %}me{% endif %}">
+                    <div class="bubble {% if msg.sender_id == request.user.id %}me{% else %}other{% endif %}">
+                        <div>{{ msg.body|linebreaksbr }}</div>
+                        <div class="bubble-meta">{{ msg.sent_at|date:"M d, g:i A" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state chat-empty">
+                    No messages yet. Send the first message from the form.
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="empty-state chat-empty">
+                No admin selected yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="conversation-list">
+            <h3>Recent Chats</h3>
+            {% for convo in conversations %}
+            <a
+                href="?contact={{ convo.user.id }}&contact_type={{ convo.contact_type }}"
+                class="conversation-row {% if selected_contact_user_id == convo.user.id|stringformat:'s' %}active{% endif %}"
+            >
+                <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                    <div class="avatar">{{ convo.user.first_name.0|upper|default:convo.user.username.0|upper }}</div>
+                    <div style="min-width:0;">
+                        <div style="font-size:14px; font-weight:900; color:#111827;">
+                            {{ convo.user.get_full_name|default:convo.user.username }}
+                        </div>
+                        <div style="font-size:12px; color:#6b7280; font-weight:700;">
+                            {{ convo.role_label }}
+                        </div>
+                        <div style="margin-top:5px; font-size:12px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:360px;">
+                            {% if convo.last_message %}{{ convo.last_message.body }}{% else %}No messages yet{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:right; flex-shrink:0;">
+                    {% if convo.unread_count %}
+                    <div class="unread-tag">{{ convo.unread_count }}</div>
+                    {% endif %}
+                    <div style="margin-top:7px; font-size:11px; color:#9ca3af; font-weight:700;">
+                        {% if convo.last_message %}{{ convo.last_message.sent_at|date:"M d, g:i A" }}{% endif %}
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="empty-state" style="padding:22px 14px;">
+                No conversations available yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterContacts() {
+        const typeSelect = document.getElementById('contactType');
+        const userSelect = document.getElementById('contactUser');
+        const selectedType = typeSelect.value;
+        let hasVisibleOption = false;
+
+        Array.from(userSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+            const matches = !selectedType || option.dataset.type === selectedType;
+            option.hidden = !matches;
+            if (!matches && option.selected) {
+                userSelect.value = '';
+            }
+            if (matches) {
+                hasVisibleOption = true;
+            }
+        });
+
+        if (selectedType && !userSelect.value && hasVisibleOption) {
+            const firstVisible = Array.from(userSelect.options).find((option, index) => index > 0 && !option.hidden);
+            if (firstVisible) {
+                userSelect.value = firstVisible.value;
+            }
+        }
+    }
+
+    function openSelectedConversation() {
+        const typeSelect = document.getElementById('contactType');
+        const userSelect = document.getElementById('contactUser');
+        if (!userSelect.value) {
+            return;
+        }
+        const params = new URLSearchParams();
+        if (userSelect.value) {
+            params.set('contact', userSelect.value);
+        }
+        if (typeSelect.value) {
+            params.set('contact_type', typeSelect.value);
+        }
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+
+    filterContacts();
+
+    const chatBody = document.getElementById('chatBody');
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+</script>
+{% endblock %}

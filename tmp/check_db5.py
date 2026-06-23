@@ -1,0 +1,1 @@
+from django.db import connection; cursor = connection.cursor(); cursor.execute('SELECT COUNT(*) FROM accounts_hackathon'); print('Hackathons:', cursor.fetchone()[0]); cursor.execute('SELECT COUNT(*) FROM accounts_problemstatement'); print('PS:', cursor.fetchone()[0])  

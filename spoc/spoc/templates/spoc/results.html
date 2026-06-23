@@ -1,0 +1,41 @@
+{% extends "spoc/base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><div class="page-title">Results</div><div class="page-subtitle">Qualified Teams from {{ institution.name|default:"Your Institution" }}</div></div>
+    <span class="badge badge-teal">🟢 Round 1</span>
+</div>
+<div style="background:linear-gradient(135deg,rgba(8,145,178,0.07),rgba(5,150,105,0.05));border:1px solid rgba(8,145,178,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+    <div style="font-size:36px">🏆</div>
+    <div>
+        <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px">Round 1 Results</div>
+        <div style="font-size:13px;color:var(--muted)">{{ approved_regs.count }} teams from your college are approved and active.</div>
+    </div>
+</div>
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">✅ Approved Teams</div>
+        <span class="badge badge-green">{{ approved_regs.count }} Teams</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Team Name</th><th>Leader</th><th>Problem Statement</th><th>Members</th><th>Approved On</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for reg in approved_regs %}
+                <tr>
+                    <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--muted)">#{{ forloop.counter }}</strong></td>
+                    <td><strong>{{ reg.team_name }}</strong></td>
+                    <td>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</td>
+                    <td>{{ reg.problem_statement.title|default:"—"|truncatechars:35 }}</td>
+                    <td>{{ reg.get_member_count }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.reviewed_at|date:"M j, Y"|default:"—" }}</td>
+                    <td><span class="badge badge-green">✓ Active</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No approved teams yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

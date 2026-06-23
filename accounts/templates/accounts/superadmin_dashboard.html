@@ -1,0 +1,2062 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Super Admin Dashboard - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Inline edit panel ── */
+    .edit-panel {
+        display: none;
+        background: #fff7ed;
+        border: 2px solid #fcd34d;
+        border-radius: 14px;
+        padding: 24px;
+        margin-top: 16px;
+        animation: slideDown 0.25s ease-out;
+    }
+
+    .edit-panel.open {
+        display: block;
+    }
+
+    .edit-panel .form-grid {
+        margin-bottom: 16px;
+    }
+
+    .placement-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .placement-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 15px;
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: all .2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    }
+
+    .placement-option:hover {
+        border-color: #f97316;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(249,115,22,.08);
+    }
+
+    .placement-option input {
+        margin-top: 3px;
+        accent-color: #f97316;
+        transform: scale(1.05);
+    }
+
+    .placement-option strong {
+        display: block;
+        font-size: 14px;
+        color: #111827;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .placement-option span {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 3px;
+        line-height: 1.35;
+    }
+
+    .placement-option:has(input:checked) {
+        border-color: #f97316;
+        background: linear-gradient(180deg, #fff7ed, #fff);
+        box-shadow: 0 10px 22px rgba(249,115,22,.12);
+    }
+
+    /* ── User row highlight when editing ── */
+    tr.editing-row {
+        background: #fff7ed !important;
+    }
+
+    .analytics-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, .9fr);
+        gap: 22px;
+        margin-bottom: 28px;
+    }
+
+    .analytics-hero-card,
+    .analytics-mini-card,
+    .analytics-panel,
+    .analytics-chart-card,
+    .analytics-table-card,
+    .analytics-feed-card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 249, 242, .94));
+        border: 1px solid rgba(249, 115, 22, 0.14);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+        border-radius: 28px;
+    }
+
+    .analytics-hero-card {
+        padding: 28px;
+        position: relative;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(59, 130, 246, .18), transparent 28%),
+            radial-gradient(circle at bottom left, rgba(249, 115, 22, .18), transparent 24%),
+            linear-gradient(135deg, #fffaf5, #ffffff);
+    }
+
+    .analytics-hero-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -80px -80px auto;
+        width: 220px;
+        height: 220px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(251, 146, 60, .22), rgba(251, 146, 60, 0));
+        pointer-events: none;
+    }
+
+    .analytics-mini-stack {
+        display: grid;
+        gap: 18px;
+    }
+
+    .analytics-mini-card {
+        padding: 22px 24px;
+    }
+
+    .analytics-kicker {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: #f97316;
+        margin-bottom: 10px;
+    }
+
+    .analytics-title {
+        font-size: 30px;
+        line-height: 1.08;
+        font-weight: 900;
+        color: #111827;
+        margin: 0 0 12px;
+        max-width: 660px;
+    }
+
+    .analytics-subtitle {
+        margin: 0;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.7;
+        max-width: 720px;
+    }
+
+    .analytics-chip-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+    }
+
+    .analytics-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .9);
+        border: 1px solid rgba(148, 163, 184, .18);
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .analytics-mini-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #94a3b8;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .analytics-mini-value {
+        font-size: 34px;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    .analytics-mini-note {
+        font-size: 13px;
+        color: #475569;
+        font-weight: 600;
+        line-height: 1.55;
+    }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .analytics-panel,
+    .analytics-chart-card,
+    .analytics-table-card,
+    .analytics-feed-card {
+        padding: 24px;
+    }
+
+    .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .panel-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .panel-note {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .panel-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #eff6ff, #ffffff);
+        color: #2563eb;
+        border: 1px solid rgba(37, 99, 235, .12);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .insight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .insight-card {
+        padding: 18px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, #ffffff, #fff7ed);
+        border: 1px solid rgba(251, 146, 60, .16);
+    }
+
+    .insight-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: 10px;
+    }
+
+    .insight-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .insight-meta {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .chart-grid-modern {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .chart-shell {
+        padding: 20px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #fff, #fffaf5);
+        border: 1px solid rgba(148, 163, 184, .12);
+    }
+
+    .chart-title {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 900;
+        color: #1f2937;
+    }
+
+    .chart-caption {
+        margin: 0 0 16px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .analytics-layout {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 24px;
+        margin-top: 26px;
+    }
+
+    .analytics-chart-stack,
+    .analytics-side-stack {
+        display: grid;
+        gap: 24px;
+    }
+
+    .analytics-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .analytics-kpi-card {
+        padding: 20px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffffff, #fff8f1);
+        border: 1px solid rgba(251, 146, 60, .14);
+        box-shadow: 0 14px 28px rgba(15, 23, 42, .05);
+    }
+
+    .analytics-kpi-card .kpi-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: .09em;
+        margin-bottom: 12px;
+    }
+
+    .analytics-kpi-card .kpi-value {
+        font-size: 30px;
+        font-weight: 900;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .analytics-kpi-card .kpi-meta {
+        font-size: 13px;
+        color: #475569;
+        font-weight: 600;
+        line-height: 1.55;
+    }
+
+    .domain-list,
+    .event-snapshot-list {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .domain-row,
+    .event-snapshot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, .82);
+        border: 1px solid rgba(148, 163, 184, .12);
+    }
+
+    .domain-name,
+    .event-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #1f2937;
+    }
+
+    .domain-count,
+    .event-meta {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .event-meta strong {
+        color: #2563eb;
+    }
+
+    .activity-feed-modern {
+        display: grid;
+        gap: 14px;
+    }
+
+    .activity-item-modern {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 14px;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, .82);
+        border: 1px solid rgba(148, 163, 184, .12);
+    }
+
+    .activity-item-modern .activity-copy {
+        margin: 0;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.55;
+    }
+
+    .activity-item-modern .activity-time {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #94a3b8;
+        font-weight: 700;
+    }
+
+    @media (max-width: 1200px) {
+
+        .analytics-hero,
+        .overview-grid,
+        .analytics-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .analytics-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        .chart-grid-modern,
+        .insight-grid,
+        .analytics-kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .analytics-title {
+            font-size: 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 32px; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1 class="page-title" style="font-size: 32px; margin:0;">{% if live_hackathon %}{{ live_hackathon.name }}{% else %}Super Admin Control{% endif %}</h1>
+        <p style="color: #6b7280; font-weight: 500; margin:4px 0 0;">BPUT Hackathon Platform • HubNexus v2.4</p>
+    </div>
+    <div style="display:flex; gap:8px;">
+        {% if live_hackathon %}
+        <div class="badge-pill">{{ live_hackathon.name }}</div>
+        <div class="badge-pill badge-live">LIVE</div>
+        {% else %}
+        <div class="badge-pill" style="background:#e5e7eb;">OFFLINE</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: OVERVIEW
+══════════════════════════════════════════ -->
+{% if tab == 'overview' %}
+<section class="analytics-hero">
+    <div class="analytics-hero-card">
+        <div class="analytics-kicker">Command Center</div>
+        <h2 class="analytics-title">Platform overview with live event health, registration flow, and evaluation
+            readiness.</h2>
+        <p class="analytics-subtitle">This workspace highlights the current operating pulse of HackNexus so the super
+            admin can spot growth, bottlenecks, and event readiness without leaving the dashboard.</p>
+        <div class="analytics-chip-row">
+            <div class="analytics-chip"><ion-icon name="sparkles-outline"></ion-icon> {{ active_users_30d }} active
+                users in 30 days</div>
+            <div class="analytics-chip"><ion-icon name="git-network-outline"></ion-icon> {{ total_registrations }} total
+                registrations</div>
+            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate }}% evaluation assignment coverage</div>
+        </div>
+    </div>
+    <div class="analytics-mini-stack">
+        <div class="analytics-mini-card">
+            <div class="analytics-mini-label">Approval Rate</div>
+            <div class="analytics-mini-value">{{ approval_rate }}%</div>
+            <div class="analytics-mini-note">{{ approved_registrations }} approved out of {{ total_registrations }}
+                total team registrations.</div>
+        </div>
+        <div class="analytics-mini-card">
+            <div class="analytics-mini-label">Publishing Readiness</div>
+            <div class="analytics-mini-value">{{ published_ps_total }} / {{ ps_total }}</div>
+            <div class="analytics-mini-note">{{ published_creatives_total }} creative assets are already published and
+                visible to participants.</div>
+        </div>
+    </div>
+</section>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="sc-icon-top">🎯</div>
+        <div class="sc-value">{{ events_total }}</div>
+        <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑ {{
+            events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
+            month</div>{% endif %}<a href="?tab=events" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">🏢</div>
+        <div class="sc-value">{{ admins_total }}</div>
+        <div class="sc-label">Admins</div>
+        <div class="sc-trend trend-neutral">↑ {{ admins_active }} active</div><a href="?tab=admin_mgt"
+            class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">⚖️</div>
+        <div class="sc-value">{{ expert_jury_total }}</div>
+        <div class="sc-label">Jury / Expert</div>
+        <div class="sc-trend trend-neutral">{{ jury_count }} Jury • {{ expert_count }} Expert</div><a
+            href="?tab=user_mgt" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">🏫</div>
+        <div class="sc-value">{{ colleges_total }}</div>
+        <div class="sc-label">Colleges Onboarded</div>
+        <div class="sc-trend trend-up">↑ {{ colleges_new_week }} this week</div><a href="#" class="sc-plus"><ion-icon
+                name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">👥</div>
+        <div class="sc-value">{{ teams_total }}</div>
+        <div class="sc-label">Teams</div>
+        <div class="sc-trend trend-up">↑ {{ teams_new_today }} new today</div><a href="#" class="sc-plus"><ion-icon
+                name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">🚀</div>
+        <div class="sc-value">{{ execs_total }}</div>
+        <div class="sc-label">Executives</div>
+        <div class="sc-trend trend-neutral">All assigned</div><a href="?tab=exec_mgt" class="sc-plus"><ion-icon
+                name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">📋</div>
+        <div class="sc-value">{{ ps_total }}</div>
+        <div class="sc-label">Problem Statements</div>
+        <div class="sc-trend trend-neutral">Multiple domains</div><a href="?tab=problem_statements"
+            class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
+    </div>
+    <div class="stat-card">
+        <div class="sc-icon-top">📍</div>
+        <div class="sc-value">{{ venues_total }}</div>
+        <div class="sc-label">Venue</div>
+        <div class="sc-trend trend-up">{% if venues_total > 0 %}Confirmed{% else %}Pending{% endif %}</div><a href="#"
+            class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
+    </div>
+</div>
+
+<div class="dashboard-row">
+    <div class="chart-card">
+        <h2 style="margin:0 0 24px; font-size:20px; font-weight:800;">Analytics Overview</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <div>
+                <p style="font-size:14px; font-weight:700; color:#6b7280; text-align:center; margin-bottom:16px;">
+                    Hackathon Distribution</p><canvas id="statusChart" height="200"></canvas>
+            </div>
+            <div>
+                <p style="font-size:14px; font-weight:700; color:#6b7280; text-align:center; margin-bottom:16px;">
+                    Problem Domains</p><canvas id="domainChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="activity-card">
+        <h2 style="margin:0 0 24px; font-size:20px; font-weight:800;">Recent Activity</h2>
+        {% for act in recent_activity %}
+        <div class="activity-item">
+            <div class="activity-icon" style="background:#f3f4f6; color:#2563eb;"><ion-icon
+                    name="{{ act.icon }}-outline"></ion-icon></div>
+            <div style="flex:1;">
+                <div style="font-size:14px; font-weight:700; color:#374151;">{{ act.text }}</div>
+                <div style="font-size:12px; color:#9ca3af; margin-top:4px;">{{ act.time }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: EVENTS
+══════════════════════════════════════════ -->
+{% elif tab == 'analytics' %}
+<section class="analytics-hero">
+    <div class="analytics-hero-card">
+        <div class="analytics-kicker">Analytics Workspace</div>
+        <h2 class="analytics-title">Deeper platform analysis across registrations, user growth, event distribution, and
+            delivery health.</h2>
+        <p class="analytics-subtitle">This tab consolidates the operational numbers a super admin typically needs for
+            review meetings, progress tracking, and fast decision-making.</p>
+        <div class="analytics-chip-row">
+            <div class="analytics-chip"><ion-icon name="people-outline"></ion-icon> {{ active_users_30d }} active users
+                in 30 days</div>
+            <div class="analytics-chip"><ion-icon name="document-text-outline"></ion-icon> {{ published_ps_total }}
+                published problem statements</div>
+            <div class="analytics-chip"><ion-icon name="checkmark-done-outline"></ion-icon> {{ approved_registrations }}
+                approved registrations</div>
+        </div>
+    </div>
+    <div class="analytics-mini-stack">
+        <div class="analytics-mini-card">
+            <div class="analytics-mini-label">Evaluation Readiness</div>
+            <div class="analytics-mini-value">{{ evaluation_assignment_rate }}%</div>
+            <div class="analytics-mini-note">Assignments marked ready across all team evaluation slots.</div>
+        </div>
+        <div class="analytics-mini-card">
+            <div class="analytics-mini-label">Average Evaluation Score</div>
+            <div class="analytics-mini-value">{{ avg_evaluation_score }}</div>
+            <div class="analytics-mini-note">Current average score from all submitted evaluator entries.</div>
+        </div>
+    </div>
+</section>
+
+<div class="analytics-kpi-grid">
+    <div class="analytics-kpi-card">
+        <div class="kpi-label">Active Users</div>
+        <div class="kpi-value">{{ active_users_30d }}</div>
+        <div class="kpi-meta">Logged in during the last 30 days and actively using the platform.</div>
+    </div>
+    <div class="analytics-kpi-card">
+        <div class="kpi-label">Pending Reviews</div>
+        <div class="kpi-value">{{ pending_registrations }}</div>
+        <div class="kpi-meta">Registrations still waiting on approval workflow movement.</div>
+    </div>
+    <div class="analytics-kpi-card">
+        <div class="kpi-label">Published Assets</div>
+        <div class="kpi-value">{{ published_creatives_total }}</div>
+        <div class="kpi-meta">Creative materials already published and visible to users.</div>
+    </div>
+    <div class="analytics-kpi-card">
+        <div class="kpi-label">Venue Readiness</div>
+        <div class="kpi-value">{{ venues_total }}</div>
+        <div class="kpi-meta">Venue records currently attached across configured hackathons.</div>
+    </div>
+</div>
+
+<div class="analytics-layout">
+    <div class="analytics-chart-stack">
+        <div class="analytics-chart-card">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">Registration Pipeline</h2>
+                    <p class="panel-note">Status-based registration flow from intake to decision.</p>
+                </div>
+                <div class="panel-pill">{{ approval_rate }}% approval rate</div>
+            </div>
+            <canvas id="pipelineChart" height="140"></canvas>
+        </div>
+        <div class="analytics-chart-card">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">User Growth Trend</h2>
+                    <p class="panel-note">Month-wise growth for newly created platform users.</p>
+                </div>
+            </div>
+            <canvas id="growthChart" height="140"></canvas>
+        </div>
+        <div class="chart-grid-modern">
+            <div class="analytics-chart-card">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Role Distribution</h2>
+                        <p class="panel-note">How users are split across platform roles.</p>
+                    </div>
+                </div>
+                <canvas id="roleChart" height="180"></canvas>
+            </div>
+            <div class="analytics-chart-card">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Event Status Snapshot</h2>
+                        <p class="panel-note">Current mix of draft, live, and completed events.</p>
+                    </div>
+                </div>
+                <canvas id="statusChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="analytics-side-stack">
+        <div class="analytics-table-card">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">Top Domains</h2>
+                    <p class="panel-note">Problem statement concentration by domain.</p>
+                </div>
+            </div>
+            <div class="domain-list">
+                {% for item in top_domains %}
+                <div class="domain-row">
+                    <div class="domain-name">{{ item.domain }}</div>
+                    <div class="domain-count">{{ item.count }} statements</div>
+                </div>
+                {% empty %}
+                <div class="domain-row">
+                    <div class="domain-name">No domains yet</div>
+                    <div class="domain-count">Add problem statements to populate analytics</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="analytics-table-card">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">Event Snapshots</h2>
+                    <p class="panel-note">Quick-read event load across teams, venues, and problems.</p>
+                </div>
+            </div>
+            <div class="event-snapshot-list">
+                {% for event in live_event_snapshots %}
+                <div class="event-snapshot">
+                    <div>
+                        <div class="event-name">{{ event.name }}</div>
+                        <div class="domain-count">{{ event.status }}</div>
+                    </div>
+                    <div class="event-meta"><strong>{{ event.teams }}</strong> teams · {{ event.problems }} PS · {{
+                        event.venues }} venues</div>
+                </div>
+                {% empty %}
+                <div class="event-snapshot">
+                    <div class="event-name">No events configured</div>
+                    <div class="event-meta">Create an event to populate this summary</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="analytics-feed-card">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">Latest Activity Feed</h2>
+                    <p class="panel-note">Recent admin-visible operations pulled into one list.</p>
+                </div>
+            </div>
+            <div class="activity-feed-modern">
+                {% for act in recent_activity %}
+                <div class="activity-item-modern">
+                    <div class="activity-icon" style="background:#eff6ff; color:#2563eb;"><ion-icon
+                            name="{{ act.icon }}-outline"></ion-icon></div>
+                    <div>
+                        <p class="activity-copy">{{ act.text }}</p>
+                        <div class="activity-time">{{ act.time }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif tab == 'events' %}
+<div id="hackathonForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; font-size:22px; font-weight:800;">Create New Hackathon Event</h2>
+            <button onclick="toggleForm('hackathonForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Hackathon Name</label><input type="text" name="name" required
+                        placeholder="e.g. BPUT Smart Odisha Hackathon"></div>
+                <div class="form-group"><label>Organization Name</label><input type="text" name="organization_name"
+                        required placeholder="e.g. OKCL / BPUT"></div>
+                <div class="form-group"><label>Organization Logo</label><input type="file" name="organization_logo"
+                        accept="image/*"></div>
+            </div>
+            <div class="form-section-title">Approval & Status</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Approval Date</label><input type="date" name="approval_date"></div>
+                <div class="form-group"><label>Approval Letter (PDF)</label><input type="file" name="approval_letter"
+                        accept=".pdf"></div>
+                <div class="form-group">
+                    <label>Event Status</label>
+                    <select name="status" id="eventStatusSelect">
+                        <option value="Draft">Draft (Private)</option>
+                        <option value="Live">Live (Public)</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-section-title">Key Timeline</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Poster Launch Date</label><input type="date"
+                        name="poster_launching_date"></div>
+                <div class="form-group"><label>Website Launch Date</label><input type="date"
+                        name="website_launching_date"></div>
+                <div class="form-group"><label>Registration Opens</label><input type="date" name="registration_open">
+                </div>
+                <div class="form-group"><label>Registration Closes</label><input type="date" name="registration_close">
+                </div>
+            </div>
+            <div class="form-section-title">Team Configurations</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1">
+                </div>
+                <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4">
+                </div>
+                <div class="form-group"><label>Total Members Allowed</label><input type="number"
+                        name="total_team_members" value="4"></div>
+                <div class="form-group"><label>Mentors per Team</label><input type="number" name="number_of_mentors"
+                        value="1"></div>
+            </div>
+            <div class="form-section-title">Rounds</div>
+            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Enabled rounds become active automatically
+                when today falls between their start and end dates. Admins can activate or deactivate rounds later.</p>
+            <div class="form-group" style="margin-bottom:16px;"><label>Total Number of Rounds</label><input
+                    type="number" name="number_of_rounds" value="1" min="1" max="5" style="max-width:200px;"></div>
+            {% for i in "12345" %}
+            <div class="round-row"
+                style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:14px; background:#fffbf7; padding:14px; border-radius:10px; margin-bottom:12px; align-items:end;">
+                <div class="form-group"><label>Round {{ i }} Name</label><input type="text" name="round_{{ i }}_name"
+                        value="Round {{ i }}"></div>
+                <div class="form-group"><label>Start Date</label><input type="date" name="round_{{ i }}_start_date">
+                </div>
+                <div class="form-group"><label>End Date</label><input type="date" name="round_{{ i }}_end_date"></div>
+                <label
+                    style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c; padding-bottom:12px; white-space:nowrap;">
+                    <input type="checkbox" name="round_{{ i }}_is_enabled" checked
+                        style="width:16px; height:16px; accent-color:#ea580c;"> Active
+                </label>
+                <div
+                    style="grid-column: 1 / -1; width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_{{ i }}_num_params" value="0" min="0"
+                                oninput="updateMarkingParams(this, {{ i }})">
+                        </div>
+                        <label
+                            style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_{{ i }}_has_others"
+                                style="width:16px; height:16px; accent-color:#ea580c;"> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_{{ i }}_params_container"
+                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <div style="display:flex; gap:16px; margin-top:28px;">
+                <button type="button" onclick="toggleForm('hackathonForm')" class="draft-btn"
+                    style="flex:1;">Cancel</button>
+                <button type="button" onclick="saveHackathonAsDraft()" class="draft-btn" style="flex:1;"><ion-icon
+                        name="save-outline"></ion-icon> Save as Draft</button>
+                <button type="submit" class="cta-btn-v2" style="flex:2;">Publish Hackathon Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Event Management</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="events">
+                <input type="text" name="search_events" placeholder="Search hackathons..." value="{{ search_events }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('hackathonForm')"><ion-icon
+                    name="add-circle-outline"></ion-icon> Create Event</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">HACKATHON</th>
+                    <th style="padding:14px;">ORGANIZATION</th>
+                    <th style="padding:14px;">STATUS</th>
+                    <th style="padding:14px;">ACTIVE ROUND</th>
+                    <th style="padding:14px;">ROUND CONTROL</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hackathons_list %}
+                <tr
+                    style="border-bottom:1px solid #eee; {% if h.status == 'Suspended' %}opacity:0.6; background:#f1f5f9;{% endif %}">
+                    <td style="padding:14px;"><strong>{{ h.name }}</strong><br><small style="color:#6b7280;">{% if h.round_1_start_date %}{{ h.round_1_start_date|date:"d M Y" }}{% else %}TBD{% endif %}</small></td>
+                    <td style="padding:14px;">{{ h.organization_name }}</td>
+                    <td style="padding:14px;"><span class="badge {% if h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">{{ h.status }}</span></td>
+                    <td style="padding:14px;">
+                        {% if h.active_round %}
+                        <strong>{{ h.active_round.name }}</strong><br><small style="color:#059669;">{{ h.active_round.start_date|date:"d M Y" }} to {{ h.active_round.end_date|date:"d M Y" }}</small>
+                        {% else %}
+                        <span style="color:#9ca3af; font-weight:700;">No active round today</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            {% for round in h.get_rounds %}
+                            <form action="{% url 'toggle_round_status' h.id round.number %}" method="POST"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="badge"
+                                    style="border:none; cursor:pointer; {% if round.is_enabled %}background:#ecfdf5;color:#047857;{% else %}background:#f3f4f6;color:#64748b;{% endif %}"
+                                    title="{{ round.start_date|default:'TBD' }} to {{ round.end_date|default:'TBD' }}">
+                                    R{{ round.number }} {% if round.is_enabled %}ON{% else %}OFF{% endif %}
+                                </button>
+                            </form>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td style="padding:14px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <a href="{% url 'view_hackathon' h.id %}" title="View"
+                                style="color:#059669; font-size:20px;"><ion-icon name="eye-outline"></ion-icon></a>
+                            <a href="{% url 'edit_hackathon' h.id %}" title="Edit"
+                                style="color:#2563eb; font-size:20px;"><ion-icon name="create-outline"></ion-icon></a>
+                            {% if h.status != 'Suspended' %}
+                            <form action="{% url 'delete_hackathon' h.id %}" method="POST" style="display:inline;"
+                                onsubmit="return confirm('Suspend this event?')">
+                                {% csrf_token %}
+                                <button type="submit" title="Suspend"
+                                    style="color:#dc2626; font-size:20px; background:none; border:none; cursor:pointer; padding:0; display:flex;"><ion-icon
+                                        name="ban-outline"></ion-icon></button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:40px; color:#9ca3af;">No hackathons recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: ADMIN MANAGEMENT
+══════════════════════════════════════════ -->
+{% elif tab == 'admin_mgt' %}
+
+<!-- Create form (hidden by default) -->
+<div id="adminForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Administrator</h2>
+            <button onclick="toggleForm('adminForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="/accounts/create-user/" method="POST" id="onboardAdminForm">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="{{ admin_role.id }}">
+            <input type="hidden" name="status" id="admin_form_status" value="active">
+            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
+            <div class="form-grid">
+                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
+                        placeholder="e.g. John" required></div>
+                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
+                        placeholder="e.g. Doe" required></div>
+                <div class="form-group"><label>Username</label><input type="text" name="username"
+                        placeholder="e.g. jdoe_admin" required></div>
+                <div class="form-group"><label>Email ID</label><input type="email" name="email"
+                        placeholder="e.g. jdoe@example.com" required></div>
+            </div>
+            <div class="form-group" style="margin-bottom:20px;"><label>Credentials (Password)</label><input
+                    type="password" name="password" required placeholder="••••••••"></div>
+            <div class="form-section-title">Administrative Permissions</div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Select the modules this administrator can
+                manage.</p>
+
+            <div class="form-group" style="margin-bottom:16px; max-width: 300px;">
+                <label>Admin Role (Auto-selects permissions)</label>
+                <select id="adminTypeSelect" onchange="autoSelectPermissions(this.value)">
+                    <option value="">-- Custom Selection --</option>
+                    <option value="spoc">SPOC & College Mgt</option>
+                    <option value="team">Team & Event Monitor</option>
+                    <option value="problem">Problem Statement & Content Management</option>
+                    <option value="venue">Venue & Logistics Management</option>
+                    <option value="finance">Financial Management</option>
+                    <option value="jury">Jury & Evaluation</option>
+                    <option value="support">Support & Stay Ops</option>
+                    <option value="media">Media & Communications</option>
+                    <option value="results">Results & Awards</option>
+                </select>
+            </div>
+
+            <div
+                style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; background:#fffbf7; padding:18px; border-radius:14px; border:1px solid #fed7aa;">
+                {% for perm in all_permissions %}
+                <label
+                    style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px; border-radius:8px;">
+                    <input type="checkbox" name="permissions[]" value="{{ perm.id }}" data-perm-name="{{ perm.name }}"
+                        style="width:16px; height:16px; accent-color:#ea580c; margin-top:2px; flex-shrink:0;">
+                    <div>
+                        <div style="font-size:13px; font-weight:700; color:#374151;">{{ perm.name }}</div>
+                        <div style="font-size:11px; color:#94a3b8;">{{ perm.description }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <div style="display:flex; gap:16px; margin-top:28px;">
+                <button type="button" onclick="toggleForm('adminForm')" class="draft-btn"
+                    style="flex:1;">Cancel</button>
+                <button type="button"
+                    onclick="document.getElementById('admin_form_status').value='draft'; document.getElementById('onboardAdminForm').submit();"
+                    class="draft-btn" style="flex:1;"><ion-icon name="save-outline"></ion-icon> Save as Draft</button>
+                <button type="submit" class="cta-btn-v2" style="flex:2;">Configure & Onboard Admin</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Admins list -->
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Platform Administrators</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="admin_mgt">
+                <input type="text" name="search_admins" placeholder="Search admins..." value="{{ search_admins }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('adminForm')"><ion-icon name="person-add-outline"></ion-icon>
+                Onboard Admin</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">ADMINISTRATOR</th>
+                    <th style="padding:14px;">STATUS</th>
+                    <th style="padding:14px;">PERMISSIONS</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if admins_list %}
+                {% for admin in admins_list %}
+                <tr id="admin-row-{{ admin.user.id }}"
+                    style="border-bottom:1px solid #eee; {% if not admin.user.is_active %}background:#f8fafc; opacity:0.85;{% endif %}">
+                    <td style="padding:14px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div
+                                style="width:36px; height:36px; background:{% if admin.user.is_active %}#eff6ff{% else %}#f1f5f9{% endif %}; border-radius:10px; display:flex; align-items:center; justify-content:center; color:{% if admin.user.is_active %}#2563eb{% else %}#94a3b8{% endif %}; font-weight:800; font-size:16px;">
+                                {{ admin.user.username|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <strong>{{ admin.user.get_full_name|default:admin.user.username }}</strong>
+                                {% if not admin.user.is_active %}
+                                <span
+                                    style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:800;">DRAFT</span>
+                                {% endif %}
+                                <br>
+                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} • {{ admin.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:14px;">
+                        {% if admin.user.is_active %}
+                        <span class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #d1fae5;">●
+                            Active</span>
+                        {% else %}
+                        <span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fee2e2;">○
+                            Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                            {% for p in admin.permissions.all %}
+                            <span class="badge"
+                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{ p.name }}</span>
+                            {% empty %}
+                            <span style="font-size:11px; color:#9ca3af; font-style:italic;">No permissions</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td style="padding:14px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button onclick="toggleEditPanel('admin-edit-{{ admin.user.id }}')" title="Edit"
+                                style="color:#2563eb; font-size:20px; background:none; border:none; cursor:pointer; padding:0; display:flex;">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </button>
+                            <form action="{% url 'toggle_user_status' admin.user.id %}" method="POST"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                {% if admin.user.is_active %}
+                                <button type="submit" title="Suspend"
+                                    style="color:#dc2626; font-size:22px; background:none; border:none; cursor:pointer; padding:0; display:flex;"
+                                    onclick="return confirm('Suspend this administrator?')"><ion-icon
+                                        name="ban-outline"></ion-icon></button>
+                                {% else %}
+                                <button type="submit" title="Activate"
+                                    style="color:#059669; font-size:22px; background:none; border:none; cursor:pointer; padding:0; display:flex;"><ion-icon
+                                        name="checkmark-circle-outline"></ion-icon></button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="padding:0;">
+                        <div id="admin-edit-{{ admin.user.id }}" class="edit-panel">
+                            <form action="{% url 'inline_edit_user' admin.user.id %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="redirect_tab" value="admin_mgt">
+                                <div class="form-section-title" style="margin-top:0;">Edit Administrator — {{
+                                    admin.user.username }}</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>First Name</label><input type="text"
+                                            name="first_name" value="{{ admin.user.first_name }}"></div>
+                                    <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
+                                            value="{{ admin.user.last_name }}"></div>
+                                    <div class="form-group"><label>Email</label><input type="email" name="email"
+                                            value="{{ admin.user.email }}"></div>
+                                    <div class="form-group"><label>New Password <span
+                                                style="font-size:11px; color:#9ca3af;">(leave blank to
+                                                keep)</span></label><input type="password" name="new_password"
+                                            placeholder="New password..."></div>
+                                </div>
+                                <div class="form-section-title">Update Permissions</div>
+                                <div
+                                    style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; background:#fff; padding:16px; border-radius:12px; border:1px solid #fed7aa;">
+                                    {% for perm in admin.editable_permissions %}
+                                    <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                                        <input type="checkbox" name="permissions[]" value="{{ perm.id }}"
+                                            style="accent-color:#ea580c; margin-top:3px;" {{ perm.checked_attr }}>
+                                        <div>
+                                            <div style="font-size:13px; font-weight:700;">{{ perm.name }}</div>
+                                            <div style="font-size:11px; color:#9ca3af;">{{ perm.description }}</div>
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <div style="display:flex; gap:12px; margin-top:20px;">
+                                    <button type="submit" class="cta-btn-v2">Save Changes</button>
+                                    <button type="button" onclick="toggleEditPanel('admin-edit-{{ admin.user.id }}')"
+                                        class="draft-btn">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:40px; color:#9ca3af;">No administrators yet. Click
+                        "Onboard Admin" to add one.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: EXECUTIVE MANAGEMENT
+══════════════════════════════════════════ -->
+{% elif tab == 'exec_mgt' %}
+<div id="execForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Executive</h2>
+            <button onclick="toggleForm('execForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="/accounts/create-user/" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="role"
+                value="{% for r in roles %}{% if r.name == 'Executive' %}{{ r.id }}{% endif %}{% endfor %}">
+            <div class="form-section-title" style="margin-top:0;">Personal Details</div>
+            <div class="form-grid">
+                <div class="form-group"><label>First Name</label><input type="text" name="first_name" required></div>
+                <div class="form-group"><label>Last Name</label><input type="text" name="last_name" required></div>
+                <div class="form-group"><label>Username</label><input type="text" name="username" required></div>
+                <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Password</label><input type="password" name="password" required></div>
+                <div class="form-group">
+                    <label>Assign to Administrator</label>
+                    <select name="assigned_admin_id" required>
+                        <option value="">-- Select Admin --</option>
+                        {% for admin in administrators %}
+                        <option value="{{ admin.id }}">{{ admin.user.get_full_name }} (@{{ admin.user.username }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex; gap:16px; margin-top:20px;">
+                <button type="button" onclick="toggleForm('execForm')" class="draft-btn" style="flex:1;">Cancel</button>
+                <button type="submit" class="cta-btn-v2" style="flex:2;">Onboard Executive</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Hackathon Executives</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="exec_mgt">
+                <input type="text" name="search_execs" placeholder="Search executives..." value="{{ search_execs }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('execForm')"><ion-icon name="person-add-outline"></ion-icon>
+                Add Executive</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">EXECUTIVE</th>
+                    <th style="padding:14px;">ASSIGNED ADMIN</th>
+                    <th style="padding:14px;">JOINED</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exec in executives_list %}
+                <tr
+                    style="border-bottom:1px solid #eee; {% if not exec.user.is_active %}background:#f8fafc; opacity:0.7;{% endif %}">
+                    <td style="padding:14px;">
+                        <strong>{{ exec.user.get_full_name }}</strong><br>
+                        <small style="color:#6b7280;">@{{ exec.user.username }}</small>
+                    </td>
+                    <td style="padding:14px;">
+                        {% if exec.assigned_admin %}
+                        <span style="font-weight:600;">{{ exec.assigned_admin.user.get_full_name }}</span><br>
+                        <small style="color:#2563eb;">Admin</small>
+                        {% else %}
+                        <span style="color:#9ca3af; font-style:italic;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">{{ exec.user.date_joined|date:"M d, Y" }}</td>
+                    <td style="padding:14px;">
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <a href="{% url 'resend_executive_credentials' exec.user.id %}" title="Resend credentials"
+                                style="color:#2563eb; font-size:22px;">
+                                <ion-icon name="mail-unread-outline"></ion-icon>
+                            </a>
+                            <a href="{% url 'toggle_user_status' exec.user.id %}"
+                                style="color:{% if exec.user.is_active %}#dc2626{% else %}#059669{% endif %}; font-size:22px;">
+                                <ion-icon
+                                    name="{% if exec.user.is_active %}ban-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:40px; color:#9ca3af;">No executives found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: PROBLEM STATEMENTS
+══════════════════════════════════════════ -->
+{% elif tab == 'problem_statements' %}
+<div id="psForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; color:#ea580c; font-weight:800;">Define Problem Statement</h2>
+            <button onclick="toggleForm('psForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="/events/create-problem-statement/" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="ps_id" value="">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Select Hackathon</label>
+                    <select name="hackathon" required>
+                        <option value="">-- Choose Event --</option>
+                        {% for h in hackathons %}
+                        <option value="{{ h.id }}">{{ h.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>Statement Title</label><input type="text" name="title" required
+                        placeholder="e.g. AI-driven Traffic Mgt"></div>
+                <div class="form-group">
+                    <label>Domain</label>
+                    <select name="domain">
+                        {% for choice in DOMAIN_CHOICES %}
+                        <option value="{{ choice }}">{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;"><label>Brief Description</label><textarea
+                    name="description" rows="4"></textarea></div>
+            <div class="form-group"><label>Detailed PDF Reference (Optional)</label><input type="file" name="pdf_file"
+                    accept=".pdf"></div>
+            <div style="display:flex; gap:16px; margin-top:28px;">
+                <button type="button" onclick="toggleForm('psForm')" class="draft-btn" style="flex:1;">Cancel</button>
+                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
+                    Draft</button>
+                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Publish
+                    Statement</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Problem Statements</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="problem_statements">
+                <input type="text" name="search_ps" placeholder="Search statements..." value="{{ search_ps }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('psForm')"><ion-icon name="document-text-outline"></ion-icon>
+                Define PS</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">TITLE</th>
+                    <th style="padding:14px;">EVENT</th>
+                    <th style="padding:14px;">DOMAIN</th>
+                    <th style="padding:14px;">STATUS</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ps in problem_statements %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:14px;"><strong>{{ ps.title }}</strong></td>
+                    <td style="padding:14px;">{{ ps.hackathon.name }}</td>
+                    <td style="padding:14px;"><span class="badge badge-purple">{{ ps.domain }}</span></td>
+                    <td style="padding:14px;">
+                        {% if ps.is_published %}
+                        <span class="badge" style="background:#ecfdf5; color:#059669;">Published</span>
+                        {% else %}
+                        <span class="badge" style="background:#fff7ed; color:#ea580c;">Draft</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        <a href="{% url 'edit_problem_statement' ps.id %}"
+                            style="color:#2563eb; font-size:20px; margin-right:10px;"><ion-icon
+                                name="create-outline"></ion-icon></a>
+                        <form action="{% url 'delete_problem_statement' ps.id %}" method="POST" style="display:inline;">
+                            {% csrf_token %}<button type="submit"
+                                style="color:#dc2626; font-size:20px; background:none; border:none; cursor:pointer;"><ion-icon
+                                    name="trash-outline"></ion-icon></button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">No statements found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: CREATIVES
+══════════════════════════════════════════ -->
+{% elif tab == 'creatives' %}
+<div id="creativeForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; color:#ea580c; font-weight:800;">Upload Creative Material</h2>
+            <button onclick="toggleForm('creativeForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="{% url 'create_creative_material' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="creative_id" value="">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Select Hackathon</label>
+                    <select name="hackathon_id" required>
+                        <option value="">-- Choose Event --</option>
+                        {% for h in hackathons %}
+                        <option value="{{ h.id }}">{{ h.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            <div class="form-group"><label>Asset Title</label><input type="text" name="title" required
+                        placeholder="e.g. Event Header Poster"></div>
+            </div>
+            <div class="form-group"><label>File Upload (Image/PDF)</label><input type="file" name="file" required></div>
+            <div class="form-group">
+                <label>Landing Page Placement</label>
+                <div class="placement-grid">
+                    {% for value, label in landing_section_choices %}
+                    <label class="placement-option">
+                        <input type="checkbox" name="landing_sections" value="{{ value }}">
+                        <div>
+                            <strong>{{ label }}</strong>
+                            <span>Show this creative asset in the {{ label|lower }} section.</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset should appear.</small>
+            </div>
+            <div style="display:flex; gap:16px; margin-top:28px;">
+                <button type="button" onclick="toggleForm('creativeForm')" class="draft-btn"
+                    style="flex:1;">Cancel</button>
+                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
+                    Draft</button>
+                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Upload &
+                    Publish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Creative Materials</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="creatives">
+                <input type="text" name="search_creatives" placeholder="Search assets..." value="{{ search_creatives }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('creativeForm')"><ion-icon name="images-outline"></ion-icon>
+                Upload Asset</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">ASSET</th>
+                    <th style="padding:14px;">EVENT</th>
+                    <th style="padding:14px;">PLACEMENT</th>
+                    <th style="padding:14px;">STATUS</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cr in creatives_list %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:14px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div
+                                style="width:40px; height:40px; background:#f1f5f9; border-radius:8px; overflow:hidden;">
+                                {% if cr.file %}
+                                <img src="{{ cr.file.url }}" style="width:100%; height:100%; object-fit:cover;">
+                                {% else %}
+                                <ion-icon name="image-outline" style="font-size:24px; color:#9ca3af;"></ion-icon>
+                                {% endif %}
+                            </div>
+                            <strong>{{ cr.title }}</strong>
+                        </div>
+                    </td>
+                    <td style="padding:14px;">{{ cr.hackathon.name }}</td>
+                    <td style="padding:14px; color:#6b7280; font-size:13px;">
+                        {% if cr.landing_sections %}
+                            {% for value, label in landing_section_choices %}
+                                {% if value in cr.landing_sections %}<span style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{ label }}</span>{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span style="color:#9ca3af;">Not selected</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        {% if cr.is_published %}
+                        <span class="badge" style="background:#ecfdf5; color:#059669;">Published</span>
+                        {% else %}
+                        <span class="badge" style="background:#fff7ed; color:#ea580c;">Draft</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        <a href="{{ cr.file.url }}" target="_blank"
+                            style="color:#059669; font-size:20px; margin-right:10px;"><ion-icon
+                                name="download-outline"></ion-icon></a>
+                        <form action="{% url 'delete_creative_material' cr.id %}" method="POST" style="display:inline;">
+                            {% csrf_token %}<button type="submit"
+                                style="color:#dc2626; font-size:20px; background:none; border:none; cursor:pointer;"
+                                onclick="return confirm('Delete permanently?')"><ion-icon
+                                    name="trash-outline"></ion-icon></button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">No assets uploaded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% elif tab == 'user_mgt' %}
+
+<!-- user onboarding form -->
+<div id="userForm" class="hidden-form">
+    <div class="form-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard Expert/Stakeholder</h2>
+            <button onclick="toggleForm('userForm')"
+                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
+                    name="close-circle-outline"></ion-icon></button>
+        </div>
+        <form action="/accounts/create-user/" method="POST" id="onboardUserForm">
+            {% csrf_token %}
+            <div class="form-section-title" style="margin-top:0;">Identity Details</div>
+            <div class="form-grid">
+                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
+                        placeholder="e.g. Alice" required></div>
+                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
+                        placeholder="e.g. Smith" required></div>
+                <div class="form-group"><label>Username</label><input type="text" name="username"
+                        placeholder="e.g. asmith_mentor" required></div>
+                <div class="form-group"><label>Email Address</label><input type="email" name="email"
+                        placeholder="e.g. alice@example.com" required></div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>Assigned Role</label>
+                    <select name="role" required>
+                        <option value="">-- Select Role --</option>
+                        {% for r in other_roles_list %}
+                        <option value="{{ r.id }}">{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Credentials (Password)</label>
+                    <input type="password" name="password" required placeholder="••••••••">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:16px; margin-top:28px;">
+                <button type="button" onclick="toggleForm('userForm')" class="draft-btn" style="flex:1;">Cancel</button>
+                <button type="submit" class="cta-btn-v2" style="flex:2;">Complete Onboarding</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="margin:0; font-size:20px; font-weight:800;">Expert & Stakeholder Management</h2>
+        <div style="display:flex; gap:12px;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="hidden" name="tab" value="user_mgt">
+                <select name="role_filter" onchange="this.form.submit()"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif; background:white;">
+                    <option value="">All Roles</option>
+                    <option value="Jury" {% if role_filter == 'Jury' %}selected{% endif %}>Jury Members</option>
+                    <option value="Mentor" {% if role_filter == 'Mentor' %}selected{% endif %}>Mentors</option>
+                    <option value="SPOC" {% if role_filter == 'SPOC' %}selected{% endif %}>Colleges (SPOC)</option>
+                    <option value="Expert" {% if role_filter == 'Expert' %}selected{% endif %}>Domain Experts</option>
+                    <option value="Team Lead" {% if role_filter == 'Team Lead' %}selected{% endif %}>Team Leads</option>
+                </select>
+                <input type="text" name="search_users" placeholder="Search by name/email..." value="{{ search_users }}"
+                    style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+                <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                        name="search-outline"></ion-icon></button>
+            </form>
+            <button class="create-btn" onclick="toggleForm('userForm')"
+                style="background:#ea580c; border:none; padding:0 18px; border-radius:10px; color:white; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                <ion-icon name="person-add-outline" style="font-size:18px;"></ion-icon> Add User
+            </button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">USER</th>
+                    <th style="padding:14px;">ROLE</th>
+                    <th style="padding:14px;">CONTACT</th>
+                    <th style="padding:14px;">STATUS</th>
+                    <th style="padding:14px;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users_list %}
+                <tr
+                    style="border-bottom:1px solid #eee; {% if not user.is_active %}background:#f8fafc; opacity:0.7;{% endif %}">
+                    <td style="padding:14px;">
+                        <strong>{{ user.get_full_name|default:user.username }}</strong><br>
+                        <small style="color:#6b7280; font-family:monospace;">@{{ user.username }}</small>
+                    </td>
+                    <td style="padding:14px;"><span class="badge badge-purple">{{ user.role.name }}</span></td>
+                    <td style="padding:14px;">{{ user.email }}</td>
+                    <td style="padding:14px;">
+                        {% if user.is_active %}
+                        <span class="badge" style="background:#ecfdf5; color:#059669;">Active</span>
+                        {% else %}
+                        <span class="badge" style="background:#fef2f2; color:#dc2626;">Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        <a href="{% url 'toggle_user_status' user.id %}"
+                            style="color:{% if user.is_active %}#dc2626{% else %}#059669{% endif %}; font-size:22px;">
+                            <ion-icon
+                                name="{% if user.is_active %}ban-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">No users found for this
+                        criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif tab == 'evaluator_payouts' %}
+<div class="stat-card">
+    <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; gap:16px; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0; font-size:20px; font-weight:800;">Evaluator Payout Details</h2>
+            <p style="margin:6px 0 0; color:#6b7280; font-size:13px; font-weight:600;">
+                Jury and expert bank details submitted from their dashboard profile pages.
+            </p>
+        </div>
+        <form method="GET" style="display:flex; gap:8px;">
+            <input type="hidden" name="tab" value="evaluator_payouts">
+            <input type="text" name="search_evaluators" placeholder="Search by name, email, bank..."
+                value="{{ search_evaluators }}"
+                style="padding:10px; border:1px solid #ddd; border-radius:8px; font-family:'Outfit',sans-serif;">
+            <button type="submit" class="create-btn" style="background:#2563eb;"><ion-icon
+                    name="search-outline"></ion-icon></button>
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#fffbf7;">
+                    <th style="padding:14px;">EVALUATOR</th>
+                    <th style="padding:14px;">ROLE</th>
+                    <th style="padding:14px;">BANK DETAILS</th>
+                    <th style="padding:14px;">PROOF</th>
+                    <th style="padding:14px;">UPDATED</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payout in bank_profiles %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:14px;">
+                        <strong>{{ payout.user.get_full_name|default:payout.user.username }}</strong><br>
+                        <small style="color:#6b7280;">{{ payout.user.email }}</small>
+                    </td>
+                    <td style="padding:14px;">
+                        <span class="badge badge-amber">{{ payout.user.role.name|default:"Evaluator" }}</span>
+                    </td>
+                    <td style="padding:14px;">
+                        {% if payout.bank_account_holder or payout.bank_name or payout.account_number or payout.upi_id
+                        %}
+                        <div style="font-size:13px; color:#374151; line-height:1.6;">
+                            <strong>{{ payout.bank_account_holder|default:"-" }}</strong><br>
+                            {{ payout.bank_name|default:"-" }}{% if payout.branch_name %}, {{ payout.branch_name }}{%
+                            endif %}<br>
+                            A/C: {{ payout.account_number|default:"-" }}<br>
+                            IFSC: {{ payout.ifsc_code|default:"-" }}<br>
+                            UPI: {{ payout.upi_id|default:"-" }}
+                            {% if payout.payment_notes %}
+                            <br><span style="color:#6b7280;">{{ payout.payment_notes }}</span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span style="color:#9ca3af; font-weight:600;">Not submitted yet</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px;">
+                        {% if payout.cancelled_cheque %}
+                        <a href="{{ payout.cancelled_cheque.url }}" target="_blank"
+                            style="color:#059669; font-weight:800; text-decoration:none;">View file</a>
+                        {% else %}
+                        <span style="color:#9ca3af; font-weight:600;">No file</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px; color:#6b7280; font-weight:600;">
+                        {{ payout.updated_at|date:"M d, Y g:i A" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">
+                        No evaluator payout details submitted yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Toggle a create/upload form ──
+    function toggleForm(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const isHidden = window.getComputedStyle(form).display === 'none';
+
+        document.querySelectorAll('.hidden-form').forEach(f => f.style.display = 'none');
+
+        if (isHidden) {
+            form.style.display = 'block';
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // ── Dynamic Marking Parameters ──
+    function updateMarkingParams(inputElem, roundNum) {
+        const count = parseInt(inputElem.value) || 0;
+        const container = document.getElementById(`round_${roundNum}_params_container`);
+        if (!container) return;
+
+        container.innerHTML = '';
+        for (let j = 1; j <= count; j++) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.style.marginBottom = '0';
+            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
+                             <input type="text" name="round_${roundNum}_param_${j}_name" required placeholder="e.g. Innovation">`;
+            container.appendChild(div);
+        }
+    }
+
+
+    // ── Monitor number of rounds and show/hide corresponding date fields ──
+    function initRoundsLogic() {
+        const numRoundsInput = document.querySelector('input[name="number_of_rounds"]');
+        if (!numRoundsInput) return;
+
+        const updateRounds = () => {
+            const count = parseInt(numRoundsInput.value) || 1;
+            document.querySelectorAll('.round-row').forEach((row, idx) => {
+                if (idx < count) {
+                    row.style.display = 'grid';
+                    row.querySelectorAll('input').forEach(i => i.required = true);
+                } else {
+                    row.style.display = 'none';
+                    row.querySelectorAll('input').forEach(i => i.required = false);
+                }
+            });
+        };
+
+        numRoundsInput.addEventListener('input', updateRounds);
+        updateRounds();
+    }
+
+    document.addEventListener('DOMContentLoaded', initRoundsLogic);
+
+    // ── Toggle inline edit panel below a row ──
+    function toggleEditPanel(panelId) {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        const isOpen = panel.classList.contains('open');
+
+        document.querySelectorAll('.edit-panel.open').forEach(p => {
+            if (p.id !== panelId) p.classList.remove('open');
+        });
+
+        if (isOpen) {
+            panel.classList.remove('open');
+        } else {
+            panel.classList.add('open');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    // ── Populate PS / Creative edit form ──
+    function populateForm(formId, data) {
+        const formContainer = document.getElementById(formId);
+        const form = formContainer.querySelector('form');
+
+        ['ps_id', 'creative_id'].forEach(key => {
+            const el = form.querySelector(`[name="${key}"]`);
+            if (el && !data[key]) el.value = '';
+        });
+
+        formContainer.style.display = 'block';
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        for (const [key, value] of Object.entries(data)) {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field && field.type !== 'file') field.value = value;
+        }
+
+        const title = formContainer.querySelector('h2');
+        if (title) {
+            if (data.ps_id) title.innerText = 'Update Problem Statement';
+            else if (data.creative_id) title.innerText = 'Update Creative Material';
+            else {
+                if (formId === 'psForm') title.innerText = 'Define Problem Statement';
+                if (formId === 'creativeForm') title.innerText = 'Upload Creative Material';
+            }
+        }
+    }
+
+    // ── Auto-select permissions based on admin type ──
+    function autoSelectPermissions(adminType) {
+        const featureMap = {
+            'spoc': ['SPOC & College Management'],
+            'team': ['Team & Event Monitoring'],
+            'problem': ['Problem Statement & Content Management'],
+            'venue': ['Venue & Logistics Management'],
+            'finance': ['Financial Management'],
+            'jury': ['Jury Onboarding & Management', 'Evaluation Coordination'],
+            'support': ['Feedback & Support Management', 'Accommodation & Health Support Management'],
+            'media': ['Social Media & Creative Management', 'Media & Sponsorship Management', 'Announcement & Communication System'],
+            'results': ['Reporting & Result Management', 'Awards & Certification Management']
+        };
+
+        if (!adminType) return; // Custom selection
+
+        const permsToSelect = featureMap[adminType] || [];
+        const checkboxes = document.querySelectorAll('#onboardAdminForm input[name="permissions[]"]');
+
+        checkboxes.forEach(cb => {
+            if (permsToSelect.includes(cb.getAttribute('data-perm-name'))) {
+                cb.checked = true;
+            } else {
+                cb.checked = false;
+            }
+        });
+    }
+
+    // ── Hackathon draft helper ──
+    function saveHackathonAsDraft() {
+        const sel = document.getElementById('eventStatusSelect');
+        if (sel) sel.value = 'Draft';
+        const form = document.querySelector('#hackathonForm form');
+        if (form) form.submit();
+    }
+
+    // ── Dashboard charts (overview only) ──
+    {% if tab == 'overview' %}
+    document.addEventListener('DOMContentLoaded', () => {
+        const statusData = {{ status_chart_data|safe }};
+    const domainData = {{ domain_chart_data|safe }};
+
+    new Chart(document.getElementById('statusChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: statusData.labels,
+            datasets: [{ data: statusData.data, backgroundColor: ['#ea580c', '#2563eb', '#7c3aed', '#059669', '#fcd34d'], borderWidth: 0 }]
+        },
+        options: { cutout: '65%', plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('domainChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: domainData.labels,
+            datasets: [{ data: domainData.data, backgroundColor: '#6366f1', borderRadius: 8 }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } } }
+    });
+    });
+    {% endif %}
+    {% if tab == 'overview' or tab == 'analytics' %}
+    document.addEventListener('DOMContentLoaded', () => {
+        const statusData = {{ status_chart_data|safe }};
+    const registrationData = {{ registration_chart_data|safe }};
+    const roleData = {{ role_chart_data|safe }};
+    const growthData = {{ growth_chart_data|safe }};
+
+    const domainData = {{ domain_chart_data|safe }};
+
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    const resetCanvas = (id) => {
+        const oldCanvas = document.getElementById(id);
+        if (!oldCanvas) return null;
+        const newCanvas = oldCanvas.cloneNode(false);
+        oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
+        return newCanvas.getContext('2d');
+    };
+
+    const gradientFor = (ctx, top, bottom) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, top);
+        gradient.addColorStop(1, bottom);
+        return gradient;
+    };
+
+    const statusCtx = resetCanvas('statusChart');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusData.labels,
+                datasets: [{
+                    data: statusData.data,
+                    backgroundColor: ['#2563eb', '#f97316', '#14b8a6', '#8b5cf6', '#f59e0b'],
+                    borderColor: '#ffffff',
+                    borderWidth: 6,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                cutout: '72%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, boxWidth: 10, padding: 18, font: { weight: '700' } }
+                    }
+                }
+            }
+        });
+    }
+
+    const domainCtx = resetCanvas('domainChart');
+    if (domainCtx && domainData.labels.length) {
+        new Chart(domainCtx, {
+            type: 'bar',
+            data: {
+                labels: domainData.labels,
+                datasets: [{
+                    data: domainData.data,
+                    backgroundColor: gradientFor(domainCtx, 'rgba(37,99,235,0.92)', 'rgba(99,102,241,0.55)'),
+                    borderRadius: 16,
+                    borderSkipped: false,
+                    maxBarThickness: 42
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.14)' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false }, ticks: { font: { weight: '700' } } }
+                }
+            }
+        });
+    }
+
+    const pipelineCtx = resetCanvas('pipelineChart');
+    if (pipelineCtx) {
+        new Chart(pipelineCtx, {
+            type: 'bar',
+            data: {
+                labels: registrationData.labels,
+                datasets: [{
+                    data: registrationData.data,
+                    backgroundColor: ['rgba(59,130,246,0.82)', 'rgba(16,185,129,0.82)', 'rgba(239,68,68,0.76)', 'rgba(249,115,22,0.78)'],
+                    borderRadius: 14,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.14)' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false }, ticks: { font: { weight: '700' } } }
+                }
+            }
+        });
+    }
+
+    const roleCtx = resetCanvas('roleChart');
+    if (roleCtx) {
+        new Chart(roleCtx, {
+            type: 'polarArea',
+            data: {
+                labels: roleData.labels,
+                datasets: [{
+                    data: roleData.data,
+                    backgroundColor: ['rgba(37,99,235,0.75)', 'rgba(249,115,22,0.75)', 'rgba(20,184,166,0.75)', 'rgba(139,92,246,0.75)', 'rgba(245,158,11,0.75)', 'rgba(236,72,153,0.72)', 'rgba(34,197,94,0.72)'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                scales: { r: { grid: { color: 'rgba(148,163,184,.16)' }, ticks: { display: false } } },
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10, padding: 16 } } }
+            }
+        });
+    }
+
+    const growthCtx = resetCanvas('growthChart');
+    if (growthCtx) {
+        new Chart(growthCtx, {
+            type: 'line',
+            data: {
+                labels: growthData.labels,
+                datasets: [{
+                    data: growthData.data,
+                    borderColor: '#f97316',
+                    backgroundColor: gradientFor(growthCtx, 'rgba(249,115,22,0.28)', 'rgba(249,115,22,0.02)'),
+                    fill: true,
+                    tension: 0.38,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#f97316',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.14)' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false }, ticks: { font: { weight: '700' } } }
+                }
+            }
+        });
+    }
+    });
+    {% endif %}
+</script>
+{% endblock %}

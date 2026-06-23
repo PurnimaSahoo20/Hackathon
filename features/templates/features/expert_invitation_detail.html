@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Expert Application — {{ invite.email }} — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:28px;margin-bottom:20px;}
+  .section-label{font-size:11px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #ede9fe;}
+  .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+  .info-item label{font-size:12px;font-weight:700;color:#9ca3af;display:block;margin-bottom:3px;}
+  .info-item span{font-size:14px;color:#111827;font-weight:600;}
+  .badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block;}
+  .b-invited{background:#eff6ff;color:#2563eb;} .b-pending{background:#fff7ed;color:#d97706;}
+  .b-approved{background:#ecfdf5;color:#059669;} .b-rejected{background:#fef2f2;color:#dc2626;}
+  .b-suspended{background:#f3f4f6;color:#6b7280;}
+  .btn{background:#7c3aed;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-outline{background:#fff;color:#7c3aed;border:2px solid #7c3aed;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-danger{background:#fef2f2;color:#dc2626;border:2px solid #fee2e2;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-success{background:#ecfdf5;color:#059669;border:2px solid #d1fae5;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,.2);}
+  .fg{margin-bottom:14px;}
+  .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+  .fg input{width:100%;border:1px solid #e5e7eb;border-radius:9px;padding:10px 13px;font-family:'Outfit',sans-serif;}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:13px;color:#6b7280;">
+  <a href="{% url 'jury_management' %}?sub=invitations" style="color:#7c3aed;font-weight:700;text-decoration:none;">Expert Management</a>
+  <ion-icon name="chevron-forward-outline"></ion-icon>
+  <span>Application — {{ invite.email }}</span>
+</div>
+
+<!-- Header -->
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+  <div>
+    <h1 style="font-size:24px;font-weight:900;margin:0 0 6px;">{{ invite.get_full_name }}</h1>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="badge b-{{ invite.status }}">{{ invite.get_status_display }}</span>
+      <span style="color:#6b7280;font-size:13px;">{{ invite.email }}</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if invite.status != 'approved' %}
+    <a href="{% url 'edit_expert_invitation' invite.id %}" class="btn-outline"><ion-icon name="create-outline"></ion-icon> Edit</a>
+    {% endif %}
+    {% if invite.status == 'pending' %}
+    <form method="POST" action="{% url 'approve_expert_invitation' invite.id %}" style="display:inline;">
+      {% csrf_token %}<button type="submit" class="btn-success"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+    </form>
+    <button class="btn-danger" onclick="document.getElementById('rejectModal').classList.add('open')"><ion-icon name="close-circle-outline"></ion-icon> Reject</button>
+    {% endif %}
+    {% if invite.status == 'approved' and invite.created_user %}
+    <a href="{% url 'view_expert_member' invite.created_user.expert_profile.id %}" class="btn"><ion-icon name="person-outline"></ion-icon> View Profile</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Personal Details -->
+<div class="detail-card">
+  <div class="section-label">Personal Information</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Full Name</label><span>{{ invite.first_name }} {{ invite.last_name }}</span></div>
+    <div class="info-item"><label>Email</label><span>{{ invite.email }}</span></div>
+    <div class="info-item"><label>Phone</label><span>{{ invite.phone_number|default:"—" }}</span></div>
+    <div class="info-item"><label>Gender</label><span>{{ invite.gender|default:"—" }}</span></div>
+    <div class="info-item"><label>Date of Birth</label><span>{{ invite.date_of_birth|default:"—" }}</span></div>
+    <div class="info-item"><label>Hackathon</label><span>{{ invite.hackathon.name|default:"—" }}</span></div>
+  </div>
+</div>
+
+<!-- Professional Details -->
+<div class="detail-card">
+  <div class="section-label">Professional Details</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Organization</label><span>{{ invite.organization|default:"—" }}</span></div>
+    <div class="info-item"><label>Designation</label><span>{{ invite.designation|default:"—" }}</span></div>
+    <div class="info-item"><label>Domain / Expertise</label><span>{{ invite.domain|default:"—" }}</span></div>
+    <div class="info-item"><label>LinkedIn</label>
+      {% if invite.linkedin_url %}<span><a href="{{ invite.linkedin_url }}" target="_blank" style="color:#7c3aed;">View Profile</a></span>
+      {% else %}<span>—</span>{% endif %}
+    </div>
+  </div>
+  {% if invite.bio %}
+  <div style="margin-top:16px;">
+    <div class="info-item"><label>Bio</label><span style="white-space:pre-line;line-height:1.6;">{{ invite.bio }}</span></div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Documents -->
+<div class="detail-card">
+  <div class="section-label">Documents</div>
+  <div class="info-grid">
+    <div class="info-item"><label>ID Proof</label>
+      {% if invite.id_proof %}<span><a href="{{ invite.id_proof.url }}" target="_blank" class="btn-outline" style="font-size:12px;padding:6px 12px;"><ion-icon name="document-outline"></ion-icon> View</a></span>
+      {% else %}<span style="color:#9ca3af;">Not uploaded</span>{% endif %}
+    </div>
+    <div class="info-item"><label>Photo</label>
+      {% if invite.photo %}<span><img src="{{ invite.photo.url }}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;"></span>
+      {% else %}<span style="color:#9ca3af;">Not uploaded</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="detail-card">
+  <div class="section-label">Timeline</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Invited At</label><span>{{ invite.invited_at|date:"M d, Y H:i" }}</span></div>
+    <div class="info-item"><label>Submitted At</label><span>{{ invite.submitted_at|date:"M d, Y H:i"|default:"Not yet submitted" }}</span></div>
+    <div class="info-item"><label>Invited By</label><span>{{ invite.invited_by.get_full_name|default:invite.invited_by.username|default:"—" }}</span></div>
+    {% if invite.approved_at %}<div class="info-item"><label>Approved At</label><span>{{ invite.approved_at|date:"M d, Y H:i" }}</span></div>{% endif %}
+    {% if invite.rejection_reason %}<div class="info-item" style="grid-column:1/-1;"><label>Rejection Reason</label><span style="color:#dc2626;">{{ invite.rejection_reason }}</span></div>{% endif %}
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box">
+    <h3 style="margin:0 0 8px;">Reject Application</h3>
+    <p style="color:#6b7280;font-size:14px;margin-bottom:16px;">Rejecting expert application for <strong>{{ invite.email }}</strong></p>
+    <form method="POST" action="{% url 'reject_expert_invitation' invite.id %}">
+      {% csrf_token %}
+      <div class="fg"><label>Reason</label><input type="text" name="rejection_reason" required placeholder="Reason for rejection..."></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button type="submit" class="btn-danger" style="padding:9px 18px;">Confirm Reject</button>
+        <button type="button" onclick="document.getElementById('rejectModal').classList.remove('open')" class="btn-outline">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

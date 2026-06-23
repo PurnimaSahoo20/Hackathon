@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mentor Login — HackNexus</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 50%,#f0fdf4 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.wrapper{display:grid;grid-template-columns:1fr 1fr;max-width:960px;width:100%;min-height:600px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(5,150,105,0.18),0 8px 24px rgba(0,0,0,0.06)}
+.left{background:linear-gradient(160deg,#059669 0%,#047857 60%,#065f46 100%);padding:56px 48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.left::before{content:'';position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,0.06)}
+.brand{font-size:26px;font-weight:900;color:#fff}
+.brand span{color:#a7f3d0}
+.left-body{position:relative;z-index:1;margin-top:48px}
+.left-body h2{font-size:34px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:16px}
+.left-body p{color:rgba(255,255,255,0.8);font-size:15px;line-height:1.6}
+.left-features{margin-top:32px;display:flex;flex-direction:column;gap:12px}
+.feat{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.9);font-size:14px;font-weight:500}
+.feat-dot{width:8px;height:8px;border-radius:50%;background:#a7f3d0;flex-shrink:0}
+.left-foot{font-size:12px;color:rgba(255,255,255,0.5);position:relative;z-index:1}
+.right{background:#fff;padding:56px 48px;display:flex;flex-direction:column;justify-content:center}
+.role-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);color:#059669;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;margin-bottom:24px}
+.form-title{font-size:28px;font-weight:800;color:#111827;margin-bottom:6px;letter-spacing:-0.03em}
+.form-sub{font-size:14px;color:#6b7280;margin-bottom:36px}
+.field{margin-bottom:20px}
+.field label{display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+.field input{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:'Outfit',sans-serif;color:#111827;background:#f9fafb;transition:all 0.2s;outline:none}
+.field input:focus{border-color:#059669;background:#fff;box-shadow:0 0 0 3px rgba(5,150,105,0.08)}
+.btn{width:100%;padding:14px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s;margin-top:8px}
+.btn:hover{background:#047857;transform:translateY(-1px);box-shadow:0 8px 20px rgba(5,150,105,0.3)}
+.msg{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:16px}
+.msg-error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+.msg-info{background:#f0fdf4;border:1px solid #bbf7d0;color:#059669}
+@media(max-width:640px){.wrapper{grid-template-columns:1fr}.left{display:none}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="left">
+        <div class="brand">Hack<span>Nexus</span></div>
+        <div class="left-body">
+            <h2>Mentor Portal</h2>
+            <p>Guide teams to excellence. Access your team's progress, submissions, and problem statements.</p>
+            <div class="left-features">
+                <div class="feat"><div class="feat-dot"></div>View assigned team members</div>
+                <div class="feat"><div class="feat-dot"></div>Review team submissions & solutions</div>
+                <div class="feat"><div class="feat-dot"></div>View problem statements</div>
+                <div class="feat"><div class="feat-dot"></div>Communicate with team leads</div>
+            </div>
+        </div>
+        <div class="left-foot">© 2025 HackNexus. All rights reserved.</div>
+    </div>
+    <div class="right">
+        <div class="role-badge">🎓 Mentor Access</div>
+        <div class="form-title">Mentor Login</div>
+        <div class="form-sub">Sign in to your mentor dashboard</div>
+        {% for message in messages %}
+        <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-info{% endif %}">{{ message }}</div>
+        {% endfor %}
+        <form method="POST">{% csrf_token %}
+            <div class="field"><label>Email or Username</label><input type="text" name="identifier" value="{{ identifier|default:'' }}" placeholder="your@email.com" required autofocus></div>
+            <div class="field"><label>Password</label><input type="password" name="password" placeholder="Enter your password" required></div>
+            <button type="submit" class="btn">Continue →</button>
+        </form>
+    </div>
+</div>
+</body></html>

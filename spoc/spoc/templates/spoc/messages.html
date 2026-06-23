@@ -1,0 +1,29 @@
+{% extends "spoc/base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><div class="page-title">Messages</div><div class="page-subtitle">Direct conversations with teams and members</div></div>
+</div>
+<div class="table-wrap" style="padding:24px">
+    {% if conv_users %}
+    <div style="display:flex;flex-direction:column;gap:2px">
+        {% for u in conv_users %}
+        <a href="{% url 'spoc_conversation' u.id %}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;border:1px solid transparent;text-decoration:none;transition:all 0.18s" onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+            <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,0.12);color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">{{ u.first_name.0|upper|default:u.username.0|upper }}</div>
+            <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--text)">{{ u.get_full_name|default:u.username }}</div>
+                <div style="font-size:12px;color:var(--muted)">{{ u.email }}</div>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">→</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:48px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:12px;opacity:0.4">💬</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No conversations yet</div>
+        <div style="font-size:13px">Messages with team leads will appear here once teams are registered.</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

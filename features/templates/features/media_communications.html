@@ -1,0 +1,545 @@
+{% extends 'base.html' %}
+
+{% block title %}Social Media & Communication - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:14px;margin-bottom:20px;width:fit-content;flex-wrap:wrap;}
+    .sub-tab{padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;}
+    .sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+    .inner-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+    .inner-tab{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none;color:#64748b;background:#f8fafc;border:1px solid #e5e7eb;}
+    .inner-tab.active{background:#fff7ed;color:#c2410c;border-color:#fdba74;}
+    .card{background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:24px;margin-bottom:20px;}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+    .fg input,.fg select{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;background:#fffbf7;}
+    td{padding:12px 14px;border-bottom:1px solid #f3f4f6;vertical-align:top;}
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;}
+    .btn-lite{background:#fff;color:#ea580c;border:1px solid #ea580c;border-radius:9px;padding:8px 14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;}
+    .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .pub{background:#ecfdf5;color:#059669;}.draft{background:#fff7ed;color:#d97706;}.susp{background:#fef2f2;color:#dc2626;}
+    .detail-grid{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:20px;align-items:start;}
+    .detail-grid video,.detail-grid img{width:100%;border-radius:14px;border:1px solid #e5e7eb;background:#111827;max-height:260px;object-fit:cover;}
+    .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .meta-item span:first-child{display:block;font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px;}
+    .meta-item span:last-child{display:block;font-size:13px;font-weight:600;color:#111827;line-height:1.5;}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .placement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:8px;}
+    .placement-option{display:flex;align-items:flex-start;gap:10px;padding:14px 15px;border:1px solid #fcd34d;border-radius:14px;background:#fff;cursor:pointer;transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,0.03);}
+    .placement-option:hover{border-color:#ea580c;transform:translateY(-1px);box-shadow:0 8px 18px rgba(234,88,12,0.08);}
+    .placement-option input{margin-top:3px;accent-color:#ea580c;transform:scale(1.08);}
+    .placement-option strong{display:block;font-size:14px;color:#111827;font-weight:800;line-height:1.2;}
+    .placement-option span{display:block;font-size:12px;color:#6b7280;margin-top:3px;line-height:1.35;}
+    .placement-option:has(input:checked){border-color:#ea580c;background:linear-gradient(180deg,#fff7ed,#fff);box-shadow:0 10px 22px rgba(234,88,12,0.12);}
+    .post-type-toggle{
+        display:inline-grid;
+        grid-template-columns:repeat(2,minmax(120px,1fr));
+        gap:0;
+        padding:6px;
+        background:#f8fafc;
+        border:1px solid #e5e7eb;
+        border-radius:16px;
+        box-shadow:inset 0 1px 2px rgba(15,23,42,.03);
+    }
+    .post-type-option{
+        position:relative;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        min-height:44px;
+        border-radius:12px;
+        cursor:pointer;
+        user-select:none;
+        transition:all .18s ease;
+        color:#64748b;
+        font-size:13px;
+        font-weight:800;
+        letter-spacing:.01em;
+        border:1px solid transparent;
+        padding:0 14px;
+    }
+    .post-type-option input{
+        position:absolute;
+        inset:0;
+        opacity:0;
+        pointer-events:none;
+    }
+    .post-type-option span{
+        position:relative;
+        z-index:1;
+    }
+    .post-type-option:has(input:checked){
+        background:linear-gradient(135deg,#fff7ed,#ffffff);
+        color:#ea580c;
+        border-color:#fdba74;
+        box-shadow:0 10px 20px rgba(234,88,12,.12);
+    }
+    .post-type-option:hover{
+        color:#ea580c;
+        background:rgba(255,247,237,.6);
+    }
+    @media (max-width:900px){.detail-grid{grid-template-columns:1fr;}.meta-grid{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
+    <div>
+        <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Social Media & Communication</h1>
+        <p style="color:#6b7280;margin:0;">Manage creatives, testimonials, voice of inspiration items, news, gallery photos, and social feed links for each hackathon.</p>
+    </div>
+    <form method="GET">
+        <input type="hidden" name="focus" value="{{ focus }}">
+        {% if focus == 'testimonials' %}<input type="hidden" name="testimonial_kind" value="{{ testimonial_kind }}">{% endif %}
+        <select name="hackathon" onchange="this.form.submit()" style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;">
+            <option value="">Select hackathon</option>
+            {% for h in hackathons %}
+            <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="sub-tabs">
+    <a href="?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'creative-elements' %}active{% endif %}">Creative Elements</a>
+    <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind|default:'jury' }}" class="sub-tab {% if focus == 'testimonials' %}active{% endif %}">Testimonials</a>
+    <a href="?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'voice-inspiration' %}active{% endif %}">Voice of Inspiration</a>
+    <a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'news-press-release' %}active{% endif %}">News & Press Release</a>
+    <a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'media-gallery' %}active{% endif %}">Media Gallery</a>
+    <a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'feeds' %}active{% endif %}">Feeds</a>
+</div>
+
+{% if focus == 'creative-elements' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_creative %}Edit{% else %}Upload{% endif %} Creative Element</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="focus" value="creative-elements">
+        <input type="hidden" name="asset_kind" value="creative">
+        <input type="hidden" name="creative_id" value="{% if edit_creative %}{{ edit_creative.asset.id }}{% endif %}">
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="Creative element title" value="{% if edit_creative %}{{ edit_creative.display_title }}{% endif %}" required></div>
+            <div class="fg"><input type="file" name="file" {% if not edit_creative %}required{% endif %}></div>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_creative and value in edit_creative.asset.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Show this creative element in the {{ label|lower }} section.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Pick one or more places where this asset should appear.</small>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            {% if edit_creative %}<a href="?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% else %}
+    <p style="color:#9ca3af;">Choose a hackathon to manage creative elements.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Creative Element Library</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for creative in creative_items %}
+            <tr>
+                <td>{{ creative.display_title }}</td>
+                <td>{{ creative.asset.uploaded_at|date:"d M Y" }}</td>
+                <td>{% if creative.asset.is_suspended %}<span class="badge susp">Suspended</span>{% elif creative.asset.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="{{ creative.asset.file.url }}" target="_blank" class="btn-lite">Open</a>
+                    <a href="?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_creative={{ creative.asset.id }}" class="btn-lite">Edit</a>
+                    <form method="POST" action="{% url 'toggle_creative_asset_status' creative.asset.id %}">{% csrf_token %}<input type="hidden" name="focus" value="creative-elements"><button class="btn-lite" type="submit">{% if creative.asset.is_suspended %}Activate{% else %}Suspend{% endif %}</button></form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No creative elements uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif focus == 'testimonials' %}
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+            <h2 style="margin:0 0 6px;font-size:18px;font-weight:800;">Testimonials</h2>
+            <p style="margin:0;color:#6b7280;">Manage jury, expert, team member, and VIP testimonials in separate lists.</p>
+        </div>
+        <div style="padding:8px 12px;border-radius:999px;background:#fff7ed;color:#c2410c;font-weight:800;font-size:12px;">{{ total_testimonials }} total</div>
+    </div>
+    <div class="inner-tabs">
+        <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=jury" class="inner-tab {% if testimonial_kind == 'jury' %}active{% endif %}">Jury</a>
+        <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=expert" class="inner-tab {% if testimonial_kind == 'expert' %}active{% endif %}">Expert</a>
+        <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=team" class="inner-tab {% if testimonial_kind == 'team' %}active{% endif %}">Team Members</a>
+        <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=vip" class="inner-tab {% if testimonial_kind == 'vip' %}active{% endif %}">VIP</a>
+    </div>
+
+    <h3 style="margin:18px 0 14px;font-size:16px;font-weight:800;">{% if edit_testimonial %}Edit{% else %}Upload{% endif %} {{ testimonial_kind|title }} Testimonial</h3>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="focus" value="testimonials">
+        <input type="hidden" name="asset_kind" value="testimonial">
+        <input type="hidden" name="testimonial_kind" value="{{ testimonial_kind }}">
+        <input type="hidden" name="creative_id" value="{% if edit_testimonial %}{{ edit_testimonial.asset.id }}{% endif %}">
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="{{ testimonial_kind|title }} testimonial title" value="{% if edit_testimonial %}{{ edit_testimonial.display_title }}{% endif %}" required></div>
+            <div class="fg"><input type="file" name="file" accept="video/*" {% if not edit_testimonial %}required{% endif %}></div>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_testimonial and value in edit_testimonial.asset.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Show this testimonial in the {{ label|lower }} section.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Choose one or more places where this testimonial should appear.</small>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            {% if edit_testimonial %}<a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% else %}
+    <p style="color:#9ca3af;">Choose a hackathon to upload testimonials.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3 style="margin:0 0 16px;font-size:18px;font-weight:800;">{{ testimonial_kind|title }} Testimonial List</h3>
+    <table>
+        <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for item in current_testimonials %}
+            <tr>
+                <td>{{ item.display_title }}</td>
+                <td>{{ item.asset.uploaded_at|date:"d M Y" }}</td>
+                <td>{% if item.asset.is_suspended %}<span class="badge susp">Suspended</span>{% elif item.asset.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}&testimonial={{ item.asset.id }}" class="btn-lite">View</a>
+                    <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}&edit={{ item.asset.id }}" class="btn-lite">Edit</a>
+                    <a href="{{ item.asset.file.url }}" download class="btn-lite">Download</a>
+                    <form method="POST" action="{% url 'toggle_creative_asset_status' item.asset.id %}">{% csrf_token %}<input type="hidden" name="focus" value="testimonials"><input type="hidden" name="testimonial_kind" value="{{ testimonial_kind }}"><button class="btn-lite" type="submit">{% if item.asset.is_suspended %}Activate{% else %}Suspend{% endif %}</button></form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No {{ testimonial_kind }} testimonials available yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if selected_testimonial %}
+<div class="card">
+    <h3 style="margin:0 0 16px;font-size:18px;font-weight:800;">Testimonial Details</h3>
+    <div class="detail-grid">
+        <div><video controls preload="metadata"><source src="{{ selected_testimonial.asset.file.url }}">Your browser does not support the video tag.</video></div>
+        <div>
+            <div class="meta-grid">
+                <div class="meta-item"><span>Title</span><span>{{ selected_testimonial.display_title }}</span></div>
+                <div class="meta-item"><span>Uploaded At</span><span>{{ selected_testimonial.asset.uploaded_at|date:"d M Y, h:i A" }}</span></div>
+                <div class="meta-item"><span>Status</span><span>{% if selected_testimonial.asset.is_suspended %}Suspended{% elif selected_testimonial.asset.is_published %}Published{% else %}Draft{% endif %}</span></div>
+                <div class="meta-item"><span>Hackathon</span><span>{{ active_hackathon.name|default:"—" }}</span></div>
+                <div class="meta-item"><span>Contributor</span><span>{% if selected_testimonial.user %}{{ selected_testimonial.user.get_full_name|default:selected_testimonial.user.username }}{% else %}Direct Upload{% endif %}</span></div>
+                <div class="meta-item"><span>Email / Context</span><span>{% if selected_testimonial.user %}{{ selected_testimonial.user.email }}{% else %}Managed by social media admin{% endif %}</span></div>
+            </div>
+            <div class="actions" style="margin-top:18px;">
+                <a href="{{ selected_testimonial.asset.file.url }}" target="_blank" class="btn-lite">Open Video</a>
+                <a href="{{ selected_testimonial.asset.file.url }}" download class="btn">Download Video</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif focus == 'news-press-release' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_news %}Edit{% else %}Upload{% endif %} News & Announcement</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_news_press_item' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="item_id" value="{% if edit_news %}{{ edit_news.item.id }}{% endif %}">
+        <div class="fg" style="margin-bottom:16px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Post Type</label>
+            <div class="post-type-toggle">
+                <label class="post-type-option" for="news_kind_news">
+                    <input type="radio" id="news_kind_news" name="news_kind" value="news" {% if edit_news_kind != 'announcement' %}checked{% endif %}>
+                    <span>News</span>
+                </label>
+                <label class="post-type-option" for="news_kind_announcement">
+                    <input type="radio" id="news_kind_announcement" name="news_kind" value="announcement" {% if edit_news_kind == 'announcement' %}checked{% endif %}>
+                    <span>Announcement</span>
+                </label>
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="News or announcement title" value="{% if edit_news %}{{ edit_news.display_title }}{% endif %}" required></div>
+            <div class="fg"><input type="url" name="external_url" placeholder="External URL (optional)" value="{% if edit_news %}{{ edit_news.item.external_url }}{% endif %}"></div>
+            <div class="fg"><input type="file" name="file"></div>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_news and value in edit_news.item.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Display this update in the {{ label|lower }} section.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Select the public landing sections that should show this update.</small>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">{% if edit_news_kind == 'announcement' %}Publish Announcement{% else %}Publish News{% endif %}</button>
+            {% if edit_news %}<a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">News & Announcement List</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for news in news_items %}
+            <tr>
+                <td>{{ news.display_title }}</td>
+                <td>{{ news.item.created_at|date:"d M Y" }}</td>
+                <td>
+                    {% if news.item.is_suspended %}<span class="badge susp">Suspended</span>{% elif news.item.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}
+                    <span class="badge b-type" style="margin-left:6px;">{{ news.kind_label }}</span>
+                </td>
+                <td class="actions">
+                    {% if news.item.file %}<a href="{{ news.item.file.url }}" target="_blank" class="btn-lite">Open</a>{% elif news.item.external_url %}<a href="{{ news.item.external_url }}" target="_blank" class="btn-lite">Open</a>{% endif %}
+                    <a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_news={{ news.item.id }}" class="btn-lite">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No news or press release items yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif focus == 'media-gallery' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_gallery %}Edit{% else %}Upload{% endif %} Media Gallery Photo/Video</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="focus" value="media-gallery">
+        <input type="hidden" name="asset_kind" value="gallery">
+        <input type="hidden" name="creative_id" value="{% if edit_gallery %}{{ edit_gallery.asset.id }}{% endif %}">
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="Gallery item title" value="{% if edit_gallery %}{{ edit_gallery.display_title }}{% endif %}" required></div>
+            <div class="fg"><input type="file" name="file" accept="image/*,video/*" {% if not edit_gallery %}required{% endif %}></div>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_gallery and value in edit_gallery.asset.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Display this gallery item in the {{ label|lower }} section.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Choose where the gallery item should appear.</small>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            {% if edit_gallery %}<a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Media Gallery List</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for gallery in gallery_items %}
+            <tr>
+                <td>{{ gallery.display_title }}</td>
+                <td>{{ gallery.asset.uploaded_at|date:"d M Y" }}</td>
+                <td>{% if gallery.asset.is_suspended %}<span class="badge susp">Suspended</span>{% elif gallery.asset.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="{{ gallery.asset.file.url }}" target="_blank" class="btn-lite">Open</a>
+                    <a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_gallery={{ gallery.asset.id }}" class="btn-lite">Edit</a>
+                    <form method="POST" action="{% url 'toggle_creative_asset_status' gallery.asset.id %}">{% csrf_token %}<input type="hidden" name="focus" value="media-gallery"><button class="btn-lite" type="submit">{% if gallery.asset.is_suspended %}Activate{% else %}Suspend{% endif %}</button></form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No gallery items uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif focus == 'voice-inspiration' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_voice_inspiration %}Edit{% else %}Upload{% endif %} Voice of Inspiration</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="focus" value="voice-inspiration">
+        <input type="hidden" name="asset_kind" value="creative">
+        <input type="hidden" name="creative_id" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.id }}{% endif %}">
+        <input type="hidden" name="landing_sections" value="voice-of-inspiration">
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="Name" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.speaker_name|default:edit_voice_inspiration.display_title }}{% endif %}" required></div>
+            <div class="fg"><input name="designation" placeholder="Designation" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.designation }}{% endif %}"></div>
+            <div class="fg"><input name="institute_name" placeholder="Institute / Organization" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.institute_name }}{% endif %}"></div>
+            <div class="fg"><input type="file" name="profile_image" accept="image/*" {% if not edit_voice_inspiration or not edit_voice_inspiration.asset.profile_image %}required{% endif %}></div>
+            <div class="fg">
+                <select name="display_priority" style="width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;">
+                    <option value="0" {% if not edit_voice_inspiration or edit_voice_inspiration.asset.display_priority == 0 %}selected{% endif %}>No Priority</option>
+                    <option value="1" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 1 %}selected{% endif %}>Priority 1 (Highest)</option>
+                    <option value="2" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 2 %}selected{% endif %}>Priority 2</option>
+                    <option value="3" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 3 %}selected{% endif %}>Priority 3</option>
+                    <option value="4" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 4 %}selected{% endif %}>Priority 4</option>
+                    <option value="5" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 5 %}selected{% endif %}>Priority 5</option>
+                    <option value="6" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 6 %}selected{% endif %}>Priority 6</option>
+                    <option value="7" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 7 %}selected{% endif %}>Priority 7</option>
+                    <option value="8" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 8 %}selected{% endif %}>Priority 8</option>
+                    <option value="9" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 9 %}selected{% endif %}>Priority 9</option>
+                    <option value="10" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 10 %}selected{% endif %}>Priority 10 (Lowest)</option>
+                </select>
+            </div>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <textarea name="quote_text" rows="4" placeholder="Quote or message" style="width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;resize:vertical;">{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.quote_text }}{% endif %}</textarea>
+        </div>
+        <div class="fg" style="margin-top:14px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
+            <div class="placement-grid">
+                <label class="placement-option" style="grid-column:1 / -1; cursor:default;">
+                    <input type="checkbox" checked disabled>
+                    <div>
+                        <strong>Voice of Inspiration</strong>
+                        <span>This item will appear in the Voice of Inspiration section on the landing page.</span>
+                    </div>
+                </label>
+            </div>
+            <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">This tab is dedicated to items shown in the Voice of Inspiration block.</small>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            {% if edit_voice_inspiration %}<a href="?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% else %}
+    <p style="color:#9ca3af;">Choose a hackathon to manage Voice of Inspiration items.</p>
+    {% endif %}
+</div>
+
+    <div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Voice of Inspiration List</h2>
+    <table>
+        <thead><tr><th>Name</th><th>Designation</th><th>Institute</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for voice_item in voice_inspiration_items %}
+            <tr>
+                <td>{{ voice_item.asset.speaker_name|default:voice_item.display_title }}</td>
+                <td>{{ voice_item.asset.designation|default:"—" }}</td>
+                <td>{{ voice_item.asset.institute_name|default:"—" }}</td>
+                <td>{% if voice_item.asset.display_priority > 0 %}<span class="badge pub">{{ voice_item.asset.display_priority }}</span>{% else %}<span style="color:#9ca3af;">—</span>{% endif %}</td>
+                <td>{% if voice_item.asset.is_suspended %}<span class="badge susp">Suspended</span>{% elif voice_item.asset.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="{{ voice_item.asset.file.url }}" target="_blank" class="btn-lite">Open</a>
+                    <a href="?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_voice_inspiration={{ voice_item.asset.id }}" class="btn-lite">Edit</a>
+                    <form method="POST" action="{% url 'toggle_creative_asset_status' voice_item.asset.id %}">{% csrf_token %}<input type="hidden" name="focus" value="voice-inspiration"><button class="btn-lite" type="submit">{% if voice_item.asset.is_suspended %}Activate{% else %}Suspend{% endif %}</button></form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;color:#9ca3af;">No Voice of Inspiration items available yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif focus == 'feeds' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_feed %}Edit{% else %}Upload{% endif %} Feed Link</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_social_feed_item' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="item_id" value="{% if edit_feed %}{{ edit_feed.item.id }}{% endif %}">
+        <div class="form-grid">
+            <div class="fg"><input name="title" placeholder="Feed title" value="{% if edit_feed %}{{ edit_feed.display_title }}{% endif %}" required></div>
+            <div class="fg"><input type="date" name="published_date" value="{% if edit_feed %}{{ edit_feed.published_date }}{% endif %}" required></div>
+            <div class="fg"><select name="platform">{% for value,label in feed_platform_choices %}<option value="{{ value }}" {% if edit_feed and edit_feed.platform == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="fg"><input type="url" name="external_url" placeholder="Published URL" value="{% if edit_feed %}{{ edit_feed.item.external_url }}{% endif %}" required></div>
+        </div>
+        <div class="actions" style="margin-top:14px;">
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            {% if edit_feed %}<a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Feed List</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Platform</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for feed in feed_items %}
+            <tr>
+                <td>{{ feed.display_title }}</td>
+                <td>{{ feed.platform_label }}</td>
+                <td>{{ feed.published_date }}</td>
+                <td>{% if feed.item.is_suspended %}<span class="badge susp">Suspended</span>{% elif feed.item.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="{{ feed.item.external_url }}" target="_blank" class="btn-lite">Open</a>
+                    <a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_feed={{ feed.item.id }}" class="btn-lite">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;color:#9ca3af;">No feed links uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,592 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Design tokens ─────────────────────────────────────────── */
+  :root {
+    --admin-accent: #2563eb;
+    --admin-accent-light: #eff6ff;
+    --admin-muted: #64748b;
+    --admin-border: #e2e8f0;
+    --admin-surface: #ffffff;
+    --admin-bg: #f8fafc;
+    --admin-enabled-shadow: 0 4px 20px rgba(37, 99, 235, .12);
+    --admin-disabled-overlay: rgba(248, 250, 252, .82);
+    --card-radius: 18px;
+  }
+
+  /* ── Welcome header ────────────────────────────────────────── */
+  .admin-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 60%, #2563eb 100%);
+    border-radius: 24px;
+    padding: 36px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .admin-header::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .06);
+    pointer-events: none;
+  }
+
+  .admin-header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: 30%;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .04);
+    pointer-events: none;
+  }
+
+  .admin-header-text h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 6px;
+    line-height: 1.1;
+  }
+
+  .admin-header-text p {
+    color: rgba(255, 255, 255, .7);
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .admin-header-stats {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .stat-pill {
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 14px;
+    padding: 14px 22px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    min-width: 90px;
+  }
+
+  .stat-pill-value {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .stat-pill-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, .65);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ── Section headings ──────────────────────────────────────── */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .section-head h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  .section-badge {
+    background: var(--admin-accent-light);
+    color: var(--admin-accent);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── Feature card grid ─────────────────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+
+  /* Base card */
+  .feature-card {
+    background: var(--admin-surface);
+    border: 1.5px solid var(--admin-border);
+    border-radius: var(--card-radius);
+    padding: 26px 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  }
+
+  /* Enabled card */
+  .feature-card.enabled {
+    cursor: pointer;
+    text-decoration: none;
+    border-color: transparent;
+    box-shadow: var(--admin-enabled-shadow);
+  }
+
+  .feature-card.enabled:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(37, 99, 235, .18);
+  }
+
+  .feature-card.enabled:hover .card-arrow {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+
+  .feature-card.enabled::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--card-radius);
+    padding: 1.5px;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Disabled card */
+  .feature-card.disabled {
+    opacity: .88;
+    cursor: not-allowed;
+  }
+
+  .feature-card.disabled .card-icon-wrap {
+    background: #f1f5f9;
+  }
+
+  .feature-card.disabled .card-icon-wrap ion-icon {
+    color: #94a3b8;
+  }
+
+  .feature-card.disabled .card-label {
+    color: #94a3b8;
+  }
+
+  .feature-card.disabled .card-desc {
+    color: #cbd5e1;
+  }
+
+  .lock-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+
+  .enabled-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  /* Card icon */
+  .card-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .card-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.55;
+    flex: 1;
+    margin: 0;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+
+  .card-action-btn {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--admin-accent);
+    background: var(--admin-accent-light);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background .15s;
+  }
+
+  .feature-card.enabled:hover .card-action-btn {
+    background: #dbeafe;
+  }
+
+  .card-arrow {
+    font-size: 13px;
+    transition: transform .2s, opacity .2s;
+    opacity: .7;
+  }
+
+  .card-not-assigned {
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Colour themes per feature slot */
+  .fc-blue {
+    background: #eff6ff;
+  }
+
+  .fc-blue ion-icon {
+    color: #2563eb;
+  }
+
+  .fc-indigo {
+    background: #eef2ff;
+  }
+
+  .fc-indigo ion-icon {
+    color: #4f46e5;
+  }
+
+  .fc-violet {
+    background: #f5f3ff;
+  }
+
+  .fc-violet ion-icon {
+    color: #7c3aed;
+  }
+
+  .fc-emerald {
+    background: #ecfdf5;
+  }
+
+  .fc-emerald ion-icon {
+    color: #059669;
+  }
+
+  .fc-teal {
+    background: #f0fdfa;
+  }
+
+  .fc-teal ion-icon {
+    color: #0d9488;
+  }
+
+  .fc-orange {
+    background: #fff7ed;
+  }
+
+  .fc-orange ion-icon {
+    color: #ea580c;
+  }
+
+  .fc-rose {
+    background: #fff1f2;
+  }
+
+  .fc-rose ion-icon {
+    color: #e11d48;
+  }
+
+  .fc-amber {
+    background: #fffbeb;
+  }
+
+  .fc-amber ion-icon {
+    color: #d97706;
+  }
+
+  .fc-cyan {
+    background: #ecfeff;
+  }
+
+  .fc-cyan ion-icon {
+    color: #0891b2;
+  }
+
+  .fc-sky {
+    background: #f0f9ff;
+  }
+
+  .fc-sky ion-icon {
+    color: #0284c7;
+  }
+
+  /* ── Round panel ────────────────────────────────────────────── */
+  .round-panel {
+    background: var(--admin-surface);
+    border-radius: 20px;
+    padding: 28px 32px;
+    border: 1px solid var(--admin-border);
+    margin-bottom: 32px;
+  }
+
+  .round-btn {
+    border: none;
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 900;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    transition: transform .15s, box-shadow .15s;
+  }
+
+  .round-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  }
+
+  .round-btn.active {
+    background: #ecfdf5;
+    color: #047857;
+  }
+
+  .round-btn.inactive {
+    background: #f3f4f6;
+    color: #64748b;
+  }
+
+  /* ── Empty state ─────────────────────────────────────────────*/
+  .empty-state {
+    background: var(--admin-surface);
+    border-radius: 24px;
+    border: 2px dashed var(--admin-border);
+    padding: 80px 40px;
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+  }
+
+  .empty-state h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    color: var(--admin-muted);
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  @media (max-width: 640px) {
+    .admin-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .admin-header-stats {
+      flex-wrap: wrap;
+    }
+
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── WELCOME HEADER ───────────────────────────────────────── #}
+<div class="admin-header">
+  <div class="admin-header-text">
+    <h1>Welcome, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+    <p>
+      Administrative Control Centre &nbsp;·&nbsp; {{ request.user.email }}
+      &nbsp;·&nbsp;
+      {% if admin_profile.user.is_active %}
+      <span style="color:#86efac; font-weight:700;">● Active</span>
+      {% else %}
+      <span style="color:#fca5a5; font-weight:700;">● Inactive</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="admin-header-stats">
+    <div class="stat-pill">
+      <div class="stat-pill-value">{{ enabled_count }}</div>
+      <div class="stat-pill-label">Modules</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-value">
+        {% if live_hackathon %}
+        <ion-icon name="radio" style="font-size:20px; color:#86efac; vertical-align:middle;"></ion-icon>
+        {% else %}
+        —
+        {% endif %}
+      </div>
+      <div class="stat-pill-label">Live Event</div>
+    </div>
+  </div>
+</div>
+
+{# ── ROUND ACTIVATION (only if live event) ─────────────────── #}
+{% if live_hackathon %}
+<div class="round-panel">
+  <div class="section-head" style="margin-bottom:16px;">
+    <ion-icon name="radio-outline" style="font-size:20px; color:#2563eb;"></ion-icon>
+    <h2>Round Activation — {{ live_hackathon.name }}</h2>
+    <span class="section-badge">Live Event</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    {% for round in live_hackathon.get_rounds %}
+    <form action="{% url 'toggle_round_status' live_hackathon.id round.number %}" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="round-btn {% if round.is_enabled %}active{% else %}inactive{% endif %}">
+        {{ round.name }}:
+        {% if round.is_enabled %}
+        <ion-icon name="checkmark-circle" style="vertical-align:middle; margin-left:4px;"></ion-icon> Active
+        {% else %}
+        <ion-icon name="ellipse-outline" style="vertical-align:middle; margin-left:4px;"></ion-icon> Inactive
+        {% endif %}
+        <span style="display:block; font-size:10px; font-weight:600; margin-top:2px; opacity:.7;">
+          {{ round.start_date|default:"TBD" }} → {{ round.end_date|default:"TBD" }}
+        </span>
+      </button>
+    </form>
+    {% empty %}
+    <p style="color:#94a3b8; font-size:13px; margin:0;">No rounds configured for this event.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── FEATURE MODULE GRID ──────────────────────────────────────── #}
+{% if feature_cards %}
+
+<div class="section-head">
+  <ion-icon name="apps-outline" style="font-size:20px; color:#2563eb;"></ion-icon>
+  <h2>Feature Modules</h2>
+  <span class="section-badge">{{ enabled_count }} of {{ feature_cards|length }} active</span>
+</div>
+
+<div class="feature-grid">
+  {% for card in feature_cards %}
+
+  {% if card.is_enabled %}
+  {# ── ENABLED CARD ─────────────────────────────────── #}
+  <a href="{% url card.url_name %}" class="feature-card enabled" id="feature-card-{{ card.codename }}">
+    <span class="enabled-badge">Active</span>
+    <div class="card-icon-wrap {{ card.colour }}">
+      <ion-icon name="{{ card.icon }}"></ion-icon>
+    </div>
+    <p class="card-label">{{ card.label }}</p>
+    <p class="card-desc">{{ card.description }}</p>
+    <div class="card-footer">
+      <span class="card-action-btn">
+        Open
+        <ion-icon name="arrow-forward-outline" class="card-arrow"></ion-icon>
+      </span>
+    </div>
+  </a>
+
+  {% else %}
+  {# ── DISABLED CARD ────────────────────────────────── #}
+  <div class="feature-card disabled" id="feature-card-{{ card.codename }}">
+    <div class="lock-badge">
+      <ion-icon name="lock-closed-outline"></ion-icon>
+    </div>
+    <div class="card-icon-wrap" style="background:#f1f5f9;">
+      <ion-icon name="{{ card.icon }}" style="color:#cbd5e1;"></ion-icon>
+    </div>
+    <p class="card-label" style="color:#94a3b8;">{{ card.label }}</p>
+    <p class="card-desc" style="color:#cbd5e1;">{{ card.description }}</p>
+    <div class="card-footer">
+      <span class="card-not-assigned">
+        <ion-icon name="ban-outline"></ion-icon>
+        Not Assigned
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endfor %}
+</div>
+
+{% else %}
+{# ── EMPTY STATE ─────────────────────────────────────────── #}
+<div class="empty-state">
+  <div class="empty-icon">🔒</div>
+  <h2>No Modules Assigned</h2>
+  <p>Your administrator account is active but no feature modules have been assigned yet. Please contact the Super Admin
+    to enable your access.</p>
+</div>
+{% endif %}
+
+{% endblock %}

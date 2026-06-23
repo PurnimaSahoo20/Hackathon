@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Support Operations - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:12px;margin-bottom:24px;width:fit-content;flex-wrap:wrap;}
+    .sub-tab{padding:9px 18px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;}
+    .sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+    .stat{background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:20px;}
+    .stat .num{font-size:28px;font-weight:900;color:#111827;}
+    .card{background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:24px;margin-bottom:20px;}
+    .table-wrap{overflow:auto;}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;background:#fffbf7;}
+    td{padding:12px 14px;border-bottom:1px solid #f3f4f6;vertical-align:top;}
+    .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .open{background:#fff7ed;color:#d97706;}.reviewed{background:#eff6ff;color:#2563eb;}.resolved{background:#ecfdf5;color:#059669;}
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;}
+    .fg textarea,.fg select,.fg input{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Support & Accommodation Operations</h1>
+    <p style="color:#6b7280;margin:0;">Handle team tickets, travel visibility, and health-related escalations.</p>
+</div>
+
+<div class="sub-tabs">
+    <a href="?focus=support" class="sub-tab {% if focus == 'support' %}active{% endif %}">Support Inbox</a>
+    <a href="?focus=travel" class="sub-tab {% if focus == 'travel' %}active{% endif %}">Travel & Stay</a>
+    <a href="?focus=health" class="sub-tab {% if focus == 'health' %}active{% endif %}">Health & Food</a>
+</div>
+
+<div class="grid">
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Open Tickets</div><div class="num">{{ support_counts.open }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Reviewed</div><div class="num">{{ support_counts.reviewed }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Resolved</div><div class="num">{{ support_counts.resolved }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Travel Records</div><div class="num">{{ travel_details|length }}</div></div>
+</div>
+
+{% if focus == 'support' %}
+<div class="card">
+    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+        <input type="hidden" name="focus" value="support">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by subject or team">
+        <select name="status">
+            <option value="">All statuses</option>
+            {% for value, label in support_statuses %}
+            <option value="{{ value }}" {% if support_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn" type="submit">Filter</button>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Team</th><th>Category</th><th>Message</th><th>Status</th><th>Admin Reply</th><th>Update</th></tr>
+            </thead>
+            <tbody>
+                {% for item in support_messages %}
+                <tr>
+                    <td><strong>{{ item.registration.team_name }}</strong><br><small>{{ item.registration.hackathon.name }}</small></td>
+                    <td>{{ item.get_category_display }}</td>
+                    <td><strong>{{ item.subject }}</strong><br><small>{{ item.message }}</small></td>
+                    <td><span class="badge {{ item.status }}">{{ item.get_status_display }}</span></td>
+                    <td style="min-width:260px;">
+                        <form method="POST" action="{% url 'update_support_message' item.id %}">
+                            {% csrf_token %}
+                            <div class="fg" style="margin-bottom:8px;">
+                                <select name="status">
+                                    {% for value, label in support_statuses %}
+                                    <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="fg" style="margin-bottom:8px;">
+                                <textarea name="admin_reply" rows="3" placeholder="Respond to the team...">{{ item.admin_reply }}</textarea>
+                            </div>
+                            <button class="btn" type="submit">Save</button>
+                        </form>
+                    </td>
+                    <td>{{ item.updated_at|date:"d M Y, h:i A" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:#9ca3af;">No support messages found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif focus == 'travel' %}
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Team</th><th>Traveler</th><th>Route</th><th>Journey Date</th><th>Mode</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+                {% for item in travel_details %}
+                <tr>
+                    <td><strong>{{ item.registration.team_name }}</strong><br><small>{{ item.registration.institution.name|default:"-" }}</small></td>
+                    <td>{{ item.traveler_name|default:item.submitted_by.get_full_name }}</td>
+                    <td>{{ item.origin }} to {{ item.destination }}</td>
+                    <td>{{ item.journey_date }}</td>
+                    <td>{{ item.get_travel_mode_display }}</td>
+                    <td>{{ item.notes|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:#9ca3af;">No travel details submitted yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Health, Venue, and Food Signals</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Team / Venue</th><th>Type</th><th>Details</th><th>Latest Update</th></tr>
+            </thead>
+            <tbody>
+                {% for item in health_related_messages %}
+                <tr>
+                    <td>{{ item.registration.team_name }}</td>
+                    <td>{{ item.get_category_display }}</td>
+                    <td><strong>{{ item.subject }}</strong><br><small>{{ item.message }}</small></td>
+                    <td>{{ item.updated_at|date:"d M Y, h:i A" }}</td>
+                </tr>
+                {% empty %}
+                {% for food in food_records %}
+                <tr>
+                    <td>{{ food.venue.venue_name }}</td>
+                    <td>Food Vendor</td>
+                    <td><strong>{{ food.vendor_name }}</strong><br><small>{{ food.menu_details|default:"Menu not specified" }}</small></td>
+                    <td>Headcount {{ food.headcount_estimation }} | Cost {{ food.cost_estimation }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No health or food operations recorded yet.</td></tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

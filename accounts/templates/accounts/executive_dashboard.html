@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Executive Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .exec-hero {background:linear-gradient(135deg,#1f2937 0%,#0f766e 55%,#14b8a6 100%);border-radius:24px;padding:32px 36px;color:#fff;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px;}
+  .exec-hero h1 {margin:0 0 8px;font-size:28px;font-weight:900;}
+  .exec-hero p {margin:0;color:rgba(255,255,255,.76);}
+  .hero-stats {display:flex;gap:14px;flex-wrap:wrap;}
+  .hero-pill {background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:14px 18px;min-width:96px;text-align:center;}
+  .hero-pill strong {display:block;font-size:24px;}
+  .hero-pill span {font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.72);}
+  .tabs {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;}
+  .tab-link {text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:800;color:#475569;background:#e2e8f0;}
+  .tab-link.active {background:#0f766e;color:#fff;}
+  .panel {background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:24px;}
+  .panel h2 {margin:0 0 16px;font-size:18px;font-weight:900;color:#0f172a;}
+  .feature-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;}
+  .feature-card {background:#fff;border-radius:18px;border:1px solid #dbeafe;padding:22px;text-decoration:none;color:inherit;display:block;}
+  .feature-card.enabled {box-shadow:0 10px 24px rgba(15,118,110,.08);}
+  .feature-card.disabled {opacity:.7;border-style:dashed;}
+  .feature-icon {width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
+  .fc-blue {background:#eff6ff;color:#2563eb;} .fc-indigo {background:#eef2ff;color:#4f46e5;}
+  .fc-violet {background:#f5f3ff;color:#7c3aed;} .fc-emerald {background:#ecfdf5;color:#059669;}
+  .fc-teal {background:#f0fdfa;color:#0f766e;} .fc-orange {background:#fff7ed;color:#ea580c;}
+  .fc-rose {background:#fff1f2;color:#e11d48;} .fc-amber {background:#fffbeb;color:#d97706;}
+  .fc-cyan {background:#ecfeff;color:#0891b2;} .fc-sky {background:#f0f9ff;color:#0284c7;}
+  .badge {display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;}
+  .badge-ok {background:#ecfdf5;color:#047857;}
+  .badge-pending {background:#fff7ed;color:#c2410c;}
+  .grid-two {display:grid;grid-template-columns:1.2fr .8fr;gap:24px;}
+  .info-list {display:grid;gap:12px;}
+  .info-item {border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;}
+  .muted {color:#64748b;}
+  table {width:100%;border-collapse:collapse;}
+  th {text-align:left;padding:12px 14px;background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;}
+  td {padding:14px;border-top:1px solid #eef2f7;vertical-align:top;}
+  .mini {font-size:12px;color:#64748b;}
+  .btn {display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:none;cursor:pointer;border-radius:10px;padding:10px 14px;font-family:'Outfit',sans-serif;font-weight:800;}
+  .btn-primary {background:#0f766e;color:#fff;}
+  .btn-light {background:#f1f5f9;color:#0f172a;}
+  .btn-outline {background:#fff;border:1px solid #cbd5e1;color:#0f172a;}
+  .stack {display:grid;gap:12px;}
+  .field input,.field textarea,.field select {width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;}
+  .field label {display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
+  details.reminder {border:1px solid #e2e8f0;border-radius:14px;padding:10px 14px;background:#fcfcfd;}
+  details.reminder summary {cursor:pointer;font-weight:800;color:#0f766e;}
+  .thread {border:1px solid #e2e8f0;border-radius:14px;padding:14px;}
+  .thread + .thread {margin-top:12px;}
+  .pagination {display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;}
+  .pagination-link {display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:10px;background:#f8fafc;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;font-weight:800;}
+  .pagination-link.disabled {opacity:.45;pointer-events:none;}
+  @media (max-width: 900px) {.grid-two {grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="exec-hero">
+  <div>
+    <h1>Executive Workspace</h1>
+    <p>
+      Read-only visibility for the modules assigned through
+      {% if assigned_admin %}<strong>{{ assigned_admin.user.get_full_name|default:assigned_admin.user.username }}</strong>{% else %}<strong>your admin mapping</strong>{% endif %}.
+    </p>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-pill"><strong>{{ enabled_count|default:0 }}</strong><span>Modules</span></div>
+    <div class="hero-pill"><strong>{{ unread_count|default:0 }}</strong><span>Unread</span></div>
+    <div class="hero-pill"><strong>{% if pending_total %}{{ pending_total }}{% elif pending_count %}{{ pending_count }}{% else %}0{% endif %}</strong><span>Pending Users</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <a href="{% url 'executive_dashboard' %}" class="tab-link {% if tab == 'overview' %}active{% endif %}">Overview</a>
+  <a href="{% url 'executive_user_status' %}" class="tab-link {% if tab == 'user_status' %}active{% endif %}">User Status</a>
+  <a href="{% url 'executive_inbox' %}" class="tab-link {% if tab == 'inbox' %}active{% endif %}">Communication</a>
+</div>
+
+{% if tab == 'overview' %}
+<div class="grid-two">
+  <div class="panel">
+    <h2>Assigned Feature Visibility</h2>
+    <div class="feature-grid">
+      {% for card in feature_cards %}
+        {% if card.is_enabled %}
+        <a href="{% url card.url_name %}" class="feature-card enabled">
+          <div class="feature-icon {{ card.colour }}"><ion-icon name="{{ card.icon }}"></ion-icon></div>
+          <div style="font-weight:900; margin-bottom:6px;">{{ card.label }}</div>
+          <div class="muted" style="font-size:13px;">{{ card.description }}</div>
+          <div style="margin-top:12px;"><span class="badge badge-ok">View Only</span></div>
+        </a>
+        {% else %}
+        <div class="feature-card disabled">
+          <div class="feature-icon {{ card.colour }}"><ion-icon name="{{ card.icon }}"></ion-icon></div>
+          <div style="font-weight:900; margin-bottom:6px;">{{ card.label }}</div>
+          <div class="muted" style="font-size:13px;">Not assigned through your admin.</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="panel">
+      <h2>Assigned Admin</h2>
+      {% if assigned_admin %}
+        <div class="info-item">
+          <div style="font-weight:900;">{{ assigned_admin.user.get_full_name|default:assigned_admin.user.username }}</div>
+          <div class="mini">@{{ assigned_admin.user.username }}{% if assigned_admin.user.email %} | {{ assigned_admin.user.email }}{% endif %}</div>
+          <div style="margin-top:12px;">
+            <a href="{% url 'executive_inbox' %}" class="btn btn-primary"><ion-icon name="chatbubble-ellipses-outline"></ion-icon> Message Assigned Admin</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="muted">No admin has been assigned yet.</div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>Pending Users Snapshot</h2>
+      <div class="info-list">
+        {% for row in pending_rows %}
+        <div class="info-item">
+          <div style="display:flex;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-weight:900;">{{ row.user.get_full_name|default:row.user.username }}</div>
+              <div class="mini">{{ row.role_name }} | @{{ row.user.username }}</div>
+            </div>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+          <div class="mini" style="margin-top:8px;">Missing: {{ row.missing_fields|join:", " }}</div>
+        </div>
+        {% empty %}
+        <div class="muted">All tracked users currently look complete.</div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;">
+        <a href="{% url 'executive_user_status' %}" class="btn btn-light">Open Full Status Board</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% elif tab == 'user_status' %}
+<div class="panel">
+  <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;">
+    <div>
+      <h2>SPOC Completion Tracker</h2>
+      <div class="mini">{{ pending_count }} pending | {{ completed_count }} completed | {{ total }} total</div>
+    </div>
+    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search user" style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;">
+      <input type="hidden" name="role" value="SPOC">
+      <div class="mini" style="display:flex;align-items:center;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-weight:800;color:#0f766e;">
+        Scope: SPOC users only
+      </div>
+      <select name="status" style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;">
+        <option value="">All statuses</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Missing Details</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in page_obj.object_list %}
+      <tr>
+        <td>
+          <div style="font-weight:900;">{{ row.user.get_full_name|default:row.user.username }}</div>
+          <div class="mini">@{{ row.user.username }} | {{ row.user.email }}</div>
+        </td>
+        <td>{{ row.role_name }}</td>
+        <td>
+          {% if row.completion_status == 'completed' %}
+          <span class="badge badge-ok">Completed</span>
+          {% else %}
+          <span class="badge badge-pending">Pending</span>
+          {% endif %}
+        </td>
+        <td class="mini">
+          {% if row.missing_fields %}
+          {{ row.missing_fields|join:", " }}
+          {% else %}
+          Fully filled
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{% url 'view_user' row.user.id %}" class="btn btn-outline">View</a>
+            {% if row.completion_status == 'pending' %}
+            <details class="reminder">
+              <summary>Send reminder</summary>
+              <form method="POST" action="{% url 'executive_send_reminder' row.user.id %}" style="margin-top:12px;">
+                {% csrf_token %}
+                <div class="field">
+                  <label>Subject</label>
+                  <input type="text" name="subject" value="Action Required: Complete Your Profile">
+                </div>
+                <div class="field">
+                  <label>Message</label>
+                  <textarea name="custom_message" rows="4">Hello {{ row.user.get_full_name|default:row.user.username }}, please complete the remaining profile details: {{ row.missing_fields|join:", " }}.</textarea>
+                </div>
+                <label class="mini" style="display:flex;gap:8px;align-items:center;margin:8px 0 12px;">
+                  <input type="checkbox" name="send_email" checked> Also send email
+                </label>
+                <button type="submit" class="btn btn-primary">Send</button>
+              </form>
+            </details>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No users match the current filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<div class="pagination">
+  <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if role_filter %}role={{ role_filter|urlencode }}&{% endif %}{% if status_filter %}status={{ status_filter|urlencode }}&{% endif %}{% if page_obj.has_previous %}page={{ page_obj.previous_page_number }}{% endif %}" class="pagination-link {% if not page_obj.has_previous %}disabled{% endif %}">Previous</a>
+  <span class="mini">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if role_filter %}role={{ role_filter|urlencode }}&{% endif %}{% if status_filter %}status={{ status_filter|urlencode }}&{% endif %}{% if page_obj.has_next %}page={{ page_obj.next_page_number }}{% endif %}" class="pagination-link {% if not page_obj.has_next %}disabled{% endif %}">Next</a>
+</div>
+{% endif %}
+{% elif tab == 'inbox' %}
+<div class="grid-two">
+  <div class="stack">
+    <div class="panel">
+      <h2>Inbox</h2>
+      {% if message %}
+        <div class="thread">
+          <div style="font-weight:900;">{{ message.subject|default:"Message" }}</div>
+          <div class="mini">From {{ message.sender.get_full_name|default:message.sender.username }} | {{ message.created_at|date:"d M Y, H:i" }}</div>
+          <p style="margin:12px 0 0;">{{ message.body|linebreaksbr }}</p>
+        </div>
+        {% for reply in replies %}
+        <div class="thread">
+          <div style="font-weight:800;">{{ reply.sender.get_full_name|default:reply.sender.username }}</div>
+          <div class="mini">{{ reply.created_at|date:"d M Y, H:i" }}</div>
+          <p style="margin:12px 0 0;">{{ reply.body|linebreaksbr }}</p>
+        </div>
+        {% endfor %}
+        <div style="margin-top:16px;">
+          <form method="POST" action="{% url 'executive_compose' %}">
+            {% csrf_token %}
+            <input type="hidden" name="recipient_id" value="{{ message.sender.id }}">
+            <input type="hidden" name="parent_id" value="{{ message.id }}">
+            <div class="field">
+              <label>Reply</label>
+              <textarea name="body" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Send Reply</button>
+          </form>
+        </div>
+      {% else %}
+        {% for item in inbox %}
+        <div class="thread">
+          <div style="display:flex;justify-content:space-between;gap:10px;">
+            <div>
+              <div style="font-weight:900;">{{ item.subject|default:"Message" }}</div>
+              <div class="mini">From {{ item.sender.get_full_name|default:item.sender.username }}</div>
+            </div>
+            {% if not item.is_read %}<span class="badge badge-pending">New</span>{% endif %}
+          </div>
+          <p class="mini" style="margin-top:8px;">{{ item.body|truncatechars:180 }}</p>
+          <div style="margin-top:10px;">
+            <a href="{% url 'executive_message_detail' item.id %}" class="btn btn-outline">Open Thread</a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="muted">No messages yet.</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>Sent Messages</h2>
+      {% for item in sent %}
+      <div class="thread">
+        <div style="font-weight:900;">{{ item.subject|default:"Message" }}</div>
+        <div class="mini">To {{ item.recipient.get_full_name|default:item.recipient.username }} | {{ item.created_at|date:"d M Y, H:i" }}</div>
+        <p class="mini" style="margin-top:8px;">{{ item.body|truncatechars:180 }}</p>
+      </div>
+      {% empty %}
+      <div class="muted">No sent messages yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Message Assigned Admin</h2>
+    {% if assigned_admin %}
+    <form method="POST" action="{% url 'executive_compose' %}">
+      {% csrf_token %}
+      <input type="hidden" name="recipient_id" value="{{ assigned_admin.user.id }}">
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" name="subject" value="Update from Executive {{ request.user.get_full_name|default:request.user.username }}">
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea name="body" rows="8" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Send Message</button>
+    </form>
+    {% else %}
+    <div class="muted">You cannot send admin messages until a supervising admin is assigned.</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content Management — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* sub-tabs */
+    .sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:12px;margin-bottom:24px;width:fit-content;}
+    .sub-tab{padding:9px 22px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;border:none;background:none;cursor:pointer;transition:all 0.2s;}
+    .sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+    /* card */
+    .card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.03);}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+    .section-title{font-size:19px;font-weight:800;margin:0;color:#111827;}
+    /* slide form */
+    .slide-form{display:none;background:#fff7ed;border:2px solid #fcd34d;border-radius:14px;padding:26px;margin-bottom:22px;}
+    .slide-form.open{display:block;animation:slideIn 0.25s ease;}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+    .form-section{font-size:14px;font-weight:800;color:#ea580c;border-left:4px solid #ea580c;padding-left:10px;margin:18px 0 12px;}
+    .fg{margin-bottom:14px;}
+    .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+    .fg input,.fg select,.fg textarea{width:100%;border:1px solid #fcd34d;border-radius:9px;padding:10px 13px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:all 0.2s;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,0.1);}
+    .fg small{display:block;color:#9ca3af;font-size:11px;margin-top:4px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    /* buttons */
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+    .btn:hover{background:#d97706;}
+    .btn-draft{background:#fff;color:#ea580c;border:2px solid #ea580c;border-radius:9px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+    .btn-draft:hover{background:#fff7ed;}
+    .btn-icon{background:none;border:none;cursor:pointer;font-size:20px;padding:4px 6px;display:inline-flex;color:#6b7280;border-radius:6px;}
+    .btn-icon:hover{color:#ea580c;background:#fff7ed;}
+    .btn-icon.danger:hover{color:#dc2626;background:#fef2f2;}
+    .btn-icon.suspend-on{color:#d97706;}
+    /* badge */
+    .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+    .b-pub{background:#ecfdf5;color:#059669;}
+    .b-draft{background:#fff7ed;color:#d97706;}
+    .b-susp{background:#fef2f2;color:#dc2626;}
+    .b-type{background:#eff6ff;color:#2563eb;}
+    .b-audio{background:#f5f3ff;color:#7c3aed;}
+    .b-video{background:#ecfdf5;color:#059669;}
+    /* table */
+    table{width:100%;border-collapse:collapse;}
+    th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase;background:#fffbf7;}
+    td{padding:13px 14px;font-size:14px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#fffbf7;}
+    /* media type toggle */
+    .type-toggle{display:flex;gap:0;border:2px solid #fcd34d;border-radius:10px;overflow:hidden;width:fit-content;}
+    .type-toggle label{padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;color:#6b7280;background:#fff;transition:all 0.15s;}
+    .type-toggle input[type=radio]{display:none;}
+    .type-toggle input[type=radio]:checked+label{background:#ea580c;color:#fff;}
+    .placement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:8px;}
+    .placement-option{display:flex;align-items:flex-start;gap:10px;padding:14px 15px;border:1px solid #fcd34d;border-radius:14px;background:#fff;cursor:pointer;transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,0.03);}
+    .placement-option:hover{border-color:#ea580c;transform:translateY(-1px);box-shadow:0 8px 18px rgba(234,88,12,0.08);}
+    .placement-option input{margin-top:3px;accent-color:#ea580c;transform:scale(1.08);}
+    .placement-option strong{display:block;font-size:14px;color:#111827;font-weight:800;line-height:1.2;}
+    .placement-option span{display:block;font-size:12px;color:#6b7280;margin-top:3px;line-height:1.35;}
+    .placement-option:has(input:checked){border-color:#ea580c;background:linear-gradient(180deg,#fff7ed,#fff);box-shadow:0 10px 22px rgba(234,88,12,0.12);}
+    /* thumbnail preview */
+    .thumb-preview{width:54px;height:40px;border-radius:8px;object-fit:cover;border:1px solid #f3f4f6;}
+    /* filter row */
+    .filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+    .filter-row select,.filter-row input{border:1px solid #e5e7eb;border-radius:9px;padding:8px 13px;font-size:13px;font-family:'Outfit',sans-serif;outline:none;}
+    .filter-row select:focus,.filter-row input:focus{border-color:#ea580c;}
+    /* inner-tabs */
+    .inner-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+    .inner-tab{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none;color:#64748b;background:#f8fafc;border:1px solid #e5e7eb;}
+    .inner-tab.active{background:#fff7ed;color:#c2410c;border-color:#fdba74;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Content Management</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0;">Upload and manage podcasts (audio/video) and documentary resources</p>
+</div>
+
+<!-- Sub-tabs: Podcasts | Documentation -->
+<div class="sub-tabs">
+    <a href="?sub=podcasts" class="sub-tab {% if sub == 'podcasts' %}active{% endif %}">
+        <ion-icon name="mic-outline"></ion-icon> Podcasts
+    </a>
+    <a href="?sub=docs" class="sub-tab {% if sub == 'docs' %}active{% endif %}">
+        <ion-icon name="film-outline"></ion-icon> Documentation
+    </a>
+</div>
+
+{% if sub == 'podcasts' %}
+<!-- PODCASTS TAB CONTENT -->
+<div class="inner-tabs">
+    <a href="?sub=podcasts&podcast_type=podcast" class="inner-tab {% if podcast_type == 'podcast' %}active{% endif %}">Podcasts</a>
+    <a href="?sub=podcasts&podcast_type=expert_talk" class="inner-tab {% if podcast_type == 'expert_talk' %}active{% endif %}">Expert Talks</a>
+</div>
+<div id="podcastForm" class="slide-form {% if edit_podcast_obj %}open{% endif %}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;" id="podcastFormTitle">
+            {% if edit_podcast_obj %}Edit {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}{% else %}Upload New {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}{% endif %}
+        </h3>
+        <button type="button" onclick="closeForm('podcastForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'create_podcast' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="podcast_id" id="podcast_id_field" value="{% if edit_podcast_obj %}{{ edit_podcast_obj.id }}{% endif %}">
+        <input type="hidden" name="podcast_type" value="{{ podcast_type }}">
+
+        <div class="form-section" style="margin-top:0;">Basic Details</div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Title *</label>
+                <input type="text" name="title" id="pf_title" required placeholder="e.g. Intro to Smart Cities"
+                       value="{% if edit_podcast_obj %}{{ edit_podcast_obj.title }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>Hackathon *</label>
+                <select name="hackathon_id" id="pf_hackathon" required>
+                    <option value="">-- Select Hackathon --</option>
+                    {% for h in hackathons %}
+                    <option value="{{ h.id }}" {% if edit_podcast_obj and edit_podcast_obj.hackathon_id == h.id %}selected{% endif %}>{{ h.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="fg">
+                <label>Link to Problem Statement <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
+                <select name="problem_statement_id" id="pf_ps">
+                    <option value="">-- General / All --</option>
+                    {% for ps in problem_statements %}
+                    <option value="{{ ps.id }}"
+                        {% if edit_podcast_obj and edit_podcast_obj.problem_statement_id == ps.id %}selected{% endif %}>
+                        {{ ps.hackathon.name }} → {{ ps.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>Media Type</label>
+                <div class="type-toggle">
+                    <input type="radio" name="media_type" id="mt_video" value="video"
+                           {% if not edit_podcast_obj or edit_podcast_obj.description and 'audio' not in edit_podcast_obj.description %}checked{% endif %}>
+                    <label for="mt_video"><ion-icon name="videocam-outline"></ion-icon> Video</label>
+                    <input type="radio" name="media_type" id="mt_audio" value="audio"
+                           {% if edit_podcast_obj and 'audio' in edit_podcast_obj.description %}checked{% endif %}>
+                    <label for="mt_audio"><ion-icon name="musical-notes-outline"></ion-icon> Audio</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="fg">
+            <label>Description</label>
+            <textarea name="description" id="pf_desc" rows="3" placeholder="What is this about? Who should watch?">{% if edit_podcast_obj %}{{ edit_podcast_obj.description }}{% endif %}</textarea>
+        </div>
+
+        <div class="fg">
+            <label>Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_podcast_obj and value in edit_podcast_obj.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Show this podcast in the {{ label|lower }} area.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small>Pick one or more sections where this podcast should appear.</small>
+        </div>
+
+        <div class="form-section">Media Files</div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Upload Audio / Video File</label>
+                <input type="file" name="video_file" accept="audio/*,video/*">
+                <small>Accepted: MP4, MOV, AVI, MP3, WAV, OGG — Max 500MB</small>
+                {% if edit_podcast_obj and edit_podcast_obj.video_file %}
+                <small style="color:#059669;margin-top:4px;display:block;">✓ File already uploaded — upload new to replace</small>
+                {% endif %}
+            </div>
+            <div class="fg">
+                <label>OR External URL <span style="font-size:11px;color:#9ca3af;">(YouTube / Vimeo / Drive)</span></label>
+                <input type="url" name="video_url" id="pf_url" placeholder="https://youtube.com/watch?v=..."
+                       value="{% if edit_podcast_obj %}{{ edit_podcast_obj.video_url }}{% endif %}">
+            </div>
+        </div>
+
+        <div class="fg">
+            <label>Thumbnail Image <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
+            <input type="file" name="thumbnail" accept="image/*">
+            {% if edit_podcast_obj and edit_podcast_obj.thumbnail %}
+            <small style="color:#059669;display:block;margin-top:4px;">✓ Thumbnail exists — upload new to replace</small>
+            {% endif %}
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;">
+            <button type="submit" name="action" value="draft" class="btn-draft"><ion-icon name="save-outline"></ion-icon> Save as Draft</button>
+            <button type="submit" name="action" value="publish_website" class="btn"><ion-icon name="globe-outline"></ion-icon> {% if edit_podcast_obj %}Update & Publish to Website{% else %}Publish to Website{% endif %}</button>
+            <button type="submit" name="action" value="publish_internal" class="btn-draft"><ion-icon name="people-outline"></ion-icon> {% if edit_podcast_obj %}Update & Publish to Internal Community{% else %}Publish to Internal Community{% endif %}</button>
+            <button type="button" onclick="closeForm('podcastForm')" class="btn-draft" style="margin-left:auto;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">{% if podcast_type == 'expert_talk' %}Expert Talks & Resources{% else %}Podcasts & Audio/Video Resources{% endif %}</h2>
+        <button class="btn" onclick="openForm('podcastForm', 'Upload New {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}')">
+            <ion-icon name="add-outline"></ion-icon> Add {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <form method="GET" class="filter-row">
+        <input type="hidden" name="sub" value="podcasts">
+        <input type="hidden" name="podcast_type" value="{{ podcast_type }}">
+        <select name="hackathon" onchange="this.form.submit()">
+            <option value="">All Hackathons</option>
+            {% for h in hackathons %}
+            <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="q" placeholder="Search {% if podcast_type == 'expert_talk' %}expert talks{% else %}podcasts{% endif %}..." value="{{ q }}">
+        <button type="submit" class="btn" style="padding:8px 14px;"><ion-icon name="search-outline"></ion-icon></button>
+        {% if q or hackathon_filter %}<a href="?sub=podcasts&podcast_type={{ podcast_type }}" class="btn-draft" style="padding:8px 14px;">Clear</a>{% endif %}
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:50px;"></th>
+                <th>TITLE</th>
+                <th>TYPE</th>
+                <th>HACKATHON</th>
+                <th>PROBLEM STATEMENT</th>
+                <th>STATUS</th>
+                <th>UPLOADED</th>
+                <th>ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for podcast in podcasts %}
+            <tr id="podcast-row-{{ podcast.id }}">
+                <td>
+                    {% if podcast.thumbnail %}
+                    <img src="{{ podcast.thumbnail.url }}" class="thumb-preview" alt="">
+                    {% else %}
+                    <div style="width:54px;height:40px;border-radius:8px;background:linear-gradient(135deg,#fff7ed,#ffedd5);display:flex;align-items:center;justify-content:center;font-size:20px;">
+                        {% if 'audio' in podcast.description|lower %}🎵{% else %}🎬{% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong>{{ podcast.title }}</strong>
+                    {% if podcast.description %}<br><small style="color:#9ca3af;">{{ podcast.description|truncatechars:55 }}</small>{% endif %}
+                </td>
+                <td>
+                    {% if 'audio' in podcast.description|lower %}
+                    <span class="badge b-audio"><ion-icon name="musical-notes-outline" style="font-size:11px;"></ion-icon> Audio</span>
+                    {% else %}
+                    <span class="badge b-video"><ion-icon name="videocam-outline" style="font-size:11px;"></ion-icon> Video</span>
+                    {% endif %}
+                </td>
+                <td>{{ podcast.hackathon.name }}</td>
+                <td>{{ podcast.problem_statement.title|default:"—"|truncatechars:28 }}</td>
+                <td>
+                    {% if podcast.publication_scope == 'website' %}
+                    <span class="badge b-pub">Website</span>
+                    {% elif podcast.publication_scope == 'internal' %}
+                    <span class="badge b-type">Internal Community</span>
+                    {% elif podcast.is_published %}
+                    <span class="badge b-pub">Published</span>
+                    {% else %}
+                    <span class="badge b-draft">Draft</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:12px;color:#6b7280;">{{ podcast.created_at|date:"d M Y" }}</td>
+                <td>
+                    <div style="display:flex;gap:2px;align-items:center;">
+                        {% if podcast.video_url %}
+                        <a href="{{ podcast.video_url }}" target="_blank" class="btn-icon" title="Open Link"><ion-icon name="open-outline"></ion-icon></a>
+                        {% elif podcast.video_file %}
+                        <a href="{{ podcast.video_file.url }}" target="_blank" class="btn-icon" title="Download File"><ion-icon name="download-outline"></ion-icon></a>
+                        {% endif %}
+                        <a href="?sub=podcasts&podcast_type={{ podcast_type }}&edit_podcast={{ podcast.id }}" class="btn-icon" title="Edit"><ion-icon name="create-outline"></ion-icon></a>
+                        <form method="POST" action="{% url 'suspend_podcast' podcast.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-icon {% if podcast.is_published %}suspend-on{% endif %}" onclick="return confirm('Change publication status?')">
+                                <ion-icon name="{% if podcast.is_published %}eye-off-outline{% else %}eye-outline{% endif %}"></ion-icon>
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'delete_podcast' podcast.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-icon danger" onclick="return confirm('Delete permanently?')">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" style="text-align:center;padding:48px;color:#9ca3af;">No {% if podcast_type == 'expert_talk' %}expert talks{% else %}podcasts{% endif %} uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif sub == 'docs' %}
+<!-- DOCUMENTATION TAB CONTENT -->
+<div id="docForm" class="slide-form {% if edit_doc_obj %}open{% endif %}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;" id="docFormTitle">
+            {% if edit_doc_obj %}Edit Documentation{% else %}Upload Documentation{% endif %}
+        </h3>
+        <button type="button" onclick="closeForm('docForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'create_documentation' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="doc_id" value="{% if edit_doc_obj %}{{ edit_doc_obj.id }}{% endif %}">
+
+        <div class="form-section" style="margin-top:0;">Basic Details</div>
+        <div class="form-row-3">
+            <div class="fg">
+                <label>Title *</label>
+                <input type="text" name="title" required placeholder="e.g. Final Round Documentary"
+                       value="{% if edit_doc_obj %}{{ edit_doc_obj.title }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>Hackathon *</label>
+                <select name="hackathon_id" required>
+                    <option value="">-- Select --</option>
+                    {% for h in hackathons %}
+                    <option value="{{ h.id }}" {% if edit_doc_obj and edit_doc_obj.hackathon_id == h.id %}selected{% endif %}>{{ h.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>Resource Type *</label>
+                <select name="doc_type">
+                    {% for val, label in DOC_TYPES %}
+                    <option value="{{ val }}" {% if edit_doc_obj and edit_doc_obj.doc_type == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="fg">
+                <label>Link to Problem Statement <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
+                <select name="problem_statement_id">
+                    <option value="">-- General / All --</option>
+                    {% for ps in problem_statements %}
+                    <option value="{{ ps.id }}" {% if edit_doc_obj and edit_doc_obj.problem_statement_id == ps.id %}selected{% endif %}>
+                        {{ ps.hackathon.name }} → {{ ps.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>External URL <span style="font-size:11px;color:#9ca3af;">(Drive / YouTube / website)</span></label>
+                <input type="url" name="external_url" placeholder="https://..."
+                       value="{% if edit_doc_obj %}{{ edit_doc_obj.external_url }}{% endif %}">
+            </div>
+        </div>
+
+        <div class="fg">
+            <label>Landing Page Placement</label>
+            <div class="placement-grid">
+                {% for value, label in landing_section_choices %}
+                <label class="placement-option">
+                    <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_doc_obj and value in edit_doc_obj.landing_sections %}checked{% endif %}>
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>Display this document in the {{ label|lower }} area.</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <small>Choose one or more landing page sections where this resource should appear.</small>
+        </div>
+
+        <div class="fg">
+            <label>Description</label>
+            <textarea name="description" rows="2" placeholder="Briefly describe this resource...">{% if edit_doc_obj %}{{ edit_doc_obj.description }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-section">Upload File</div>
+        <div class="fg">
+            <label>File Upload <span style="font-size:11px;color:#9ca3af;">(video, PDF, ZIP, document)</span></label>
+            <input type="file" name="file" accept="video/*,.pdf,.zip,.doc,.docx,.ppt,.pptx,.xlsx,.csv">
+            {% if edit_doc_obj and edit_doc_obj.file %}
+            <small style="color:#059669;display:block;margin-top:4px;">✓ File already uploaded</small>
+            {% endif %}
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button type="submit" name="action" value="draft" class="btn-draft"><ion-icon name="save-outline"></ion-icon> Save as Draft</button>
+            <button type="submit" name="action" value="publish" class="btn"><ion-icon name="cloud-upload-outline"></ion-icon> Update & Publish</button>
+            <button type="button" onclick="closeForm('docForm')" class="btn-draft" style="margin-left:auto;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Documentation & Video Resources</h2>
+        <button class="btn" onclick="openForm('docForm', 'Upload Documentation')">
+            <ion-icon name="add-outline"></ion-icon> Add Resource
+        </button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>TITLE</th>
+                <th>TYPE</th>
+                <th>HACKATHON</th>
+                <th>FILE / LINK</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in docs %}
+            <tr>
+                <td><strong>{{ doc.title }}</strong></td>
+                <td><span class="badge b-type">{{ doc.get_doc_type_display }}</span></td>
+                <td>{{ doc.hackathon.name }}</td>
+                <td>
+                    {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank">File</a>{% endif %}
+                    {% if doc.external_url %}<a href="{{ doc.external_url }}" target="_blank" style="margin-left:6px;">Link</a>{% endif %}
+                </td>
+                <td>{% if doc.is_published %}<span class="badge b-pub">Published</span>{% else %}<span class="badge b-draft">Draft</span>{% endif %}</td>
+                <td>
+                    <div style="display:flex;gap:2px;">
+                        <a href="?sub=docs&edit_doc={{ doc.id }}" class="btn-icon"><ion-icon name="create-outline"></ion-icon></a>
+                        <form method="POST" action="{% url 'delete_documentation' doc.id %}" style="display:inline;">
+                            {% csrf_token %}<button type="submit" class="btn-icon danger"><ion-icon name="trash-outline"></ion-icon></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;padding:48px;color:#9ca3af;">No documentation found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openForm(formId, title) {
+    document.querySelectorAll('.slide-form').forEach(f => f.classList.remove('open'));
+    const form = document.getElementById(formId);
+    if (!form) return;
+    const h3 = form.querySelector('h3[id]');
+    if (h3 && title) h3.textContent = title;
+    form.classList.add('open');
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function closeForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) form.classList.remove('open');
+}
+{% if edit_podcast_obj %}
+document.addEventListener('DOMContentLoaded', () => openForm('podcastForm'));
+{% endif %}
+{% if edit_doc_obj %}
+document.addEventListener('DOMContentLoaded', () => openForm('docForm'));
+{% endif %}
+</script>
+{% endblock %}

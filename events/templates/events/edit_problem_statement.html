@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Problem Statement - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card { background: white; border: 2px solid #fcd34d; border-radius: 16px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+    .form-section-title { font-size: 16px; font-weight: 800; color: #ea580c; border-left: 4px solid #ea580c; padding-left: 12px; margin: 32px 0 16px 0; }
+    
+    input, select, textarea { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: white; font-family: inherit; }
+    input:focus, select:focus, textarea:focus { border-color: #ea580c; }
+    label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'superadmin_dashboard' %}?tab=problem_statements" style="text-decoration: none; color: #6b7280; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back to Dashboard
+    </a>
+</div>
+
+<div class="form-card">
+    <h1 style="margin: 0 0 32px 0; font-size: 28px; font-weight: 900;">Edit Problem Statement</h1>
+
+    <form action="{% url 'edit_problem_statement' ps.id %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Associated Hackathon</label>
+                <select name="hackathon_id" required>
+                    {% for h in hackathons %}
+                    <option value="{{ h.id }}" {% if ps.hackathon_id == h.id %}selected{% endif %}>{{ h.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group"><label>Problem Title</label><input type="text" name="title" value="{{ ps.title }}" required></div>
+            
+            <div class="form-group"><label>Domain / Category</label><input type="text" name="domain" value="{{ ps.domain }}"></div>
+
+            <div class="form-group"><label>Detailed Description</label><textarea name="description" rows="6">{{ ps.description }}</textarea></div>
+
+            <div class="form-group" style="background: #fffbf7; padding: 20px; border: 1px solid #fed7aa; border-radius: 12px;">
+                <label>Problem Statement PDF</label>
+                <input type="file" name="pdf_file" accept=".pdf" style="padding: 10px;">
+                {% if ps.pdf_file %}
+                <div style="margin-top: 12px; font-size: 13px; font-weight: 700; color: #ea580c; display: flex; align-items: center; gap: 8px;">
+                    <ion-icon name="document-outline" style="font-size: 18px;"></ion-icon> 
+                    Current: <a href="{{ ps.pdf_file.url }}" target="_blank" style="color: #2563eb; text-decoration: underline;">View Uploaded PDF</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; display: flex; gap: 16px;">
+            <a href="{% url 'superadmin_dashboard' %}?tab=problem_statements" style="flex: 1; text-align: center; text-decoration: none; padding: 14px; border-radius: 8px; background: #e5e7eb; color: #374151; font-weight: 700;">Cancel</a>
+            <button type="submit" style="flex: 2; padding: 14px; border-radius: 8px; background: #ea580c; color: white; border: none; font-weight: 800; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);">Update Problem Statement</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

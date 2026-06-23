@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify OTP — Team</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#eff6ff,#dbeafe);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.card{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(37,99,235,0.14);text-align:center}.brand{font-size:22px;font-weight:900;color:#2563eb;margin-bottom:32px}.icon{font-size:48px;margin-bottom:16px}h2{font-size:24px;font-weight:800;color:#111827;margin-bottom:8px}.sub{font-size:14px;color:#6b7280;margin-bottom:8px}.email{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;display:inline-block;margin-bottom:28px}.otp-row{display:flex;gap:12px;justify-content:center;margin-bottom:24px}.otp-input{width:64px;height:64px;border:2px solid #e5e7eb;border-radius:12px;font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;text-align:center;color:#111827;background:#f9fafb;outline:none;transition:all 0.2s}.otp-input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}.btn{width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer}.btn:hover{background:#1d4ed8}.msg{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:20px;text-align:left;background:#fef2f2;border:1px solid #fecaca;color:#dc2626}.timer{font-size:13px;color:#6b7280;margin-top:10px;font-family:'JetBrains Mono',monospace}.timer span{color:#2563eb;font-weight:700}.resend{margin-top:16px;font-size:13px;color:#6b7280}.resend a{color:#2563eb;font-weight:600;text-decoration:none}</style>
+</head><body>
+<div class="card">
+    <div class="brand">HackNexus Team</div>
+    <div class="icon">🔐</div>
+    <h2>2-Factor Verification</h2>
+    <p class="sub">Code sent to</p>
+    <div class="email">{{ email }}</div>
+    {% for message in messages %}<div class="msg">{{ message }}</div>{% endfor %}
+    <form method="POST" id="otp-form">{% csrf_token %}
+        <div class="otp-row">
+            <input class="otp-input" type="text" maxlength="1" inputmode="numeric" id="d1" autofocus>
+            <input class="otp-input" type="text" maxlength="1" inputmode="numeric" id="d2">
+            <input class="otp-input" type="text" maxlength="1" inputmode="numeric" id="d3">
+            <input class="otp-input" type="text" maxlength="1" inputmode="numeric" id="d4">
+        </div>
+        <input type="hidden" name="otp" id="otp-hidden">
+        <button type="submit" class="btn">Verify & Login →</button>
+    </form>
+    <div class="timer">Expires in <span id="countdown">10:00</span></div>
+    <p class="resend">Back to <a href="{% url 'team_login' %}">Login</a></p>
+</div>
+<script>
+const inputs=document.querySelectorAll('.otp-input');
+inputs.forEach((inp,i)=>{inp.addEventListener('input',e=>{if(e.target.value&&i<inputs.length-1)inputs[i+1].focus()});inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!e.target.value&&i>0)inputs[i-1].focus()})});
+document.getElementById('otp-form').addEventListener('submit',e=>{document.getElementById('otp-hidden').value=[...inputs].map(i=>i.value).join('')});
+let secs=600;const cd=document.getElementById('countdown');const t=setInterval(()=>{secs--;if(secs<=0){clearInterval(t);cd.textContent='Expired';cd.style.color='#dc2626'}else cd.textContent=`${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`,1000});
+</script>
+</body></html>

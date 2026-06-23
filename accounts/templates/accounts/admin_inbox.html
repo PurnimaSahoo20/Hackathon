@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Inbox{% endblock %}
+
+{% block extra_css %}
+<style>
+  .wrap {display:grid;grid-template-columns:1.1fr .9fr;gap:24px;}
+  .panel {background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;}
+  .panel h1,.panel h2 {margin:0 0 16px;}
+  .thread {border:1px solid #e2e8f0;border-radius:14px;padding:14px;}
+  .thread + .thread {margin-top:12px;}
+  .mini {font-size:12px;color:#64748b;}
+  .field input,.field textarea,.field select {width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;}
+  .field label {display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
+  .btn {display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:none;cursor:pointer;border-radius:10px;padding:10px 14px;font-family:'Outfit',sans-serif;font-weight:800;}
+  .btn-primary {background:#2563eb;color:#fff;}
+  @media (max-width: 900px) {.wrap {grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="panel">
+    <h1 style="font-size:24px;font-weight:900;">Admin Communication</h1>
+    <div class="mini" style="margin-bottom:18px;">Unread messages: {{ unread_count }}</div>
+
+    <h2 style="font-size:18px;font-weight:900;">Inbox</h2>
+    {% for item in inbox %}
+    <div class="thread">
+      <div style="font-weight:900;">{{ item.subject|default:"Message" }}</div>
+      <div class="mini">From {{ item.sender.get_full_name|default:item.sender.username }} • {{ item.created_at|date:"d M Y, H:i" }}</div>
+      <p style="margin:10px 0 0;">{{ item.body|linebreaksbr }}</p>
+      <form method="POST" action="{% url 'admin_compose' %}" style="margin-top:12px;">
+        {% csrf_token %}
+        <input type="hidden" name="recipient_id" value="{{ item.sender.id }}">
+        <input type="hidden" name="parent_id" value="{{ item.id }}">
+        <div class="field">
+          <label>Reply</label>
+          <textarea name="body" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Reply</button>
+      </form>
+    </div>
+    {% empty %}
+    <div class="mini">No inbox messages.</div>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <h2 style="font-size:18px;font-weight:900;">New Message</h2>
+    <form method="POST" action="{% url 'admin_compose' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label>Recipient</label>
+        <select name="recipient_id" required>
+          <option value="">Select executive</option>
+          {% for executive in executive_contacts %}
+          <option value="{{ executive.user.id }}">{{ executive.user.get_full_name|default:executive.user.username }} (@{{ executive.user.username }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" name="subject">
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea name="body" rows="7" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+
+    <h2 style="font-size:18px;font-weight:900;margin-top:28px;">Sent</h2>
+    {% for item in sent %}
+    <div class="thread">
+      <div style="font-weight:900;">{{ item.subject|default:"Message" }}</div>
+      <div class="mini">To {{ item.recipient.get_full_name|default:item.recipient.username }} • {{ item.created_at|date:"d M Y, H:i" }}</div>
+      <p style="margin:10px 0 0;">{{ item.body|truncatechars:180 }}</p>
+    </div>
+    {% empty %}
+    <div class="mini">No sent messages.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

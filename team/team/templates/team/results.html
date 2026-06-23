@@ -1,0 +1,30 @@
+{% extends "team/base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Results</div><div class="page-subtitle">Round-wise progress and submission history</div></div></div>
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Hackathon Rounds</div>
+        {% for round in rounds %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ round.name }}</strong>{% if active_round and active_round.number == round.number %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Upcoming / Closed</span>{% endif %}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:6px">{{ round.start_date|default:"TBD" }} to {{ round.end_date|default:"TBD" }}</div>
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No round data available.</div>
+        {% endfor %}
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Submission History</div>
+        {% for sol in solutions %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <strong>{{ sol.title }}</strong>
+            <div style="font-size:12px;color:var(--muted);margin:6px 0">{{ sol.get_doc_type_display }} · {{ sol.uploaded_at|date:"M j, Y H:i" }}</div>
+            {% if sol.description %}<div style="font-size:13px;color:var(--text)">{{ sol.description }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No submissions available yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

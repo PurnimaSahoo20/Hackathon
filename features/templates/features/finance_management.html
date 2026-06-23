@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Financial Management — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* sub-tabs */
+    .sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:12px;margin-bottom:24px;width:fit-content;flex-wrap:wrap;}
+    .sub-tab{padding:9px 22px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;border:none;background:none;cursor:pointer;transition:all 0.2s;}
+    .sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+    /* card */
+    .card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.03);}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+    .section-title{font-size:19px;font-weight:800;margin:0;color:#111827;}
+    /* slide form */
+    .slide-form{display:none;background:#fff7ed;border:2px solid #fcd34d;border-radius:14px;padding:26px;margin-bottom:22px;}
+    .slide-form.open{display:block;animation:slideIn 0.25s ease;}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+    .form-section{font-size:14px;font-weight:800;color:#ea580c;border-left:4px solid #ea580c;padding-left:10px;margin:18px 0 12px;}
+    .fg{margin-bottom:14px;}
+    .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+    .fg input,.fg select,.fg textarea{width:100%;border:1px solid #fcd34d;border-radius:9px;padding:10px 13px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:all 0.2s;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,0.1);}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    /* buttons */
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+    .btn:hover{background:#d97706;}
+    .btn-draft{background:#fff;color:#ea580c;border:2px solid #ea580c;border-radius:9px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+    .btn-draft:hover{background:#fff7ed;}
+    /* table */
+    table{width:100%;border-collapse:collapse;}
+    th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase;background:#fffbf7;}
+    td{padding:13px 14px;font-size:14px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#fffbf7;}
+    
+    .stat-card{background:#fff;border:1px solid #e5e7eb;padding:20px;border-radius:12px;flex:1;min-width:200px;box-shadow:0 1px 3px rgba(0,0,0,0.05); transition: none;}
+    .stat-title{font-size:13px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;}
+    .stat-value{font-size:28px;font-weight:900;color:#111827;}
+    .stat-icon{float:right;font-size:24px;color:#d1d5db;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Financial Management</h1>
+        <p style="color:#6b7280;font-size:14px;margin:0;">Manage budgets, track sponsorships, and process transactions</p>
+    </div>
+    
+    <form method="GET" style="display:flex;gap:10px;align-items:center;">
+        <input type="hidden" name="sub" value="{{ sub }}">
+        <select name="hackathon" onchange="this.form.submit()" style="border:1px solid #e5e7eb;border-radius:9px;padding:8px 13px;font-size:13px;outline:none;">
+            <option value="">All Hackathons</option>
+            {% for h in hackathons %}
+            <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+        </select>
+        {% if not active_hackathon %}
+            <span style="color:red;font-size:13px;font-weight:600;">Please select a Hackathon</span>
+        {% endif %}
+    </form>
+</div>
+
+{% if active_hackathon %}
+<div class="sub-tabs">
+    <a href="?sub=budget&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'budget' %}active{% endif %}">
+        <ion-icon name="wallet-outline"></ion-icon> Event Budget
+    </a>
+    <a href="?sub=sponsorships&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'sponsorships' %}active{% endif %}">
+        <ion-icon name="star-outline"></ion-icon> Sponsorship Funds
+    </a>
+    <a href="?sub=transactions&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'transactions' %}active{% endif %}">
+        <ion-icon name="swap-horizontal-outline"></ion-icon> Transactions
+    </a>
+    <a href="?sub=reports&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'reports' %}active{% endif %}">
+        <ion-icon name="bar-chart-outline"></ion-icon> Reports
+    </a>
+</div>
+
+{% if sub == 'budget' %}
+<div id="budgetForm" class="slide-form">
+    <!-- Form content same as before -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Set Event Budget</h3>
+        <button type="button" onclick="closeForm('budgetForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_budget' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg">
+                <label>Total Budget (₹) *</label>
+                <input type="number" step="0.01" name="total_budget" required value="0">
+            </div>
+            <div class="fg">
+                <label>Allocated Budget (₹)</label>
+                <input type="number" step="0.01" name="allocated_budget" value="0">
+            </div>
+        </div>
+        <div class="fg">
+            <label>Internal Notes</label>
+            <textarea name="notes" rows="3"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Budget</button>
+            <button type="button" class="btn-draft" onclick="closeForm('budgetForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Budget Details</h2>
+        <button class="btn" onclick="openForm('budgetForm')"><ion-icon name="add-outline"></ion-icon> Update Budget</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>TOTAL BUDGET</th>
+                <th>ALLOCATED</th>
+                <th>REMAINING (EST)</th>
+                <th>NOTES</th>
+                <th>CREATED AT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in budgets %}
+            <tr>
+                <td style="font-weight:800;color:#059669;font-size:16px;">₹{{ b.total_budget }}</td>
+                <td style="font-weight:700;">₹{{ b.allocated_budget }}</td>
+                <td style="font-weight:700;color:#ea580c;">₹{{ b.total_budget|add:"-"|add:b.allocated_budget }}</td>
+                <td>{{ b.notes|truncatechars:50|default:"-" }}</td>
+                <td style="font-size:12px;">{{ b.created_at|date:"d M, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">No budget details added.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif sub == 'sponsorships' %}
+<div id="sponsorForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Sponsorship</h3>
+        <button type="button" onclick="closeForm('sponsorForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_sponsorship' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg">
+                <label>Sponsor Name *</label>
+                <input type="text" name="sponsor_name" required>
+            </div>
+            <div class="fg">
+                <label>Date Received</label>
+                <input type="date" name="date_received">
+            </div>
+        </div>
+        <div class="form-row-3">
+            <div class="fg">
+                <label>Amount Pledged (₹) *</label>
+                <input type="number" step="0.01" name="amount_pledged" value="0" required>
+            </div>
+            <div class="fg">
+                <label>Amount Received (₹) *</label>
+                <input type="number" step="0.01" name="amount_received" value="0" required>
+            </div>
+            <div class="fg">
+                <label>Status</label>
+                <select name="status">
+                    <option value="Pending">Pending</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Received">Received</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Sponsorship</button>
+            <button type="button" class="btn-draft" onclick="closeForm('sponsorForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Sponsorship Funds</h2>
+        <button class="btn" onclick="openForm('sponsorForm')"><ion-icon name="add-outline"></ion-icon> Add Sponsorship</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>SPONSOR NAME</th>
+                <th>AMOUNT PLEDGED</th>
+                <th>AMOUNT RECEIVED</th>
+                <th>DATE</th>
+                <th>STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sponsorships %}
+            <tr>
+                <td><strong>{{ s.sponsor_name }}</strong></td>
+                <td style="font-weight:700;">₹{{ s.amount_pledged }}</td>
+                <td style="font-weight:700;color:#059669;">₹{{ s.amount_received }}</td>
+                <td>{{ s.date_received|default:"-" }}</td>
+                <td><span style="padding:4px 8px;border-radius:12px;font-size:12px;font-weight:700;background:#{% if s.status == 'Received' %}ecfdf5;color:#059669;{% elif s.status == 'Partial' %}eff6ff;color:#2563eb;{% else %}fef3c7;color:#d97706;{% endif %}">{{ s.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">No sponsorships tracked.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif sub == 'transactions' %}
+<div id="txForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Process Transaction</h3>
+        <button type="button" onclick="closeForm('txForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_transaction' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row-3">
+            <div class="fg">
+                <label>Type *</label>
+                <select name="transaction_type" required>
+                    <option value="Expense">Expense</option>
+                    <option value="Income">Income</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>Category *</label>
+                <select name="category" required>
+                    <option value="">-- Select Category --</option>
+                    {% for val, label in categories %}
+                        <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>Date *</label>
+                <input type="date" name="transaction_date" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Amount (₹) *</label>
+                <input type="number" step="0.01" name="amount" required>
+            </div>
+            <div class="fg">
+                <label>Receipt File (Img/PDF)</label>
+                <input type="file" name="receipt_file">
+            </div>
+        </div>
+        <div class="fg">
+            <label>Description/Remarks</label>
+            <textarea name="description" rows="2"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Process Transaction</button>
+            <button type="button" class="btn-draft" onclick="closeForm('txForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Transactions Log</h2>
+        <button class="btn" onclick="openForm('txForm')"><ion-icon name="add-outline"></ion-icon> Log Transaction</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>DATE</th>
+                <th>TYPE</th>
+                <th>CATEGORY</th>
+                <th>AMOUNT</th>
+                <th>DESCRIPTION</th>
+                <th>RECEIPT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr>
+                <td style="font-size:13px;font-weight:700;">{{ tx.transaction_date|date:"d M Y" }}</td>
+                <td>
+                    {% if tx.transaction_type == 'Expense' %}
+                        <span style="color:#dc2626;font-weight:700;font-size:12px;">OUT</span>
+                    {% else %}
+                        <span style="color:#059669;font-weight:700;font-size:12px;">IN</span>
+                    {% endif %}
+                </td>
+                <td>{{ tx.category }}</td>
+                <td style="font-weight:800;color:{% if tx.transaction_type == 'Expense' %}#dc2626{% else %}#059669{% endif %};">₹{{ tx.amount }}</td>
+                <td>{{ tx.description|truncatechars:40 }}</td>
+                <td>{% if tx.receipt_file %}<a href="{{ tx.receipt_file.url }}" target="_blank" style="color:#2563eb;text-decoration:none;"><ion-icon name="document-text-outline"></ion-icon></a>{% else %}-{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;">No transactions recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif sub == 'reports' %}
+<div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
+    <div class="stat-card">
+        <ion-icon name="wallet" class="stat-icon"></ion-icon>
+        <div class="stat-title">Total Allocated Budget</div>
+        <div class="stat-value">₹{{ report.total_budget }}</div>
+    </div>
+    <div class="stat-card">
+        <ion-icon name="cash" class="stat-icon"></ion-icon>
+        <div class="stat-title">Total Sponsors Received</div>
+        <div class="stat-value" style="color:#059669;">₹{{ report.total_sponsor }}</div>
+    </div>
+    <div class="stat-card">
+        <ion-icon name="swap-horizontal" class="stat-icon"></ion-icon>
+        <div class="stat-title">Total Operational Income</div>
+        <div class="stat-value" style="color:#059669;">₹{{ report.total_income }}</div>
+    </div>
+    <div class="stat-card">
+        <ion-icon name="calculator" class="stat-icon"></ion-icon>
+        <div class="stat-title">Total Expenses</div>
+        <div class="stat-value" style="color:#dc2626;">₹{{ report.total_expense }}</div>
+    </div>
+</div>
+
+<div class="card" style="background:#111827;color:#fff;border-color:#111827;">
+    <div style="font-weight:700;font-size:14px;color:#9ca3af;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Net Available Balance</div>
+    <div style="font-size:42px;font-weight:900;color:{% if report.net_balance < 0 %}#f87171{% else %}#10b981{% endif %};">₹{{ report.net_balance }}</div>
+    <p style="font-size:13px;color:#6b7280;margin:4px 0 0;">(Total Budget + Sponsors Received + Income - Expenses)</p>
+</div>
+
+<div class="card">
+    <h2 class="section-title" style="margin-bottom:18px;">Expense Breakdown by Category</h2>
+    {% if report.category_expenses %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:20px;">
+            {% for cat in report.category_expenses %}
+                <div style="padding:15px;border:1px solid #f3f4f6;border-radius:10px;background:#f9fafb;">
+                    <div style="font-size:13px;color:#6b7280;font-weight:700;margin-bottom:4px;">{{ cat.category|upper }}</div>
+                    <div style="font-size:22px;font-weight:800;color:#dc2626;">₹{{ cat.total }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="padding:30px;text-align:center;color:#9ca3af;font-size:15px;background:#f9fafb;border-radius:12px;">No expenses recorded yet.</div>
+    {% endif %}
+</div>
+
+{% endif %} <!-- End Sub checks -->
+{% endif %} <!-- End active_hackathon check -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openForm(formId) {
+    document.querySelectorAll('.slide-form').forEach(f => f.classList.remove('open'));
+    const form = document.getElementById(formId);
+    if (form) {
+        form.classList.add('open');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+function closeForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) form.classList.remove('open');
+}
+</script>
+{% endblock %}

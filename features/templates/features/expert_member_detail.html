@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Expert Member — {{ expert.user.get_full_name }} — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:28px;margin-bottom:20px;}
+  .section-label{font-size:11px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #ede9fe;}
+  .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+  .info-item label{font-size:12px;font-weight:700;color:#9ca3af;display:block;margin-bottom:3px;}
+  .info-item span{font-size:14px;color:#111827;font-weight:600;}
+  .badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block;}
+  .b-active{background:#ecfdf5;color:#059669;} .b-suspended{background:#f3f4f6;color:#6b7280;}
+  .btn{background:#7c3aed;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-outline{background:#fff;color:#7c3aed;border:2px solid #7c3aed;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-danger{background:#fef2f2;color:#dc2626;border:2px solid #fee2e2;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-success{background:#ecfdf5;color:#059669;border:2px solid #a7f3d0;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .fg{margin-bottom:16px;}
+  .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+  .fg input{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;}
+  .fg input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1);}
+  .media-grid{display:grid;grid-template-columns:minmax(0, 420px) 1fr;gap:18px;align-items:start;}
+  .meta-note{font-size:13px;color:#6b7280;line-height:1.6;}
+  .link-inline{color:#7c3aed;font-weight:700;text-decoration:none;}
+  video{width:100%;border-radius:14px;border:1px solid #e5e7eb;background:#111827;max-height:260px;}
+  @media(max-width:900px){.media-grid{grid-template-columns:1fr;}}
+  @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:13px;color:#6b7280;">
+  <a href="{% url 'jury_management' %}?sub=expert_roster" style="color:#7c3aed;font-weight:700;text-decoration:none;">Expert Roster</a>
+  <ion-icon name="chevron-forward-outline"></ion-icon>
+  <span>{{ expert.user.get_full_name|default:expert.user.username }}</span>
+</div>
+
+<!-- Header -->
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div style="width:56px;height:56px;background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;">
+      {{ expert.user.username|slice:":1"|upper }}
+    </div>
+    <div>
+      <h1 style="font-size:22px;font-weight:900;margin:0 0 4px;">{{ expert.user.get_full_name|default:expert.user.username }}</h1>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="badge {% if expert.user.is_active %}b-active{% else %}b-suspended{% endif %}">{% if expert.user.is_active %}Active{% else %}Suspended{% endif %}</span>
+        <span style="color:#6b7280;font-size:13px;">{{ expert.user.email }}</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if not edit_mode %}
+    <a href="{% url 'edit_expert_member' expert.id %}" class="btn-outline"><ion-icon name="create-outline"></ion-icon> Edit</a>
+    {% endif %}
+    <form method="POST" action="{% url 'toggle_expert_member_status' expert.id %}" style="display:inline;" onsubmit="return confirm('{% if expert.user.is_active %}Suspend{% else %}Reactivate{% endif %} this expert member?')">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">
+        <ion-icon name="{% if expert.user.is_active %}ban-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+        {% if expert.user.is_active %}Suspend{% else %}Reactivate{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if edit_mode %}
+<!-- Edit Form -->
+<div class="card">
+  <div class="section-label">Edit Profile</div>
+  <form method="POST" action="{% url 'edit_expert_member' expert.id %}">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="fg"><label>First Name</label><input name="first_name" value="{{ expert.user.first_name }}"></div>
+      <div class="fg"><label>Last Name</label><input name="last_name" value="{{ expert.user.last_name }}"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Email</label><input type="email" name="email" value="{{ expert.user.email }}"></div>
+      <div class="fg"><label>Phone Number</label><input name="phone_number" value="{{ expert.user.phone_number|default:'' }}"></div>
+    </div>
+    <div class="fg" style="max-width:360px;"><label>Domain / Expertise</label><input name="domain" value="{{ expert.domain|default:'' }}"></div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn"><ion-icon name="save-outline"></ion-icon> Save Changes</button>
+      <a href="{% url 'view_expert_member' expert.id %}" class="btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% else %}
+<!-- View Details -->
+<div class="card">
+  <div class="section-label">Account Details</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Username</label><span style="font-family:monospace;">{{ expert.user.username }}</span></div>
+    <div class="info-item"><label>Email</label><span>{{ expert.user.email }}</span></div>
+    <div class="info-item"><label>Phone</label><span>{{ expert.user.phone_number|default:"—" }}</span></div>
+    <div class="info-item"><label>Domain</label><span>{{ expert.domain|default:"—" }}</span></div>
+    <div class="info-item"><label>Role</label><span>{{ expert.user.role.name|default:"Expert" }}</span></div>
+    <div class="info-item"><label>Account Status</label><span>{% if expert.user.is_active %}Active{% else %}Suspended{% endif %}</span></div>
+    <div class="info-item"><label>Joined</label><span>{{ expert.user.date_joined|date:"M d, Y" }}</span></div>
+  </div>
+</div>
+
+{% if invitation %}
+<div class="card">
+  <div class="section-label">Onboarding Application</div>
+  <div class="info-grid">
+    <div class="info-item"><label>Organization</label><span>{{ invitation.organization|default:"—" }}</span></div>
+    <div class="info-item"><label>Designation</label><span>{{ invitation.designation|default:"—" }}</span></div>
+    <div class="info-item"><label>LinkedIn</label>
+      {% if invitation.linkedin_url %}<span><a href="{{ invitation.linkedin_url }}" target="_blank" style="color:#7c3aed;">View</a></span>
+      {% else %}<span>—</span>{% endif %}
+    </div>
+    <div class="info-item"><label>Hackathon</label><span>{{ invitation.hackathon.name|default:"—" }}</span></div>
+    <div class="info-item"><label>Approved At</label><span>{{ invitation.approved_at|date:"M d, Y"|default:"—" }}</span></div>
+    <div class="info-item"><label>Approved By</label><span>{{ invitation.approved_by.get_full_name|default:"—" }}</span></div>
+  </div>
+  {% if invitation.bio %}
+  <div style="margin-top:16px;"><div class="info-item"><label>Bio</label><span style="white-space:pre-line;line-height:1.6;">{{ invitation.bio }}</span></div></div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="section-label">Testimonial Video</div>
+  {% if evaluator_profile and evaluator_profile.testimonial_video %}
+  <div class="media-grid">
+    <div>
+      <video controls preload="metadata">
+        <source src="{{ evaluator_profile.testimonial_video.url }}">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <div>
+      <div class="info-grid" style="margin-bottom:16px;">
+        <div class="info-item"><label>Uploaded Video</label><span><a class="link-inline" href="{{ evaluator_profile.testimonial_video.url }}" target="_blank">Open file</a></span></div>
+        <div class="info-item"><label>Shared To Media Team</label><span>{% if testimonial_media_asset %}Yes{% else %}No{% endif %}</span></div>
+        <div class="info-item"><label>Shared At</label><span>{% if testimonial_media_asset %}{{ testimonial_media_asset.uploaded_at|date:"M d, Y h:i A" }}{% else %}&mdash;{% endif %}</span></div>
+      </div>
+      <p class="meta-note">This testimonial is uploaded by the expert member from their dashboard. Send it to the Media, Sponsorship & Communication team to make it available for review and publishing on the landing page.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <a href="{{ evaluator_profile.testimonial_video.url }}" class="btn-outline" target="_blank"><ion-icon name="play-circle-outline"></ion-icon> Preview Video</a>
+        <form method="POST" action="{% url 'send_expert_testimonial_to_media' expert.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="{% if testimonial_media_asset %}btn-outline{% else %}btn-success{% endif %}">
+            <ion-icon name="{% if testimonial_media_asset %}refresh-outline{% else %}send-outline{% endif %}"></ion-icon>
+            {% if testimonial_media_asset %}Send Again to Social Media{% else %}Send to Social Media Team{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p style="margin:0;color:#9ca3af;">This expert member has not uploaded a testimonial video yet.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

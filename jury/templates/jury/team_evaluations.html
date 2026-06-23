@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ dashboard_title }} - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .eval-hero {
+        background: linear-gradient(135deg, #fff4e6 0%, #ffe7c7 100%);
+        border: 1px solid rgba(234, 88, 12, 0.2);
+        border-radius: 24px;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    .eval-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ea580c;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+    }
+    .team-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(251, 146, 60, 0.28);
+        border-radius: 20px;
+        padding: 22px;
+        position: relative;
+        transition: all 0.25s ease;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .team-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 36px rgba(234, 88, 12, 0.1);
+        border-color: rgba(234, 88, 12, 0.4);
+    }
+    .team-card.complete {
+        border-color: rgba(5, 150, 105, 0.35);
+        background: linear-gradient(135deg, rgba(240, 253, 244, 0.9), rgba(255, 255, 255, 0.98));
+    }
+    .team-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .team-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #fff1de, #ffe7c7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 900;
+        color: #ea580c;
+        border: 1px solid rgba(234, 88, 12, 0.15);
+        flex-shrink: 0;
+    }
+    .team-name {
+        font-size: 16px;
+        font-weight: 800;
+        color: #111827;
+        line-height: 1.3;
+    }
+    .team-meta {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .status-pending { background: #fff7ed; color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.2); }
+    .status-complete { background: #ecfdf5; color: #059669; border: 1px solid rgba(5, 150, 105, 0.2); }
+    .progress-bar-wrap { margin: 14px 0 10px; }
+    .progress-bar-track {
+        height: 6px;
+        background: #f3f4f6;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ea580c, #f97316);
+        transition: width 0.6s ease;
+    }
+    .progress-bar-fill.complete { background: linear-gradient(90deg, #059669, #10b981); }
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        font-weight: 700;
+        color: #9ca3af;
+        margin-bottom: 5px;
+    }
+    .team-stats-row {
+        display: flex;
+        gap: 12px;
+        margin: 12px 0;
+    }
+    .team-stat-chip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+    }
+    .btn-evaluate {
+        width: 100%;
+        background: #ea580c;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2);
+    }
+    .btn-evaluate.complete {
+        background: #059669;
+        box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
+    }
+    .stat-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .summary-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(251, 146, 60, 0.28);
+        border-radius: 18px;
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+    .summary-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .summary-value { font-size: 26px; font-weight: 900; color: #111827; }
+    .summary-label { font-size: 12px; font-weight: 700; color: #6b7280; margin-top: 2px; }
+    @media (max-width: 768px) {
+        .stat-summary-grid,
+        .team-grid {
+            grid-template-columns: 1fr;
+        }
+        .eval-hero {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="eval-hero">
+    <div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+            <span class="eval-hero-badge">
+                <ion-icon name="{% if role == 'jury' %}scale-outline{% else %}star-outline{% endif %}"></ion-icon>
+                {{ role_label }}
+            </span>
+            {% if live_hackathon %}
+            <span style="font-size:12px; color:#6b7280; font-weight:700;">{{ live_hackathon.name }}</span>
+            {% endif %}
+        </div>
+        <h1 style="font-size:28px; font-weight:900; color:#111827; margin:0 0 6px;">
+            Team Evaluation Workspace
+        </h1>
+        <p style="font-size:14px; color:#6b7280; margin:0; font-weight:600;">
+            Open any assigned team to review documents, submit scores, and update marks whenever needed.
+        </p>
+    </div>
+    <div style="text-align:right; flex-shrink:0;">
+        <div style="font-size:13px; font-weight:700; color:#6b7280;">Evaluation Progress</div>
+        <div style="font-size:36px; font-weight:900; color:#ea580c; line-height:1;">
+            {{ total_evaluated }}<span style="font-size:20px; color:#9ca3af;">/{{ total_assigned }}</span>
+        </div>
+        <div style="font-size:12px; color:#9ca3af; font-weight:600;">Teams Evaluated</div>
+    </div>
+</div>
+
+<div class="stat-summary-grid">
+    <div class="summary-card">
+        <div class="summary-icon" style="background:#fff7ed;">📋</div>
+        <div>
+            <div class="summary-value">{{ total_assigned }}</div>
+            <div class="summary-label">Assigned Teams</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon" style="background:#ecfdf5;">✅</div>
+        <div>
+            <div class="summary-value" style="color:#059669;">{{ total_evaluated }}</div>
+            <div class="summary-label">Fully Evaluated</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon" style="background:#fff7ed;">⏳</div>
+        <div>
+            <div class="summary-value" style="color:#ea580c;">{{ total_pending }}</div>
+            <div class="summary-label">Pending</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <div>
+        <h2 style="margin:0; font-size:20px; font-weight:800; color:#111827;">Assigned Teams</h2>
+        <p style="margin:4px 0 0; font-size:13px; color:#6b7280; font-weight:600;">
+            Select a team card to continue scoring.
+        </p>
+    </div>
+</div>
+
+{% if team_cards %}
+<div class="team-grid">
+    {% for card in team_cards %}
+    <div class="team-card {% if card.is_complete %}complete{% endif %}">
+        <div class="team-card-header">
+            <div style="display:flex; gap:14px; align-items:flex-start;">
+                <div class="team-avatar">{{ card.team_name|slice:":2"|upper }}</div>
+                <div>
+                    <div class="team-name">{{ card.team_name }}</div>
+                    <div class="team-meta">{{ card.hackathon_name }} · {{ card.round_name }}</div>
+                </div>
+            </div>
+            <span class="status-badge {% if card.is_complete %}status-complete{% else %}status-pending{% endif %}">
+                {% if card.is_complete %}Done{% else %}Pending{% endif %}
+            </span>
+        </div>
+
+        <div class="team-stats-row">
+            <div class="team-stat-chip">
+                <ion-icon name="document-outline" style="font-size:14px; color:#ea580c;"></ion-icon>
+                {{ card.doc_count }} Docs
+            </div>
+            <div class="team-stat-chip">
+                <ion-icon name="list-outline" style="font-size:14px; color:#2563eb;"></ion-icon>
+                {{ card.total_params }} Parameters
+            </div>
+        </div>
+
+        <div class="progress-bar-wrap">
+            <div class="progress-label">
+                <span>Evaluation Progress</span>
+                <span>{{ card.scored_params }}/{{ card.total_params }} scored</span>
+            </div>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill {% if card.is_complete %}complete{% endif %}" style="width:{{ card.progress_pct }}%;"></div>
+            </div>
+        </div>
+
+        <div style="margin-top:16px;">
+            <a href="{% url 'jury_team_detail' card.team.id %}" class="btn-evaluate {% if card.is_complete %}complete{% endif %}">
+                <ion-icon name="{% if card.is_complete %}create-outline{% else %}clipboard-outline{% endif %}"></ion-icon>
+                {% if card.is_complete %}Update Marks{% else %}Evaluate Team{% endif %}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="stat-card" style="margin-top:12px;">
+    <div style="text-align:center; padding:60px 20px; color:#9ca3af;">
+        <div style="font-size:64px; margin-bottom:16px; opacity:0.4;">📋</div>
+        <h3 style="font-size:18px; font-weight:800; color:#374151; margin:0 0 8px;">No Teams Assigned Yet</h3>
+        <p style="font-size:14px; color:#6b7280; margin:0;">
+            You have not been assigned to any teams for evaluation.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

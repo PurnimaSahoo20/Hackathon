@@ -1,0 +1,15 @@
+{% extends "team/base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Announcements</div><div class="page-subtitle">Recent updates visible to your team</div></div></div>
+<div class="table-wrap" style="padding:24px">
+    {% for n in notifs %}
+    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:4px"><strong>{{ n.title }}</strong><span style="font-size:11px;color:var(--muted)">{{ n.created_at|date:"M j, Y H:i" }}</span></div>
+        <div style="font-size:13px;color:var(--muted2);line-height:1.55">{{ n.body }}</div>
+    </div>
+    {% empty %}
+    <div style="color:var(--muted)">No announcements yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

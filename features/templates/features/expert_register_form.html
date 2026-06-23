@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expert Registration — HackNexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 40%,#a855f7 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;}
+    .card{background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(76,29,149,.3);max-width:720px;width:100%;overflow:hidden;}
+    .card-header{background:linear-gradient(135deg,#4c1d95,#7c3aed);padding:32px 36px;color:#fff;}
+    .card-header h1{font-size:26px;font-weight:900;margin-bottom:6px;}
+    .card-header p{font-size:14px;opacity:.85;}
+    .card-body{padding:32px 36px;}
+    .section{font-size:13px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.7px;margin:24px 0 14px;padding-bottom:6px;border-bottom:2px solid #ede9fe;}
+    .section:first-child{margin-top:0;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .fg{margin-bottom:16px;}
+    .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+    .fg input,.fg select,.fg textarea{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border .2s;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1);}
+    .fg .hint{font-size:12px;color:#9ca3af;margin-top:4px;}
+    .submit-btn{width:100%;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.3px;margin-top:8px;transition:opacity .2s;}
+    .submit-btn:hover{opacity:.9;}
+    .invite-badge{display:inline-block;background:#ede9fe;color:#7c3aed;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;margin-bottom:20px;}
+    .warning-box{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px 16px;color:#991b1b;font-size:13px;font-weight:700;margin-bottom:18px;}
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.card-body{padding:24px 20px;}.card-header{padding:24px 20px;}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div style="font-size:32px;margin-bottom:10px;">⚖️</div>
+    <h1>Expert Registration Form</h1>
+    <p>Complete your profile to confirm your participation as a expert member.</p>
+    {% if invitation.hackathon %}
+    <div style="margin-top:14px;background:rgba(255,255,255,.15);border-radius:10px;padding:10px 16px;font-size:14px;">
+      <strong>Hackathon:</strong> {{ invitation.hackathon.name }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="invite-badge"><ion-icon name="mail-outline"></ion-icon> {{ invitation.email }}</div>
+    {% if is_rejected_resubmission and invitation.rejection_reason %}
+    <div class="warning-box">Previous submission was rejected. Reason: {{ invitation.rejection_reason }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="section">Personal Information</div>
+      <div class="form-row">
+        <div class="fg"><label>First Name *</label><input type="text" name="first_name" value="{{ invitation.first_name }}" required placeholder="e.g. Priya"></div>
+        <div class="fg"><label>Last Name *</label><input type="text" name="last_name" value="{{ invitation.last_name }}" required placeholder="e.g. Sharma"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Phone Number</label><input type="text" name="phone_number" value="{{ invitation.phone_number }}" placeholder="+91 98765 43210"></div>
+        <div class="fg">
+          <label>Gender</label>
+          <select name="gender">
+            <option value="">-- Select --</option>
+            <option value="Male" {% if invitation.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if invitation.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if invitation.gender == 'Other' %}selected{% endif %}>Other</option>
+            <option value="Prefer not to say" {% if invitation.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" style="max-width:320px;"><label>Date of Birth</label><input type="date" name="date_of_birth" value="{{ invitation.date_of_birth|default:'' }}"></div>
+
+      <div class="section">Professional Details</div>
+      <div class="form-row">
+        <div class="fg"><label>Organization / Institution *</label><input type="text" name="organization" value="{{ invitation.organization }}" required placeholder="e.g. IIT Bhubaneswar"></div>
+        <div class="fg"><label>Designation / Title *</label><input type="text" name="designation" value="{{ invitation.designation }}" required placeholder="e.g. Associate Professor"></div>
+      </div>
+      <div class="fg"><label>Area of Expertise / Judging Domain *</label><input type="text" name="domain" value="{{ invitation.domain }}" required placeholder="e.g. AI/ML, Cybersecurity, IoT"></div>
+      <div class="fg"><label>LinkedIn Profile URL <span style="font-size:11px;color:#9ca3af;">(optional)</span></label><input type="url" name="linkedin_url" value="{{ invitation.linkedin_url }}" placeholder="https://linkedin.com/in/username"></div>
+      <div class="fg"><label>Short Bio <span style="font-size:11px;color:#9ca3af;">(optional)</span></label><textarea name="bio" rows="4" placeholder="Brief professional background...">{{ invitation.bio }}</textarea></div>
+
+      <div class="section">Documents</div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Government ID Proof *</label>
+          <input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png" {% if not invitation.id_proof %}required{% endif %}>
+          <div class="hint">Aadhaar, PAN, Passport, Driving Licence</div>
+          {% if invitation.id_proof %}<div class="hint">Current file: <a href="{{ invitation.id_proof.url }}" target="_blank">View uploaded proof</a></div>{% endif %}
+        </div>
+        <div class="fg">
+          <label>Photo <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
+          <input type="file" name="photo" accept="image/*">
+          <div class="hint">Clear passport-size photo</div>
+          {% if invitation.photo %}<div class="hint">Current photo: <a href="{{ invitation.photo.url }}" target="_blank">View uploaded image</a></div>{% endif %}
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit Registration →</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

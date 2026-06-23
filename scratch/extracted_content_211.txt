@@ -1,0 +1,76 @@
+Created At: 2026-05-29T05:44:53Z
+Completed At: 2026-05-29T05:44:53Z
+File Path: `file:///d:/OKCL/Hackathon/code/Bput-Hackathon/events/views.py`
+Total Lines: 955
+Total Bytes: 44623
+Showing lines 850 to 955
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+850:             'answer': 'The platform supports mentor, jury, and expert workflows. Public details shown here expand automatically as those profiles are approved and published.',
+851:         },
+852:     ]
+853: 
+854:     documentation_links = Documentation.objects.filter(
+855:         is_published=True,
+856:     ).order_by('-created_at')
+857:     if active_hackathon:
+858:         scoped_docs = documentation_links.filter(hackathon=active_hackathon)
+859:         if scoped_docs.exists():
+860:             documentation_links = scoped_docs
+861:     documentation_links = documentation_links[:3]
+862: 
+863:     stat_cards = [
+864:         {'value': f'{total_problem_statements}+' if total_problem_statements else '75+', 'label': 'Problem Statements'},
+865:         {'value': f'{total_teams}+' if total_teams else '500+', 'label': 'Teams'},
+866:         {'value': f'{total_institutions}+' if total_institutions else '150+', 'label': 'Institutions'},
+867:         {'value': f'{len(top_tracks)}' if top_tracks else '7', 'label': 'Tracks'},
+868:         {'value': f'{len(expert_talks)}', 'label': 'Expert Talks'},
+869:         {'value': f'{active_hackathon.number_of_rounds if active_hackathon else 1}', 'label': 'Rounds'},
+870:     ]
+871: 
+872:     hero_slides = [
+873:         {
+874:             'title_prefix': 'Build Solutions for',
+875:             'highlight': 'Smart India',
+876:             'description': 'Transform ideas into impactful innovations that drive national development.',
+877:             'highlights': [
+878:                 {'icon': '📅', 'text': active_hackathon.registration_op
+<truncated 2341 bytes>
+     'secondary_target': '#podcasts',
+919:             'primary_type': 'primary',
+920:         },
+921:     ]
+922: 
+923:     ticker_message = 'Early bird registrations open now! Explore the latest published problem statements and public expert content on the platform.'
+924:     if active_hackathon and active_hackathon.registration_close:
+925:         ticker_message = f'Registrations close on {active_hackathon.registration_close:%B %d, %Y}. Explore themes, problem statements, and expert content before applying.'
+926: 
+927:     return render(request, 'landing_page.html', {
+928:         'active_hackathon': active_hackathon,
+929:         'published_problems': published_problems[:6],
+930:         'total_problem_statements': total_problem_statements,
+931:         'themes_count': themes_count or len(top_tracks),
+932:         'published_creatives': published_creatives,
+933:         'published_podcasts': published_podcasts,
+934:         'gallery_items': gallery_items,
+935:         'testimonial_items': testimonial_items,
+936:         'total_teams': total_teams,
+937:         'total_institutions': total_institutions,
+938:         'hero_slides': hero_slides,
+939:         'ticker_message': ticker_message,
+940:         'leaders': leaders[:6],
+941:         'about_cards': about_cards,
+942:         'top_tracks': top_tracks,
+943:         'track_domains': track_domains,
+944:         'ps_modal_data': ps_modal_data,
+945:         'expert_talks': expert_talks,
+946:         'timeline_events': timeline_events[:6],
+947:         'judging_criteria': judging_criteria,
+948:         'jury_members': jury_members[:8],
+949:         'sponsor_cards': sponsor_cards[:10],
+950:         'partner_cards': partner_cards[:10],
+951:         'faq_items': faq_items,
+952:         'documentation_links': documentation_links,
+953:         'stat_cards': stat_cards,
+954:     })
+955: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

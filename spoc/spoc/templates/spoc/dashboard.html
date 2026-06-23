@@ -1,0 +1,158 @@
+{% extends "spoc/base.html" %}
+{% block title %}SPOC Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">SPOC Dashboard</div>
+        <div class="page-subtitle">{{ institution.name|default:"HackNexus" }} · {{ request.user.get_full_name|default:request.user.username }}</div>
+    </div>
+    {% if institution %}
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface);padding:10px 16px;border-radius:12px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.04)">
+        <span style="font-size:24px">🏛️</span>
+        <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">{{ institution.name }}</div>
+            <div style="font-size:11px;color:var(--muted)">{{ institution.location|default:"Institution" }}</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- STATS ROW -->
+<div class="stats-row">
+    <div class="stat-card" style="--sc:#7c3aed">
+        <div class="sc-icon">🏛️</div>
+        <div class="sc-value">1</div>
+        <div class="sc-label">My College</div>
+        <div class="sc-change">✓ SPOC Active</div>
+    </div>
+    <div class="stat-card" style="--sc:#059669">
+        <div class="sc-icon">👥</div>
+        <div class="sc-value">{{ total_teams }}</div>
+        <div class="sc-label">Total Teams</div>
+        <div class="sc-change warn">↑ {{ pending_teams }} pending approval</div>
+    </div>
+    <div class="stat-card" style="--sc:#059669">
+        <div class="sc-icon">✅</div>
+        <div class="sc-value">{{ approved_teams }}</div>
+        <div class="sc-label">Approved Teams</div>
+        <div class="sc-change">Active this session</div>
+    </div>
+    <div class="stat-card" style="--sc:#d97706">
+        <div class="sc-icon">⏳</div>
+        <div class="sc-value">{{ pending_teams }}</div>
+        <div class="sc-label">Pending Approval</div>
+        {% if pending_teams %}
+        <div class="sc-change red">⚠ Action needed</div>
+        {% else %}
+        <div class="sc-change">All reviewed</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ACCOUNT STATUS -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">SPOC Account Status</div>
+        <span class="badge badge-green">✓ Active</span>
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div class="info-box">
+            <strong>✅ Your SPOC account is active.</strong> You have been verified and approved by the Admin. You can now manage team registrations and approve authorization letters for your college.
+        </div>
+        <div style="display:flex;align-items:center;overflow-x:auto;padding:20px 0 4px;gap:0">
+            {% for step in account_steps %}
+            {% if forloop.counter <= 4 %}
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+                <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:#059669;border:2px solid #059669;color:white">✓</div>
+                <div style="font-size:10px;font-weight:600;text-align:center;max-width:70px;color:var(--text)">{{ step }}</div>
+            </div>
+            {% if not forloop.last %}<div style="flex:1;min-width:28px;height:3px;background:#059669;margin-bottom:24px"></div>{% endif %}
+            {% else %}
+            {% if forloop.counter == 5 %}
+            <div style="flex:1;min-width:28px;height:3px;background:var(--border);margin-bottom:24px"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+                <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:#eff6ff;border:2px solid var(--accent);color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,0.1)">📋</div>
+                <div style="font-size:10px;font-weight:600;text-align:center;max-width:70px;color:var(--text)">{{ step }}</div>
+            </div>
+            {% else %}
+            <div style="flex:1;min-width:28px;height:3px;background:var(--border);margin-bottom:24px"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+                <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--surface);border:2px solid var(--border);color:var(--muted)">📄</div>
+                <div style="font-size:10px;font-weight:600;text-align:center;max-width:70px;color:var(--text)">{{ step }}</div>
+            </div>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- TWO COLUMNS -->
+<div class="two-grid">
+    <!-- Notifications -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">🔔 Notifications</div>
+            {% if notif_count %}<span class="badge badge-red">{{ notif_count }} new</span>{% endif %}
+        </div>
+        <div class="table-wrap" style="padding:16px 20px">
+            {% if notifications %}
+            {% for n in notifications %}
+            <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+                <div style="width:28px;height:28px;border-radius:8px;background:rgba(37,99,235,0.1);color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔔</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">{{ n.title }}</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ n.body|truncatechars:60 }}</div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No new notifications</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">Quick Actions</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <a href="{% url 'spoc_teams' %}" class="section-btn primary" style="text-align:left;padding:13px 16px;font-size:13px">
+                👥 Review Pending Team Registrations
+                {% if pending_teams %}<span style="background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:20px;margin-left:4px">{{ pending_teams }}</span>{% endif %}
+            </a>
+            <a href="{% url 'spoc_modifications' %}" class="section-btn" style="text-align:left;padding:13px 16px;font-size:13px">
+                ✏️ Review Modification Requests
+            </a>
+            <a href="{% url 'spoc_results' %}" class="section-btn" style="text-align:left;padding:13px 16px;font-size:13px">
+                🏆 View Team Results
+            </a>
+            <a href="{% url 'spoc_announcements' %}" class="section-btn" style="text-align:left;padding:13px 16px;font-size:13px">
+                📢 View Announcements
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- RECENT ACTIVITY -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-title">Recent Activity</div>
+        <a href="{% url 'spoc_activity_log' %}" class="section-btn">View All →</a>
+    </div>
+    <div class="table-wrap" style="padding:16px 20px">
+        <div class="activity-list">
+            {% for act in recent_activities %}
+            <div class="activity-item">
+                <div class="ai-dot" style="background:{{ act.color }}22;color:{{ act.color }}">{{ act.icon }}</div>
+                <div class="ai-text">{{ act.text|safe }}</div>
+                <div class="ai-time">{{ act.created_at|timesince }} ago</div>
+            </div>
+            {% empty %}
+            <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No activity yet. Start by reviewing pending team registrations.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

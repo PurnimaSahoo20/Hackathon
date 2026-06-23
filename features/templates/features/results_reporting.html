@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Results & Reporting - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:12px;margin-bottom:24px;width:fit-content;flex-wrap:wrap;}
+    .sub-tab{padding:9px 18px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;}
+    .sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+    .stat{background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:20px;}
+    .stat .num{font-size:28px;font-weight:900;color:#111827;}
+    .card{background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:24px;margin-bottom:20px;}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;background:#fffbf7;}
+    td{padding:12px 14px;border-bottom:1px solid #f3f4f6;}
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;text-decoration:none;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
+    <div>
+        <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Results, Awards & Reporting</h1>
+        <p style="color:#6b7280;margin:0;">Review reporting health, award readiness, and export team outcomes.</p>
+    </div>
+    <form method="GET">
+        <input type="hidden" name="focus" value="{{ focus }}">
+        <select name="hackathon" onchange="this.form.submit()" style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;">
+            <option value="">Select hackathon</option>
+            {% for h in hackathons %}
+            <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="sub-tabs">
+    <a href="?focus=reports{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'reports' %}active{% endif %}">Reports</a>
+    <a href="?focus=awards{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'awards' %}active{% endif %}">Awards</a>
+    <a href="?focus=results{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'results' %}active{% endif %}">Results Export</a>
+</div>
+
+<div class="grid">
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Budget</div><div class="num">{{ report.total_budget|default:0 }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Sponsor Received</div><div class="num">{{ report.total_sponsor|default:0 }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Expenses</div><div class="num">{{ report.total_expense|default:0 }}</div></div>
+    <div class="stat"><div style="font-size:12px;font-weight:800;color:#6b7280;">Net Balance</div><div class="num">{{ report.net_balance|default:0 }}</div></div>
+</div>
+
+{% if focus == 'awards' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Award-Ready Teams</h2>
+    <table>
+        <thead><tr><th>Team</th><th>Institution</th><th>Problem Statement</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for team in award_candidates %}
+            <tr>
+                <td>{{ team.team_name }}</td>
+                <td>{{ team.institution.name|default:"-" }}</td>
+                <td>{{ team.problem_statement.title|default:"-" }}</td>
+                <td>{{ team.status }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No award candidates available yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Award Expense Log</h2>
+    <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+        <tbody>
+            {% for tx in report.award_expenses %}
+            <tr><td>{{ tx.transaction_date }}</td><td>{{ tx.description|default:"Trophy and awards" }}</td><td>{{ tx.amount }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center;color:#9ca3af;">No award-related transactions recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif focus == 'results' %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Results Export</h2>
+    {% if active_hackathon %}
+    <p style="color:#6b7280;">Download a CSV containing team names, institution mapping, problem statement, and current status.</p>
+    <a class="btn" href="?focus=results&hackathon={{ hackathon_filter }}&export=teams">Export Teams CSV</a>
+    {% else %}
+    <p style="color:#9ca3af;">Choose a hackathon first.</p>
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Status Summary</h2>
+    <table>
+        <thead><tr><th>Status</th><th>Count</th></tr></thead>
+        <tbody>
+            {% for label, count in report.status_counts %}
+            <tr><td>{{ label }}</td><td>{{ count }}</td></tr>
+            {% empty %}
+            <tr><td colspan="2" style="text-align:center;color:#9ca3af;">No report data available.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

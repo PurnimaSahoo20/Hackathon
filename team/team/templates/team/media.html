@@ -1,0 +1,30 @@
+{% extends "team/base.html" %}
+{% block title %}Podcast and Media{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Podcast and Media</div><div class="page-subtitle">Published podcast and media content</div></div></div>
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Podcasts</div>
+        {% for podcast in podcasts %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <strong>{{ podcast.title }}</strong>
+            <div style="font-size:12px;color:var(--muted);margin:6px 0">{{ podcast.description|default:"No description." }}</div>
+            {% if podcast.video_url %}<a href="{{ podcast.video_url }}" target="_blank" class="section-btn">Open Link</a>{% elif podcast.video_file %}<a href="{{ podcast.video_file.url }}" target="_blank" class="section-btn">Open Media</a>{% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No podcast content available.</div>
+        {% endfor %}
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Published Media Files</div>
+        {% for item in creatives %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <strong>{{ item.title }}</strong>
+            <div style="margin-top:10px"><a href="{{ item.file.url }}" target="_blank" class="section-btn">Open File</a></div>
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No media files available.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

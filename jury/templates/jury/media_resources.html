@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Podcasts and Documentaries - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card,
+    .grid-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(251, 146, 60, 0.28);
+        border-radius: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    .hero-card {
+        padding: 28px;
+        background: linear-gradient(135deg, #fff5e9, #ffe6c8);
+    }
+    .resource-grid {
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:20px;
+    }
+    .grid-card { padding: 22px; }
+    .resource-list { display:grid; gap:14px; }
+    .resource-item {
+        border: 1px solid #f3e2cc;
+        border-radius: 18px;
+        padding: 16px;
+        background: #fffdfa;
+    }
+    .resource-meta {
+        margin-top:6px;
+        font-size:12px;
+        color:#6b7280;
+        font-weight:700;
+    }
+    .resource-link {
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        color:#ea580c;
+        font-size:13px;
+        font-weight:800;
+        text-decoration:none;
+        margin-top:10px;
+    }
+    @media (max-width: 960px) {
+        .resource-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="hero-card">
+        <h1 style="margin:0 0 8px; font-size:30px; font-weight:900; color:#111827;">Podcasts and Documentaries</h1>
+        <p style="margin:0; font-size:14px; color:#6b7280; font-weight:600;">
+            Published learning resources and media materials available in your evaluator workspace.
+        </p>
+    </div>
+
+    <div class="resource-grid">
+        <div class="grid-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px;">
+                <h2 style="margin:0; font-size:20px; font-weight:800; color:#111827;">Podcasts</h2>
+                <div style="font-size:13px; font-weight:800; color:#ea580c;">{{ podcasts|length }}</div>
+            </div>
+            {% if podcasts %}
+            <div class="resource-list">
+                {% for podcast in podcasts %}
+                <div class="resource-item">
+                    <div style="font-size:16px; font-weight:800; color:#111827;">{{ podcast.title }}</div>
+                    <div class="resource-meta">
+                        {{ podcast.hackathon.name }}{% if podcast.problem_statement %} · {{ podcast.problem_statement.title }}{% endif %}
+                    </div>
+                    <div style="margin-top:8px; font-size:13px; color:#4b5563; line-height:1.7;">
+                        {{ podcast.description|default:"No description provided." }}
+                    </div>
+                    {% if podcast.video_url %}
+                    <a href="{{ podcast.video_url }}" target="_blank" class="resource-link">
+                        <ion-icon name="open-outline"></ion-icon>
+                        Open Link
+                    </a>
+                    {% elif podcast.video_file %}
+                    <a href="{{ podcast.video_file.url }}" target="_blank" class="resource-link">
+                        <ion-icon name="play-circle-outline"></ion-icon>
+                        Open Media
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:34px 20px; color:#9ca3af; font-weight:600;">
+                No podcast resources are available right now.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="grid-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px;">
+                <h2 style="margin:0; font-size:20px; font-weight:800; color:#111827;">Documentaries</h2>
+                <div style="font-size:13px; font-weight:800; color:#ea580c;">{{ documentaries|length }} + {{ creatives|length }}</div>
+            </div>
+
+            {% if documentaries or creatives %}
+            <div class="resource-list">
+                {% for doc in documentaries %}
+                <div class="resource-item">
+                    <div style="font-size:16px; font-weight:800; color:#111827;">{{ doc.title }}</div>
+                    <div class="resource-meta">
+                        {{ doc.hackathon.name }}{% if doc.problem_statement %} · {{ doc.problem_statement.title }}{% endif %} · {{ doc.get_doc_type_display }}
+                    </div>
+                    <div style="margin-top:8px; font-size:13px; color:#4b5563; line-height:1.7;">
+                        {{ doc.description|default:"No description provided." }}
+                    </div>
+                    {% if doc.file %}
+                    <a href="{{ doc.file.url }}" target="_blank" class="resource-link">
+                        <ion-icon name="document-outline"></ion-icon>
+                        Open File
+                    </a>
+                    {% elif doc.external_url %}
+                    <a href="{{ doc.external_url }}" target="_blank" class="resource-link">
+                        <ion-icon name="open-outline"></ion-icon>
+                        Visit Link
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% for creative in creatives %}
+                <div class="resource-item">
+                    <div style="font-size:16px; font-weight:800; color:#111827;">{{ creative.title }}</div>
+                    <div class="resource-meta">{{ creative.hackathon.name }} · Media File</div>
+                    <a href="{{ creative.file.url }}" target="_blank" class="resource-link">
+                        <ion-icon name="image-outline"></ion-icon>
+                        Open File
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:34px 20px; color:#9ca3af; font-weight:600;">
+                No documentary resources are available right now.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

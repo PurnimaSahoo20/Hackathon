@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Profile — Admin — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-card {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .profile-hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 60%, #2563eb 100%);
+    padding: 40px 40px 70px;
+    position: relative;
+  }
+  .profile-avatar {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    background: #dbeafe;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 900; color: #1d4ed8;
+    overflow: hidden;
+    position: absolute;
+    bottom: -48px; left: 40px;
+    box-shadow: 0 8px 24px rgba(37,99,235,.3);
+  }
+  .profile-avatar img { width:100%; height:100%; object-fit:cover; }
+  .profile-body { padding: 64px 40px 40px; }
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block;
+    font-size: 12px; font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%; padding: 11px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color .2s, background .2s;
+    box-sizing: border-box;
+  }
+  .form-input:focus { border-color: #2563eb; background: #fff; }
+  .form-input[readonly] { color: #94a3b8; cursor: not-allowed; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .divider { border: none; border-top: 1px solid #f1f5f9; margin: 28px 0; }
+  .section-title {
+    font-size: 14px; font-weight: 800; color: #1e293b;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg,#2563eb,#3b82f6);
+    color: #fff;
+    border: none; border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37,99,235,.3); }
+  .info-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eff6ff; color: #1d4ed8;
+    font-size: 12px; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+  {% for msg in messages %}
+  <div style="margin-bottom:16px; padding:14px 20px; border-radius:12px;
+    {% if 'error' in msg.tags %}background:#fff1f2; color:#be123c; border:1px solid #fecdd3;
+    {% else %}background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;{% endif %}
+    font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px;">
+    <ion-icon name="{% if 'error' in msg.tags %}alert-circle-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+    {{ msg }}
+  </div>
+  {% endfor %}
+{% endif %}
+
+<div class="profile-card">
+  {# Hero Banner #}
+  <div class="profile-hero">
+    <div style="color:rgba(255,255,255,.7); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;">
+      Administrator Profile
+    </div>
+    <div style="font-size:26px; font-weight:900; color:#fff;">
+      {{ profile_user.get_full_name|default:profile_user.username }}
+    </div>
+    <div style="color:rgba(255,255,255,.7); font-size:13px; margin-top:4px;">
+      {{ profile_user.email }}
+    </div>
+    {# Avatar #}
+    <div class="profile-avatar">
+      {% if profile_user.profile_image %}
+        <img src="{{ profile_user.profile_image.url }}" alt="Profile Photo">
+      {% else %}
+        {{ profile_user.first_name|first|upper|default:"A" }}
+      {% endif %}
+    </div>
+  </div>
+
+  {# Body #}
+  <div class="profile-body">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:28px; padding-top:4px;">
+      <span class="info-pill">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        {{ profile_user.role.name|default:"Admin" }}
+      </span>
+      {% if profile_user.is_active %}
+        <span class="info-pill" style="background:#ecfdf5; color:#047857;">
+          <ion-icon name="radio-outline"></ion-icon> Active
+        </span>
+      {% else %}
+        <span class="info-pill" style="background:#fff1f2; color:#be123c;">
+          <ion-icon name="pause-circle-outline"></ion-icon> Inactive
+        </span>
+      {% endif %}
+      <span class="info-pill" style="background:#f5f3ff; color:#7c3aed;">
+        <ion-icon name="person-outline"></ion-icon>
+        Username: {{ profile_user.username }}
+      </span>
+    </div>
+
+    <form method="POST" action="{% url 'update_admin_profile' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {# ── Personal Info ── #}
+      <div class="section-title">
+        <ion-icon name="person-circle-outline" style="color:#2563eb;"></ion-icon>
+        Personal Information
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" type="text" name="first_name" value="{{ profile_user.first_name }}" placeholder="First Name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" type="text" name="last_name" value="{{ profile_user.last_name }}" placeholder="Last Name">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email (Login ID — read-only)</label>
+          <input class="form-input" type="email" value="{{ profile_user.email }}" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" type="text" name="phone_number" value="{{ profile_user.phone_number|default:'' }}" placeholder="+91 ...">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Profile Photo</label>
+        <input class="form-input" type="file" name="profile_image" accept="image/*" style="padding:8px 16px;">
+      </div>
+
+      <hr class="divider">
+
+      {# ── Change Password ── #}
+      <div class="section-title">
+        <ion-icon name="key-outline" style="color:#7c3aed;"></ion-icon>
+        Change Password
+        <span style="font-size:11px; font-weight:600; color:#94a3b8;">(leave blank to keep current)</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input class="form-input" type="password" name="new_password" placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-input" type="password" name="confirm_password" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="submit" class="btn-primary">
+          <ion-icon name="save-outline" style="vertical-align:middle; margin-right:6px;"></ion-icon>
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

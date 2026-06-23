@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Invalid Link — HackNexus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#4c1d95,#7c3aed);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .box{background:#fff;border-radius:20px;padding:48px 40px;max-width:460px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(76,29,149,.3);}
+    .icon{font-size:64px;margin-bottom:20px;}
+    h1{font-size:24px;font-weight:900;color:#111827;margin-bottom:14px;}
+    p{color:#6b7280;font-size:15px;line-height:1.6;}
+    .note{background:#fef2f2;border-radius:12px;padding:16px 20px;font-size:14px;color:#dc2626;margin-top:20px;font-weight:600;}
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="icon">⚠️</div>
+  <h1>Link Unavailable</h1>
+  <p>This jury registration link cannot be used.</p>
+  <div class="note">{{ reason }}</div>
+  <p style="margin-top:20px;font-size:13px;">If you believe this is an error, please contact the hackathon organisers.</p>
+</div>
+</body>
+</html>

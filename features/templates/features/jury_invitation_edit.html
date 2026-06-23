@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Edit Jury Application — {{ invite.email }} — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:28px;margin-bottom:20px;}
+  .section-label{font-size:11px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.6px;margin:20px 0 14px;padding-bottom:8px;border-bottom:2px solid #ede9fe;}
+  .section-label:first-child{margin-top:0;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .fg{margin-bottom:16px;}
+  .fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+  .fg input,.fg select,.fg textarea{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border .2s;}
+  .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1);}
+  .btn{background:#7c3aed;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  .btn-outline{background:#fff;color:#7c3aed;border:2px solid #7c3aed;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+  @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:13px;color:#6b7280;">
+  <a href="{% url 'jury_management' %}?sub=invitations" style="color:#7c3aed;font-weight:700;text-decoration:none;">Jury Management</a>
+  <ion-icon name="chevron-forward-outline"></ion-icon>
+  <a href="{% url 'view_jury_invitation' invite.id %}" style="color:#7c3aed;font-weight:700;text-decoration:none;">{{ invite.email }}</a>
+  <ion-icon name="chevron-forward-outline"></ion-icon>
+  <span>Edit</span>
+</div>
+
+<div class="form-card">
+  <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;">Edit Jury Application</h2>
+  <p style="color:#6b7280;font-size:13px;margin-bottom:20px;">Editing: <strong>{{ invite.email }}</strong> — Status: {{ invite.get_status_display }}</p>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="section-label">Personal Information</div>
+    <div class="form-row">
+      <div class="fg"><label>First Name</label><input type="text" name="first_name" value="{{ invite.first_name }}"></div>
+      <div class="fg"><label>Last Name</label><input type="text" name="last_name" value="{{ invite.last_name }}"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Email</label><input type="email" name="email" value="{{ invite.email }}"></div>
+      <div class="fg"><label>Phone Number</label><input type="text" name="phone_number" value="{{ invite.phone_number }}"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Gender</label>
+        <select name="gender">
+          <option value="">-- Select --</option>
+          <option value="Male" {% if invite.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if invite.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if invite.gender == 'Other' %}selected{% endif %}>Other</option>
+          <option value="Prefer not to say" {% if invite.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+        </select>
+      </div>
+      <div class="fg"><label>Date of Birth</label><input type="date" name="date_of_birth" value="{{ invite.date_of_birth|default:'' }}"></div>
+    </div>
+
+    <div class="section-label">Professional Details</div>
+    <div class="form-row">
+      <div class="fg"><label>Organization / Institution</label><input type="text" name="organization" value="{{ invite.organization }}"></div>
+      <div class="fg"><label>Designation / Title</label><input type="text" name="designation" value="{{ invite.designation }}"></div>
+    </div>
+    <div class="fg"><label>Domain / Expertise</label><input type="text" name="domain" value="{{ invite.domain }}"></div>
+    <div class="fg"><label>LinkedIn URL</label><input type="url" name="linkedin_url" value="{{ invite.linkedin_url }}"></div>
+    <div class="fg"><label>Bio</label><textarea name="bio" rows="4">{{ invite.bio }}</textarea></div>
+
+    <div class="section-label">Documents</div>
+    <div class="form-row">
+      <div class="fg">
+        <label>ID Proof {% if invite.id_proof %}<a href="{{ invite.id_proof.url }}" target="_blank" style="font-size:11px;color:#7c3aed;">(current)</a>{% endif %}</label>
+        <input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png">
+      </div>
+      <div class="fg">
+        <label>Photo {% if invite.photo %}<a href="{{ invite.photo.url }}" target="_blank" style="font-size:11px;color:#7c3aed;">(current)</a>{% endif %}</label>
+        <input type="file" name="photo" accept="image/*">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn"><ion-icon name="save-outline"></ion-icon> Save Changes</button>
+      <a href="{% url 'view_jury_invitation' invite.id %}" class="btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 24px;
+    }
+    .profile-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(251, 146, 60, 0.28);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    .card-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #111827;
+    }
+    .card-subtitle {
+        margin: 0 0 18px;
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 600;
+    }
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .field.full {
+        grid-column: 1 / -1;
+    }
+    .field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+    }
+    .field input,
+    .field textarea {
+        width: 100%;
+        border: 1px solid #fcd34d;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        font-family: 'Outfit', sans-serif;
+        box-sizing: border-box;
+    }
+    .field textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+    .field input:focus,
+    .field textarea:focus {
+        outline: none;
+        border-color: #ea580c;
+        box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
+    }
+    .submit-btn {
+        margin-top: 18px;
+        border: none;
+        border-radius: 12px;
+        background: #ea580c;
+        color: white;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+    }
+    .password-wrap {
+        position: relative;
+    }
+    .password-wrap input {
+        padding-right: 44px;
+    }
+    .password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: #6b7280;
+    }
+    .file-note {
+        margin-top: 8px;
+        color: #9ca3af;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .account-chip {
+        border-radius: 16px;
+        border: 1px solid #f3e2cc;
+        background: #fffaf5;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    @media (max-width: 1100px) {
+        .profile-grid,
+        .field-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-grid">
+    <div style="display:grid; gap:24px;">
+        <div class="profile-card">
+            <h1 class="card-title">Profile & Settings</h1>
+            <p class="card-subtitle">Update your evaluator profile, testimonial video, and public-facing details.</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="profile">
+                <div class="field-grid">
+                    <div class="field">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" value="{{ request.user.first_name }}">
+                    </div>
+                    <div class="field">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" value="{{ request.user.last_name }}">
+                    </div>
+                    <div class="field">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" value="{{ request.user.phone_number|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Domain / Expertise</label>
+                        <input type="text" name="domain" value="{{ role_profile.domain|default:'' }}" placeholder="AI/ML, Design, Product, Finance">
+                    </div>
+                    <div class="field">
+                        <label>Organization</label>
+                        <input type="text" name="organization" value="{{ evaluator_profile.organization|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Designation</label>
+                        <input type="text" name="designation" value="{{ evaluator_profile.designation|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Profile Photo</label>
+                        <input type="file" name="profile_image" accept="image/*">
+                    </div>
+                    <div class="field">
+                        <label>Testimonial Video</label>
+                        <input type="file" name="testimonial_video" accept="video/*">
+                        <div class="file-note">
+                            {% if evaluator_profile.testimonial_video %}
+                            Current file: <a href="{{ evaluator_profile.testimonial_video.url }}" target="_blank">View uploaded video</a>
+                            {% else %}
+                            Upload your hackathon testimonial video here.
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field full">
+                        <label>Short Bio</label>
+                        <textarea name="bio" placeholder="A short introduction for future jury or expert records.">{{ evaluator_profile.bio|default:'' }}</textarea>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Save Profile</button>
+            </form>
+        </div>
+
+        <div class="profile-card">
+            <h2 class="card-title">Bank Details</h2>
+            <p class="card-subtitle">These details will be visible to the super admin dashboard for future jury or expert payments.</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="bank">
+                <div class="field-grid">
+                    <div class="field">
+                        <label>Account Holder Name</label>
+                        <input type="text" name="bank_account_holder" value="{{ evaluator_profile.bank_account_holder|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ evaluator_profile.bank_name|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Branch Name</label>
+                        <input type="text" name="branch_name" value="{{ evaluator_profile.branch_name|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Account Number</label>
+                        <input type="text" name="account_number" value="{{ evaluator_profile.account_number|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc_code" value="{{ evaluator_profile.ifsc_code|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>UPI ID</label>
+                        <input type="text" name="upi_id" value="{{ evaluator_profile.upi_id|default:'' }}">
+                    </div>
+                    <div class="field full">
+                        <label>Cancelled Cheque / Proof</label>
+                        <input type="file" name="cancelled_cheque" accept=".pdf,image/*">
+                        <div class="file-note">
+                            {% if evaluator_profile.cancelled_cheque %}
+                            Current file: <a href="{{ evaluator_profile.cancelled_cheque.url }}" target="_blank">View uploaded proof</a>
+                            {% else %}
+                            Optional supporting document for faster payment verification.
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field full">
+                        <label>Payment Notes</label>
+                        <textarea name="payment_notes" placeholder="Optional notes for the finance or super admin team.">{{ evaluator_profile.payment_notes|default:'' }}</textarea>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Save Bank Details</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="display:grid; gap:24px;">
+        <div class="profile-card">
+            <h2 class="card-title">Account Details</h2>
+            <p class="card-subtitle">Quick reference for your current dashboard account.</p>
+            <div class="account-chip">
+                <div style="font-size:11px; font-weight:800; color:#9ca3af; text-transform:uppercase;">Email</div>
+                <div style="margin-top:4px; font-size:15px; font-weight:800; color:#111827;">{{ request.user.email }}</div>
+            </div>
+            <div class="account-chip">
+                <div style="font-size:11px; font-weight:800; color:#9ca3af; text-transform:uppercase;">Role</div>
+                <div style="margin-top:4px; font-size:15px; font-weight:800; color:#ea580c;">{{ role_label }}</div>
+            </div>
+            <div class="account-chip">
+                <div style="font-size:11px; font-weight:800; color:#9ca3af; text-transform:uppercase;">Joined</div>
+                <div style="margin-top:4px; font-size:15px; font-weight:800; color:#111827;">{{ request.user.date_joined|date:"M d, Y" }}</div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <h2 class="card-title">Change Password</h2>
+            <p class="card-subtitle">{{ password_help_text }}</p>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="password">
+                <div class="field">
+                    <label>Current Password</label>
+                    <div class="password-wrap">
+                        <input type="password" name="current_password" id="jury-current-password" required>
+                        <button type="button" class="password-toggle" data-target="jury-current-password">Show</button>
+                    </div>
+                </div>
+                <div class="field" style="margin-top:14px;">
+                    <label>New Password</label>
+                    <div class="password-wrap">
+                        <input type="password" name="new_password" id="jury-new-password" required>
+                        <button type="button" class="password-toggle" data-target="jury-new-password">Show</button>
+                    </div>
+                </div>
+                <div class="field" style="margin-top:14px;">
+                    <label>Confirm New Password</label>
+                    <div class="password-wrap">
+                        <input type="password" name="confirm_password" id="jury-confirm-password" required>
+                        <button type="button" class="password-toggle" data-target="jury-confirm-password">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Update Password</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.password-toggle').forEach(function(button) {
+    button.addEventListener('click', function() {
+        const input = document.getElementById(button.dataset.target);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.textContent = show ? 'Hide' : 'Show';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+Created At: 2026-05-29T05:44:32Z
+Completed At: 2026-05-29T05:44:32Z
+File Path: `file:///d:/OKCL/Hackathon/code/Bput-Hackathon/events/views.py`
+Total Lines: 955
+Total Bytes: 44623
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: 
+2: import logging
+3: from django.shortcuts import render, get_object_or_404
+4: from django.contrib.auth.decorators import login_required
+5: from django.views.decorators.cache import never_cache
+6: from django.contrib import messages
+7: from django.db.models import Count, Q
+8: from django.utils import timezone
+9: 
+10: from accounts.models import User, Role, SuperadminProfile, AdminProfile
+11: from accounts.rendering import render_route
+12: from events.models import Hackathon, ProblemStatement, CreativeMaterial, RoundMarkingParameter
+13: from features.models import Team, Venue
+14: 
+15: def _superadmin_required(request):
+16:     return (
+17:         request.user.is_authenticated and
+18:         (request.user.is_superuser or
+19:          (request.user.role and request.user.role.name in ('Super Admin', 'Admin')))
+20:     )
+21: 
+22: 
+23: def _can_manage_events(request):
+24:     return _superadmin_required(request)
+25: 
+26: 
+27: def _round_enabled_from_post(request, round_number):
+28:     return request.POST.get(f'round_{round_number}_is_enabled') == 'on'
+29: 
+30: 
+31: def create_hackathon(request):
+32:     if request.method == 'POST':
+33:         name = request.POST.get('name')
+34:         organization_name = request.POST.get('organization_name')
+35:         organization_logo = request.FILES.get('organization_logo')
+36:         approval_date = request.POST.get('approval_date') or None
+37:         approval_letter = request.FILES.get('approval_letter')
+38:         poster_launching_date = request.POST.get('poster_launching_date') or None
+39:    
+<truncated 37618 bytes>
+ 'Kickoff'},
+760:             {'number': 5, 'date': 'MAR 17', 'label': 'Sprint'},
+761:             {'number': 6, 'date': 'MAR 20', 'label': 'Victory'},
+762:         ]
+763:     timeline_positions = ['pos-1', 'pos-2', 'pos-3', 'pos-4', 'pos-5', 'pos-6']
+764:     for index, item in enumerate(timeline_events[:6]):
+765:         item['position_class'] = timeline_positions[index]
+766: 
+767:     judging_criteria = []
+768:     if active_hackathon:
+769:         params = list(RoundMarkingParameter.objects.filter(
+770:             hackathon=active_hackathon,
+771:             round_number=1,
+772:             is_others=False,
+773:         ).order_by('id')[:4])
+774:         if params:
+775:             share = max(10, int(100 / len(params)))
+776:             for param in params:
+777:                 judging_criteria.append({
+778:                     'title': param.name,
+779:                     'percent': share,
+780:                 })
+781:     if not judging_criteria:
+782:         judging_criteria = [
+783:             {'title': 'Innovation', 'percent': 25},
+784:             {'title': 'Social Impact', 'percent': 20},
+785:             {'title': 'Feasibility', 'percent': 15},
+786:             {'title': 'Presentation', 'percent': 15},
+787:         ]
+788: 
+789:     jury_members = []
+790:     approved_juries = JuryInvitation.objects.filter(status='approved').order_by('-approved_at')[:4]
+791:     approved_experts = ExpertInvitation.objects.filter(status='approved').order_by('-approved_at')[:4]
+792:     for invite in approved_juries:
+793:         jury_members.append({
+794:             'avatar': '🎓',
+795:             'name': invite.get_full_name(),
+796:             'role': invite.designation or invite.domain or 'Jury Member',
+797:         })
+798:     for invite in approved_experts:
+799:         jury_members.append({
+800:             'avatar': '💡',
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

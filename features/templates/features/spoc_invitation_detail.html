@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SPOC Application Details - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:#ea580c;font-weight:700;text-decoration:none;margin-bottom:24px;font-size:14px;}
+    .back-link:hover{text-decoration:underline;}
+    .profile-card{background:#fff;border-radius:20px;border:1px solid #f3f4f6;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);margin-bottom:20px;}
+    .profile-header{display:flex;align-items:center;gap:20px;margin-bottom:28px;flex-wrap:wrap;}
+    .avatar{width:72px;height:72px;border-radius:20px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#ea580c;flex-shrink:0;}
+    .profile-name{font-size:24px;font-weight:900;color:#111827;margin:0 0 4px;}
+    .profile-sub{font-size:14px;color:#6b7280;margin:0;}
+    .badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block;}
+    .b-invited{background:#eff6ff;color:#2563eb;} .b-pending{background:#fff7ed;color:#d97706;}
+    .b-approved{background:#ecfdf5;color:#059669;} .b-rejected,.b-suspended{background:#fef2f2;color:#dc2626;}
+    .section-title{font-size:16px;font-weight:800;color:#ea580c;border-left:4px solid #ea580c;padding-left:10px;margin:0 0 18px;}
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+    .info-label{font-size:11px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+    .info-value{font-size:15px;font-weight:700;color:#111827;word-break:break-word;}
+    .divider{border:none;border-top:1px solid #f3f4f6;margin:24px 0;}
+    .btn{background:#ea580c;color:#fff;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+    .btn:hover{background:#d97706;}
+    .btn-outline{background:#fff;color:#ea580c;border:2px solid #ea580c;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+    .btn-outline:hover{background:#fff7ed;}
+    .btn-approve{background:#ecfdf5;color:#059669;border:1px solid #d1fae5;}
+    .btn-reject{background:#fef2f2;color:#dc2626;border:1px solid #fee2e2;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:980px;margin:0 auto;padding:12px 0;">
+    <a href="/features/spoc/?sub=invitations" class="back-link"><ion-icon name="arrow-back-outline"></ion-icon> Back to Invitations</a>
+
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="avatar">{{ invite.first_name|default:invite.email|slice:":1"|upper }}</div>
+            <div style="flex:1;">
+                <h1 class="profile-name">{{ invite.first_name }} {{ invite.last_name }}</h1>
+                <p class="profile-sub">{{ invite.email }}{% if invite.hackathon %} - {{ invite.hackathon.name }}{% endif %}</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <span class="badge {% if invite.status == 'invited' %}b-invited{% elif invite.status == 'pending' %}b-pending{% elif invite.status == 'approved' %}b-approved{% elif invite.status == 'suspended' %}b-suspended{% else %}b-rejected{% endif %}">{{ invite.get_status_display }}</span>
+                {% if invite.status != 'approved' %}
+                <a href="{% url 'edit_spoc_invitation' invite.id %}" class="btn"><ion-icon name="create-outline"></ion-icon> Edit</a>
+                <form method="POST" action="{% url 'suspend_spoc_invitation' invite.id %}" style="display:inline;" onsubmit="return confirm('{% if invite.status == 'suspended' %}Reactivate{% else %}Suspend{% endif %} this application?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline">
+                        <ion-icon name="{% if invite.status == 'suspended' %}checkmark-circle-outline{% else %}ban-outline{% endif %}"></ion-icon>
+                        {% if invite.status == 'suspended' %}Reactivate{% else %}Suspend{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+                {% if invite.status == 'pending' %}
+                <form method="POST" action="{% url 'approve_spoc_invitation' invite.id %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-approve">Approve</button></form>
+                <button type="button" class="btn-outline btn-reject" onclick="document.getElementById('rejectBox').style.display='block'">Reject</button>
+                {% elif invite.status == 'approved' and invite.created_user and invite.created_user.spoc_profile %}
+                <a href="{% url 'view_spoc' invite.created_user.spoc_profile.id %}" class="btn">Open SPOC Profile</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="rejectBox" style="display:none;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;padding:16px;margin-bottom:22px;">
+            <form method="POST" action="{% url 'reject_spoc_invitation' invite.id %}">
+                {% csrf_token %}
+                <label style="font-weight:800;color:#991b1b;font-size:13px;">Rejection reason</label>
+                <input type="text" name="rejection_reason" value="{{ invite.rejection_reason }}" required style="width:100%;margin:8px 0 12px;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;">
+                <button type="submit" class="btn-outline btn-reject">Confirm Reject</button>
+            </form>
+        </div>
+
+        <div class="section-title">Personal Information</div>
+        <div class="info-grid">
+            <div><div class="info-label">Full Name</div><div class="info-value">{{ invite.first_name|default:"-" }} {{ invite.last_name }}</div></div>
+            <div><div class="info-label">Email</div><div class="info-value">{{ invite.email }}</div></div>
+            <div><div class="info-label">Phone</div><div class="info-value">{{ invite.phone_number|default:"-" }}</div></div>
+            <div><div class="info-label">Gender</div><div class="info-value">{{ invite.gender|default:"-" }}</div></div>
+            <div><div class="info-label">Date of Birth</div><div class="info-value">{{ invite.date_of_birth|date:"d M Y"|default:"-" }}</div></div>
+            <div><div class="info-label">Submitted At</div><div class="info-value">{{ invite.submitted_at|date:"d M Y, H:i"|default:"Not submitted yet" }}</div></div>
+            {% if invite.id_proof %}
+            <div><div class="info-label">ID Proof</div><a href="{{ invite.id_proof.url }}" target="_blank" class="btn" style="font-size:12px;padding:6px 12px;"><ion-icon name="document-outline"></ion-icon> View File</a></div>
+            {% endif %}
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-title">Institution Details</div>
+        <div class="info-grid">
+            <div><div class="info-label">Institution Name</div><div class="info-value">{{ invite.institution_name|default:"-" }}</div></div>
+            <div><div class="info-label">Institution Email</div><div class="info-value">{{ invite.institution_email|default:"-" }}</div></div>
+            <div><div class="info-label">Location</div><div class="info-value">{{ invite.institution_location|default:"-" }}</div></div>
+            <div><div class="info-label">Contact Number</div><div class="info-value">{{ invite.institution_contact|default:"-" }}</div></div>
+            <div><div class="info-label">Head Name</div><div class="info-value">{{ invite.institution_head_name|default:"-" }}</div></div>
+            <div><div class="info-label">Head Email</div><div class="info-value">{{ invite.institution_head_email|default:"-" }}</div></div>
+            <div style="grid-column:1/-1;"><div class="info-label">Address</div><div class="info-value">{{ invite.institution_address|default:"-" }}</div></div>
+            {% if invite.institution_logo %}
+            <div><div class="info-label">Logo</div><img src="{{ invite.institution_logo.url }}" style="height:58px;border-radius:8px;border:1px solid #f3f4f6;"></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

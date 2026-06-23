@@ -1,0 +1,81 @@
+{% if breadcrumbs %}
+<style>
+    .modern-breadcrumb-container {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(251, 146, 60, 0.2);
+        border-radius: 99px;
+        padding: 8px 18px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(234, 88, 12, 0.05), inset 0 0 0 1px rgba(255,255,255,0.6);
+    }
+    .modern-breadcrumb-list {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .modern-breadcrumb-item {
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        font-family: 'Outfit', sans-serif;
+    }
+    .modern-breadcrumb-link {
+        color: var(--admin-accent, #ea580c);
+        text-decoration: none;
+        font-weight: 700;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .modern-breadcrumb-link:hover {
+        color: #c2410c;
+        text-decoration: underline;
+    }
+    .modern-breadcrumb-current {
+        color: #334155;
+        font-weight: 800;
+        padding: 4px 10px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 20px;
+        border: 1px solid rgba(234, 88, 12, 0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .modern-breadcrumb-separator {
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin: 0 4px;
+    }
+    .breadcrumb-home-icon {
+        font-size: 15px;
+    }
+</style>
+
+<nav class="modern-breadcrumb-container" aria-label="Breadcrumb">
+    <ol class="modern-breadcrumb-list">
+        {% for crumb in breadcrumbs %}
+            <li class="modern-breadcrumb-item">
+                <a href="{{ crumb.url|default:'#' }}" class="modern-breadcrumb-link {% if forloop.last %}modern-breadcrumb-current{% endif %}">
+                    {% if forloop.first %}
+                        <ion-icon name="home" class="breadcrumb-home-icon"></ion-icon>
+                    {% endif %}
+                    {{ crumb.label }}
+                </a>
+
+                {% if not forloop.last %}
+                    <span class="modern-breadcrumb-separator"><ion-icon name="chevron-forward-outline"></ion-icon></span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}

@@ -1,0 +1,680 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Venue & Logistics — HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Sub-tabs ── */
+.sub-tabs{display:flex;gap:8px;background:#f3f4f6;padding:5px;border-radius:12px;margin-bottom:24px;width:fit-content;flex-wrap:wrap;}
+.sub-tab{padding:9px 22px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;color:#6b7280;border:none;background:none;cursor:pointer;transition:all .2s;}
+.sub-tab.active{background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:16px;border:1px solid #f3f4f6;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.03);}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.section-title{font-size:19px;font-weight:800;margin:0;color:#111827;}
+
+/* ── Slide forms ── */
+.slide-form{display:none;background:#fff7ed;border:2px solid #fcd34d;border-radius:14px;padding:26px;margin-bottom:22px;}
+.slide-form.open{display:block;animation:slideIn .25s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Modal overlay ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:18px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:modalIn .25s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:22px 26px 16px;border-bottom:1px solid #f3f4f6;position:sticky;top:0;background:#fff;z-index:1;}
+.modal-header h3{margin:0;font-size:20px;font-weight:900;color:#111827;display:flex;align-items:center;gap:8px;}
+.modal-close{background:none;border:none;font-size:26px;color:#9ca3af;cursor:pointer;line-height:1;padding:0;}
+.modal-body{padding:22px 26px 26px;}
+
+/* ── Form helpers ── */
+.form-section{font-size:13px;font-weight:800;color:#ea580c;border-left:4px solid #ea580c;padding-left:10px;margin:18px 0 12px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-weight:700;font-size:13px;color:#374151;margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{width:100%;border:1.5px solid #e5e7eb;border-radius:9px;padding:10px 13px;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:all .2s;box-sizing:border-box;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,.1);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:580px){.form-row{grid-template-columns:1fr;}}
+
+/* ── Facility checkboxes ── */
+.facility-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;}
+@media(max-width:580px){.facility-grid{grid-template-columns:repeat(2,1fr);}}
+.fac-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer;}
+.fac-item input[type=checkbox]{width:16px;height:16px;accent-color:#ea580c;cursor:pointer;flex-shrink:0;}
+
+/* ── Buttons ── */
+.btn{background:linear-gradient(135deg,#ea580c,#d97706);color:#fff;border:none;border-radius:9px;padding:10px 22px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all .2s;}
+.btn:hover{opacity:.88;transform:translateY(-1px);}
+.btn-outline{background:#fff;color:#ea580c;border:2px solid #ea580c;border-radius:9px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all .2s;}
+.btn-outline:hover{background:#fff7ed;}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+.btn-danger:hover{background:#fee2e2;}
+.btn-success-sm{background:#ecfdf5;color:#059669;border:1.5px solid #6ee7b7;border-radius:8px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+.btn-success-sm:hover{background:#d1fae5;}
+.btn-view{background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
+.btn-view:hover{background:#dbeafe;}
+.btn-edit-sm{background:#fefce8;color:#ca8a04;border:1.5px solid #fde68a;border-radius:8px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .2s;}
+.btn-edit-sm:hover{background:#fef9c3;}
+
+/* ── Table ── */
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:#6b7280;letter-spacing:.5px;text-transform:uppercase;background:#fffbf7;}
+td{padding:13px 14px;font-size:14px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fffbf7;}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+.badge-active{background:#ecfdf5;color:#059669;}
+.badge-suspended{background:#fef2f2;color:#dc2626;}
+.badge-pending{background:#fef3c7;color:#d97706;}
+.badge-confirmed{background:#ecfdf5;color:#059669;}
+
+/* ── Venue detail view ── */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+@media(max-width:640px){.detail-grid{grid-template-columns:1fr;}}
+.detail-item label{font-size:11px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;}
+.detail-item p{font-size:15px;font-weight:600;color:#111827;margin:0;}
+.fac-tag{display:inline-block;background:#fff7ed;color:#ea580c;border:1px solid #fcd34d;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;margin:3px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">📍 Venue & Logistics</h1>
+        <p style="color:#6b7280;font-size:14px;margin:0;">Manage venues, logistics, food & volunteer assignments</p>
+    </div>
+    <form method="GET" style="display:flex;gap:10px;align-items:center;">
+        <input type="hidden" name="sub" value="{{ sub }}">
+        <select name="hackathon" onchange="this.form.submit()" style="border:1.5px solid #e5e7eb;border-radius:9px;padding:8px 13px;font-size:13px;outline:none;font-family:'Outfit',sans-serif;">
+            <option value="">All Hackathons</option>
+            {% for h in hackathons %}
+            <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+        </select>
+        {% if not active_hackathon %}
+        <span style="color:#dc2626;font-size:13px;font-weight:600;">⚠ Select a Hackathon</span>
+        {% endif %}
+    </form>
+</div>
+
+{% if active_hackathon %}
+<div class="sub-tabs">
+    <a href="?sub=venues&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'venues' or sub == 'venue_detail' %}active{% endif %}">
+        <ion-icon name="business-outline"></ion-icon> Venues
+    </a>
+    <a href="?sub=allocation&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'allocation' %}active{% endif %}">
+        <ion-icon name="map-outline"></ion-icon> Venue Allocation
+    </a>
+    <a href="?sub=logistics&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'logistics' %}active{% endif %}">
+        <ion-icon name="cog-outline"></ion-icon> Logistics Planning
+    </a>
+    <a href="?sub=food&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'food' %}active{% endif %}">
+        <ion-icon name="restaurant-outline"></ion-icon> Food & Refreshment
+    </a>
+    <a href="?sub=volunteers&hackathon={{ hackathon_filter }}" class="sub-tab {% if sub == 'volunteers' %}active{% endif %}">
+        <ion-icon name="people-outline"></ion-icon> Volunteer Assignments
+    </a>
+</div>
+
+{# ════════════════════════════════════════ VENUES TAB ════════════════════════════════════════ #}
+{% if sub == 'venues' %}
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">All Venues</h2>
+        <button class="btn" onclick="openModal('addVenueModal')">
+            <ion-icon name="add-outline"></ion-icon> Add Venue
+        </button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>VENUE</th>
+                <th>LOCATION</th>
+                <th>CAPACITY</th>
+                <th>EVENT DATE</th>
+                <th>FACILITIES</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in venues %}
+            <tr>
+                <td>
+                    <strong>{{ v.venue_name }}</strong>
+                    {% if v.landmark %}<br><small style="color:#9ca3af;">🏷 {{ v.landmark }}</small>{% endif %}
+                </td>
+                <td>{{ v.location|default:"—" }}</td>
+                <td>{% if v.capacity %}{{ v.capacity }} pax{% else %}—{% endif %}</td>
+                <td>{{ v.event_date|default:"—" }}</td>
+                <td>
+                    {% if v.facilities %}
+                        {% for fac in v.facilities %}
+                            <span class="fac-tag">{{ fac }}</span>
+                        {% endfor %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if v.status == 'Active' %}badge-active{% else %}badge-suspended{% endif %}">
+                        {{ v.status }}
+                    </span>
+                </td>
+                <td style="white-space:nowrap;">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        {# VIEW #}
+                        <a href="{% url 'view_venue' v.id %}" class="btn-view">
+                            <ion-icon name="eye-outline"></ion-icon> View
+                        </a>
+                        {# EDIT #}
+                        <button class="btn-edit-sm" onclick="openEditModal(
+                            {{ v.id }},
+                            '{{ v.venue_name|escapejs }}',
+                            '{{ v.location|escapejs }}',
+                            '{{ v.capacity|default:'' }}',
+                            '{{ v.landmark|escapejs }}',
+                            '{{ v.contact_details|escapejs }}',
+                            '{{ v.event_date|escapejs }}',
+                            {{ v.facilities|default:'[]'|safe }}
+                        )"><ion-icon name="create-outline"></ion-icon> Edit</button>
+                        {# SUSPEND / ACTIVATE #}
+                        <form method="POST" action="{% url 'suspend_venue' v.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="hackathon_id" value="{{ hackathon_filter }}">
+                            {% if v.status == 'Active' %}
+                            <button type="submit" class="btn-danger" onclick="return confirm('Suspend this venue?')">
+                                <ion-icon name="pause-circle-outline"></ion-icon> Suspend
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn-success-sm" onclick="return confirm('Activate this venue?')">
+                                <ion-icon name="play-circle-outline"></ion-icon> Activate
+                            </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">
+                <ion-icon name="business-outline" style="font-size:32px;opacity:.4;display:block;margin:0 auto 8px;"></ion-icon>
+                No venues added yet. Click <strong>Add Venue</strong> to get started.
+            </td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ─── VENUE DETAIL (inline view) ─── #}
+{% elif sub == 'venue_detail' and venue %}
+<div style="margin-bottom:16px;">
+    <a href="?sub=venues&hackathon={{ hackathon_filter }}" class="btn-outline">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back to Venues
+    </a>
+</div>
+
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+        <div>
+            <h2 style="font-size:24px;font-weight:900;margin:0 0 6px;color:#111827;">{{ venue.venue_name }}</h2>
+            <p style="color:#6b7280;margin:0;font-size:14px;">{{ venue.hackathon.name }}</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="badge {% if venue.status == 'Active' %}badge-active{% else %}badge-suspended{% endif %}" style="font-size:14px;padding:6px 16px;">
+                {{ venue.status }}
+            </span>
+            <button class="btn-edit-sm" style="font-size:13px;padding:9px 18px;" onclick="openEditModal(
+                {{ venue.id }},
+                '{{ venue.venue_name|escapejs }}',
+                '{{ venue.location|escapejs }}',
+                '{{ venue.capacity|default:'' }}',
+                '{{ venue.landmark|escapejs }}',
+                '{{ venue.contact_details|escapejs }}',
+                '{{ venue.event_date|escapejs }}',
+                {{ venue.facilities|default:'[]'|safe }}
+            )"><ion-icon name="create-outline"></ion-icon> Edit</button>
+            <form method="POST" action="{% url 'suspend_venue' venue.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="hackathon_id" value="{{ hackathon_filter }}">
+                {% if venue.status == 'Active' %}
+                <button type="submit" class="btn-danger" style="font-size:13px;padding:9px 18px;" onclick="return confirm('Suspend this venue?')">
+                    <ion-icon name="pause-circle-outline"></ion-icon> Suspend Venue
+                </button>
+                {% else %}
+                <button type="submit" class="btn-success-sm" style="font-size:13px;padding:9px 18px;" onclick="return confirm('Activate this venue?')">
+                    <ion-icon name="play-circle-outline"></ion-icon> Activate Venue
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-item">
+            <label>Location</label>
+            <p>{{ venue.location|default:"—" }}</p>
+        </div>
+        <div class="detail-item">
+            <label>Capacity</label>
+            <p>{% if venue.capacity %}{{ venue.capacity }} persons{% else %}—{% endif %}</p>
+        </div>
+        <div class="detail-item">
+            <label>Landmark</label>
+            <p>{{ venue.landmark|default:"—" }}</p>
+        </div>
+        <div class="detail-item">
+            <label>Contact Details</label>
+            <p>{{ venue.contact_details|default:"—" }}</p>
+        </div>
+        <div class="detail-item">
+            <label>Event Date</label>
+            <p>{{ venue.event_date|default:"—" }}</p>
+        </div>
+        <div class="detail-item">
+            <label>Added On</label>
+            <p>{{ venue.created_at|date:"d M Y, h:i A" }}</p>
+        </div>
+    </div>
+
+    <div>
+        <div class="form-section">Facilities Available</div>
+        {% if venue.facilities %}
+        <div style="margin-top:8px;">
+            {% for fac in venue.facilities %}
+            <span class="fac-tag">✓ {{ fac }}</span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#9ca3af;font-size:14px;">No facilities listed.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# ═══════════════════════════════════ ALLOCATION TAB ═══════════════════════════════════ #}
+{% elif sub == 'allocation' %}
+<div id="allocForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Allocate Venue</h3>
+        <button type="button" onclick="closeSlide('allocForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_venue_allocation' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg">
+                <label>Venue *</label>
+                <select name="venue_id" required>
+                    <option value="">-- Select Venue --</option>
+                    {% for v in venues %}
+                        <option value="{{ v.id }}">{{ v.venue_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>Allocated Date</label>
+                <input type="date" name="allocated_date">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Status</label>
+                <select name="status">
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>Confirmation Letter (PDF/Img)</label>
+                <input type="file" name="confirmation_letter">
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Allocation</button>
+            <button type="button" class="btn-outline" onclick="closeSlide('allocForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Venue Allocations</h2>
+        <button class="btn" onclick="openSlide('allocForm')"><ion-icon name="add-outline"></ion-icon> Allocate Venue</button>
+    </div>
+    <table>
+        <thead><tr><th>VENUE</th><th>ALLOCATED DATE</th><th>STATUS</th><th>CONFIRMATION LETTER</th></tr></thead>
+        <tbody>
+            {% for a in allocations %}
+            <tr>
+                <td><strong>{{ a.venue.venue_name }}</strong></td>
+                <td>{{ a.allocated_date|default:"—" }}</td>
+                <td><span class="badge {% if a.status == 'Confirmed' %}badge-confirmed{% else %}badge-pending{% endif %}">{{ a.status }}</span></td>
+                <td>{% if a.confirmation_letter %}<a href="{{ a.confirmation_letter.url }}" target="_blank" style="color:#2563eb;font-weight:600;font-size:13px;text-decoration:none;"><ion-icon name="download-outline"></ion-icon> Download</a>{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:#9ca3af;">No venue allocations.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ═══════════════════════════════════ LOGISTICS TAB ═══════════════════════════════════ #}
+{% elif sub == 'logistics' %}
+<div id="logForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Logistics Plan</h3>
+        <button type="button" onclick="closeSlide('logForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_logistics' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg"><label>Plan Name *</label><input type="text" name="plan_name" required></div>
+            <div class="fg"><label>Infrastructure Readiness (%)</label><input type="number" name="infrastructure_readiness" min="0" max="100" value="0"></div>
+        </div>
+        <div class="fg"><label>Description</label><textarea name="description" rows="3"></textarea></div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Plan</button>
+            <button type="button" class="btn-outline" onclick="closeSlide('logForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Logistics Planning</h2>
+        <button class="btn" onclick="openSlide('logForm')"><ion-icon name="add-outline"></ion-icon> Add Plan</button>
+    </div>
+    <table>
+        <thead><tr><th>PLAN NAME</th><th>DESCRIPTION</th><th>READINESS</th></tr></thead>
+        <tbody>
+            {% for l in logistics %}
+            <tr>
+                <td><strong>{{ l.plan_name }}</strong></td>
+                <td>{{ l.description|truncatechars:100 }}</td>
+                <td>
+                    <div style="font-weight:700;font-size:13px;margin-bottom:4px;">{{ l.infrastructure_readiness }}%</div>
+                    <div style="width:100%;background:#e5e7eb;height:8px;border-radius:4px;"><div style="width:{{ l.infrastructure_readiness }}%;height:100%;background:#059669;border-radius:4px;"></div></div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center;padding:24px;color:#9ca3af;">No logistics plans.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ═══════════════════════════════════ FOOD TAB ═══════════════════════════════════ #}
+{% elif sub == 'food' %}
+<div id="foodForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Food & Refreshment Details</h3>
+        <button type="button" onclick="closeSlide('foodForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_food_refreshment' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg">
+                <label>Venue *</label>
+                <select name="venue_id" required>
+                    <option value="">-- Select Venue --</option>
+                    {% for v in venues %}<option value="{{ v.id }}">{{ v.venue_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="fg"><label>Vendor Name *</label><input type="text" name="vendor_name" required></div>
+        </div>
+        <div class="form-row">
+            <div class="fg"><label>Headcount Estimation</label><input type="number" name="headcount_estimation" value="0"></div>
+            <div class="fg"><label>Cost Estimation (₹)</label><input type="number" step="0.01" name="cost_estimation" value="0.00"></div>
+        </div>
+        <div class="fg"><label>Contact Info</label><input type="text" name="contact_info"></div>
+        <div class="fg"><label>Menu Details</label><textarea name="menu_details" rows="2"></textarea></div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Details</button>
+            <button type="button" class="btn-outline" onclick="closeSlide('foodForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Food and Refreshment</h2>
+        <button class="btn" onclick="openSlide('foodForm')"><ion-icon name="add-outline"></ion-icon> Add Food Log</button>
+    </div>
+    <table>
+        <thead><tr><th>VENUE</th><th>VENDOR</th><th>MENU</th><th>HEADCOUNT</th><th>EST. COST</th></tr></thead>
+        <tbody>
+            {% for f in food %}
+            <tr>
+                <td><strong>{{ f.venue.venue_name }}</strong></td>
+                <td>{{ f.vendor_name }}<br><small style="color:#9ca3af;">{{ f.contact_info }}</small></td>
+                <td>{{ f.menu_details|truncatechars:50 }}</td>
+                <td>{{ f.headcount_estimation }}</td>
+                <td style="font-weight:700;">₹{{ f.cost_estimation }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">No food records.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ═══════════════════════════════════ VOLUNTEERS TAB ═══════════════════════════════════ #}
+{% elif sub == 'volunteers' %}
+<div id="volForm" class="slide-form">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Volunteer Assignment</h3>
+        <button type="button" onclick="closeSlide('volForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <form method="POST" action="{% url 'save_volunteer' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <div class="form-row">
+            <div class="fg"><label>Volunteer Name *</label><input type="text" name="volunteer_name" required></div>
+            <div class="fg"><label>Contact Number *</label><input type="text" name="contact_number" required></div>
+        </div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Assigned Venue</label>
+                <select name="assigned_venue_id">
+                    <option value="">-- None / Any --</option>
+                    {% for v in venues %}<option value="{{ v.id }}">{{ v.venue_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="fg">
+                <label>Status</label>
+                <select name="status">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+        <div class="fg"><label>Role Description *</label><input type="text" name="role_description" required></div>
+        <div style="margin-top:10px;">
+            <button type="submit" class="btn">Save Volunteer</button>
+            <button type="button" class="btn-outline" onclick="closeSlide('volForm')" style="margin-left:10px;">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="section-title">Volunteer Assignments</h2>
+        <button class="btn" onclick="openSlide('volForm')"><ion-icon name="add-outline"></ion-icon> Assign Volunteer</button>
+    </div>
+    <table>
+        <thead><tr><th>VOLUNTEER</th><th>ROLE</th><th>VENUE</th><th>STATUS</th></tr></thead>
+        <tbody>
+            {% for v in volunteers %}
+            <tr>
+                <td><strong>{{ v.volunteer_name }}</strong><br><small style="color:#9ca3af;">{{ v.contact_number }}</small></td>
+                <td>{{ v.role_description }}</td>
+                <td>{{ v.assigned_venue.venue_name|default:"Any Venue" }}</td>
+                <td><span class="badge {% if v.status == 'Active' %}badge-active{% else %}badge-suspended{% endif %}">{{ v.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:#9ca3af;">No volunteers assigned.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %} {# end sub check #}
+{% endif %} {# end active_hackathon check #}
+
+
+{# ══════════════ ADD VENUE MODAL ══════════════ #}
+<div class="modal-overlay" id="addVenueModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><span style="font-size:22px;">📍</span> Add Venue</h3>
+            <button class="modal-close" onclick="closeModal('addVenueModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'save_venue' %}">
+                {% csrf_token %}
+                <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+                <input type="hidden" name="venue_id" id="add_venue_id" value="">
+
+                <div class="fg">
+                    <label>Venue Name *</label>
+                    <input type="text" name="venue_name" id="add_venue_name" placeholder="e.g. BPUT Convention Center" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="fg">
+                        <label>Location *</label>
+                        <input type="text" name="location" id="add_location" placeholder="e.g. Rourkela, Odisha">
+                    </div>
+                    <div class="fg">
+                        <label>Capacity *</label>
+                        <input type="number" name="capacity" id="add_capacity" placeholder="e.g. 500">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="fg">
+                        <label>Landmark</label>
+                        <input type="text" name="landmark" id="add_landmark" placeholder="e.g. Near BPUT Main Gate, NH-6">
+                    </div>
+                    <div class="fg">
+                        <label>Contact Details</label>
+                        <input type="text" name="contact_details" id="add_contact_details" placeholder="e.g. +91 98765 43210">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="fg">
+                        <label>Event Date *</label>
+                        <input type="text" name="event_date" id="add_event_date" placeholder="e.g. Mar 20-22, 2026">
+                    </div>
+                    <div class="fg">
+                        <label>Assign to Event *</label>
+                        <select name="assign_event" id="add_assign_event">
+                            <option value="">Select Event</option>
+                            {% for h in hackathons %}
+                            <option value="{{ h.id }}" {% if h.id == active_hackathon.id %}selected{% endif %}>{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">Facilities Available</div>
+                <div class="facility-grid" id="addFacilityGrid">
+                    {% for fac in facility_choices %}
+                    <label class="fac-item">
+                        <input type="checkbox" name="facilities" value="{{ fac }}" class="add-fac-cb">
+                        {{ fac }}
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <div style="margin-top:22px;display:flex;gap:12px;justify-content:flex-end;">
+                    <button type="button" class="btn-outline" onclick="closeModal('addVenueModal')">Cancel</button>
+                    <button type="submit" class="btn" id="venueSubmitBtn">
+                        <ion-icon name="add-circle-outline"></ion-icon> Add Venue
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Slide-form helpers (used by non-venue sub-tabs) ── */
+function openSlide(id) {
+    document.querySelectorAll('.slide-form').forEach(f => f.classList.remove('open'));
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('open'); el.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+function closeSlide(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+}
+
+/* ── Modal helpers ── */
+function openModal(id) {
+    const m = document.getElementById(id);
+    if (m) {
+        m.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+function closeModal(id) {
+    const m = document.getElementById(id);
+    if (m) {
+        m.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) closeModal(this.id);
+    });
+});
+
+/* ── Edit Venue: pre-fills the Add modal for editing ── */
+function openEditModal(id, name, location, capacity, landmark, contact, eventDate, facilities) {
+    // Set hidden id so form POSTs to update path
+    document.getElementById('add_venue_id').value = id;
+    document.getElementById('add_venue_name').value = name;
+    document.getElementById('add_location').value = location;
+    document.getElementById('add_capacity').value = capacity;
+    document.getElementById('add_landmark').value = landmark;
+    document.getElementById('add_contact_details').value = contact;
+    document.getElementById('add_event_date').value = eventDate;
+
+    // Tick the right facility checkboxes
+    document.querySelectorAll('.add-fac-cb').forEach(cb => {
+        cb.checked = Array.isArray(facilities) && facilities.includes(cb.value);
+    });
+
+    // Update modal header & button text
+    document.querySelector('#addVenueModal .modal-header h3').innerHTML = '<span style="font-size:22px;">✏️</span> Edit Venue';
+    document.getElementById('venueSubmitBtn').innerHTML = '<ion-icon name="save-outline"></ion-icon> Save Changes';
+
+    openModal('addVenueModal');
+}
+
+// Reset modal to "Add" mode when closed
+document.getElementById('addVenueModal').addEventListener('click', function(e) {
+    if (e.target === this) resetVenueModal();
+});
+function resetVenueModal() {
+    document.getElementById('add_venue_id').value = '';
+    document.getElementById('addVenueModal').querySelector('form').reset();
+    document.querySelector('#addVenueModal .modal-header h3').innerHTML = '<span style="font-size:22px;">📍</span> Add Venue';
+    document.getElementById('venueSubmitBtn').innerHTML = '<ion-icon name="add-circle-outline"></ion-icon> Add Venue';
+    closeModal('addVenueModal');
+}
+</script>
+{% endblock %}

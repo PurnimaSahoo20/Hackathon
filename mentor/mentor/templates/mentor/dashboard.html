@@ -1,0 +1,76 @@
+{% extends "mentor/base.html" %}
+{% block title %}Mentor Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Mentor Dashboard</div>
+        <div class="page-subtitle">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</div>
+    </div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card" style="--sc:#059669"><div class="sc-icon">👥</div><div class="sc-value">{{ teams|length }}</div><div class="sc-label">Assigned Teams</div><div class="sc-change">Active this hackathon</div></div>
+    <div class="stat-card" style="--sc:#2563eb"><div class="sc-icon">📋</div><div class="sc-value">{{ reg_teams.count }}</div><div class="sc-label">Registrations</div><div class="sc-change">Teams mentored</div></div>
+    <div class="stat-card" style="--sc:#7c3aed"><div class="sc-icon">🎓</div><div class="sc-value">1</div><div class="sc-label">Role</div><div class="sc-change">✓ Mentor Active</div></div>
+</div>
+
+{% if notif_count %}
+<div class="info-box"><strong>🔔 {{ notif_count }} new notification{{ notif_count|pluralize }}.</strong> Check below for updates.</div>
+{% endif %}
+
+<!-- Assigned Teams -->
+<div class="section">
+    <div class="section-header"><div class="section-title">👥 Assigned Teams</div></div>
+    {% if teams %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team Name</th><th>Hackathon</th><th>Members</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for team in teams %}
+                <tr>
+                    <td><strong>{{ team.team_name }}</strong></td>
+                    <td>{{ team.hackathon.name }}</td>
+                    <td>{{ team.members.count|add:1 }}</td>
+                    <td><span class="badge badge-green">{{ team.status }}</span></td>
+                    <td><a href="{% url 'mentor_team_detail' team.id %}" class="act-btn act-view">View Team</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-wrap" style="padding:40px;text-align:center;color:var(--muted)">
+        <div style="font-size:36px;margin-bottom:12px">👥</div>
+        <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">No Teams Assigned Yet</div>
+        <div style="font-size:13px">Once a team assigns you as their mentor and gets approved, their details will appear here.</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Pending Registrations (where mentor is set but team not yet created) -->
+{% if reg_teams %}
+<div class="section">
+    <div class="section-header"><div class="section-title">📋 Team Registrations</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team Name</th><th>Leader</th><th>Hackathon</th><th>Status</th><th>PS</th></tr></thead>
+            <tbody>
+                {% for reg in reg_teams %}
+                <tr>
+                    <td><strong>{{ reg.team_name }}</strong></td>
+                    <td>{{ reg.team_leader.get_full_name|default:reg.team_leader.username }}</td>
+                    <td>{{ reg.hackathon.name }}</td>
+                    <td>
+                        {% if reg.status == 'approved' %}<span class="badge badge-green">✓ Approved</span>
+                        {% elif reg.status == 'pending' %}<span class="badge badge-amber">⏳ Pending</span>
+                        {% else %}<span class="badge badge-gray">{{ reg.status }}</span>{% endif %}
+                    </td>
+                    <td>{{ reg.problem_statement.title|default:"—"|truncatechars:30 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

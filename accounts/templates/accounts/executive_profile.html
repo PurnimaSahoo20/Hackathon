@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Executive Profile - HackNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-shell {max-width: 860px; margin: 0 auto;}
+  .profile-card {background:#fff;border:1px solid #dbeafe;border-radius:24px;overflow:hidden;box-shadow:0 16px 36px rgba(15,118,110,.08);}
+  .profile-hero {background:linear-gradient(135deg,#0f172a 0%,#0f766e 55%,#14b8a6 100%);padding:36px 40px 74px;position:relative;color:#fff;}
+  .profile-avatar {width:96px;height:96px;border-radius:28px;border:4px solid rgba(255,255,255,.92);background:#ccfbf1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;overflow:hidden;position:absolute;left:40px;bottom:-48px;box-shadow:0 12px 28px rgba(15,118,110,.28);}
+  .profile-avatar img {width:100%;height:100%;object-fit:cover;}
+  .profile-body {padding:68px 40px 40px;}
+  .profile-meta {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px;}
+  .pill {display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#f0fdfa;color:#0f766e;font-size:12px;font-weight:800;}
+  .pill.alt {background:#ecfeff;color:#155e75;}
+  .pill.dark {background:#f8fafc;color:#334155;}
+  .section-title {display:flex;align-items:center;gap:8px;margin:0 0 16px;font-size:15px;font-weight:900;color:#0f172a;}
+  .grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+  .field {margin-bottom:18px;}
+  .field label {display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;}
+  .field input {width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:11px 14px;font-family:'Outfit',sans-serif;font-size:14px;box-sizing:border-box;background:#f8fafc;}
+  .field input:focus {outline:none;border-color:#0f766e;box-shadow:0 0 0 4px rgba(20,184,166,.12);background:#fff;}
+  .field input[readonly] {color:#94a3b8;}
+  .info-box {background:linear-gradient(135deg,#f8fafc,#ecfeff);border:1px solid #cbd5e1;border-radius:18px;padding:18px 20px;margin-bottom:24px;}
+  .info-box strong {display:block;font-size:15px;color:#0f172a;margin-bottom:6px;}
+  .info-box p {margin:0;color:#475569;font-size:13px;line-height:1.55;}
+  .divider {border:none;border-top:1px solid #e2e8f0;margin:28px 0;}
+  .btn-primary {display:inline-flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:12px 22px;background:#0f766e;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 10px 24px rgba(15,118,110,.18);}
+  .btn-primary:hover {background:#115e59;}
+  @media (max-width: 700px) {
+    .profile-hero {padding:28px 24px 82px;}
+    .profile-avatar {left:24px;}
+    .profile-body {padding:68px 24px 24px;}
+    .grid {grid-template-columns:1fr;}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-shell">
+  <div class="profile-card">
+    <div class="profile-hero">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:8px;">Executive Portal</div>
+      <div style="font-size:28px;font-weight:900;">{{ profile_user.get_full_name|default:profile_user.username }}</div>
+      <div style="margin-top:6px;color:rgba(255,255,255,.78);font-size:14px;">{{ profile_user.email }}</div>
+      <div class="profile-avatar">
+        {% if profile_user.profile_image %}
+          <img src="{{ profile_user.profile_image.url }}" alt="Profile Photo">
+        {% else %}
+          {{ profile_user.first_name|default:profile_user.username|slice:":1"|upper }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="profile-body">
+      <div class="profile-meta">
+        <span class="pill"><ion-icon name="person-outline"></ion-icon>{{ profile_user.role.name|default:"Executive" }}</span>
+        <span class="pill alt"><ion-icon name="shield-checkmark-outline"></ion-icon>{{ permission_count }} mapped modules</span>
+        <span class="pill dark"><ion-icon name="at-outline"></ion-icon>{{ profile_user.username }}</span>
+      </div>
+
+      <div class="info-box">
+        <strong>Assigned admin</strong>
+        <p>
+          {% if assigned_admin %}
+            {{ assigned_admin.user.get_full_name|default:assigned_admin.user.username }}
+            {% if assigned_admin.user.email %} | {{ assigned_admin.user.email }}{% endif %}
+          {% else %}
+            No supervising admin is assigned yet.
+          {% endif %}
+        </p>
+      </div>
+
+      <form method="POST" action="{% url 'update_executive_profile' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="section-title">
+          <ion-icon name="person-circle-outline" style="color:#0f766e;"></ion-icon>
+          Personal Information
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>First Name</label>
+            <input type="text" name="first_name" value="{{ profile_user.first_name }}">
+          </div>
+          <div class="field">
+            <label>Last Name</label>
+            <input type="text" name="last_name" value="{{ profile_user.last_name }}">
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Email</label>
+            <input type="email" value="{{ profile_user.email }}" readonly>
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="text" name="phone_number" value="{{ profile_user.phone_number|default:'' }}" placeholder="+91 ...">
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Gender</label>
+            <input type="text" name="gender" value="{{ profile_user.gender|default:'' }}" placeholder="Optional">
+          </div>
+          <div class="field">
+            <label>Date of Birth</label>
+            <input type="date" name="date_of_birth" value="{% if profile_user.date_of_birth %}{{ profile_user.date_of_birth|date:'Y-m-d' }}{% endif %}">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Profile Photo</label>
+          <input type="file" name="profile_image" accept="image/*">
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-title">
+          <ion-icon name="key-outline" style="color:#0f766e;"></ion-icon>
+          Change Password
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>New Password</label>
+            <input type="password" name="new_password" autocomplete="new-password" placeholder="Minimum 8 characters">
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" autocomplete="new-password" placeholder="Repeat password">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          <ion-icon name="save-outline"></ion-icon>
+          Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Event - {{ hackathon.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card { background: white; border: 2px solid #fcd34d; border-radius: 16px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 24px; }
+    .form-section-title { font-size: 16px; font-weight: 800; color: #ea580c; border-left: 4px solid #ea580c; padding-left: 12px; margin: 32px 0 16px 0; }
+    
+    input, select, textarea { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: white; }
+    input:focus { border-color: #ea580c; }
+    label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+    
+    .round-row { padding: 20px; background: #fffbf7; border: 1px solid #fed7aa; border-radius: 12px; margin-bottom: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'superadmin_dashboard' %}?tab=events" style="text-decoration: none; color: #6b7280; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back to Events
+    </a>
+</div>
+
+<div class="form-card">
+    <h1 style="margin: 0 0 32px 0; font-size: 28px; font-weight: 900;">Edit Hackathon Event</h1>
+
+    <form action="{% url 'edit_hackathon' hackathon.id %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-section-title" style="margin-top:0;">Basic Information</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Hackathon Name</label>
+                <input type="text" name="name" value="{{ hackathon.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Organization Name</label>
+                <input type="text" name="organization_name" value="{{ hackathon.organization_name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Organization Logo (Leave empty to keep current)</label>
+                <input type="file" name="organization_logo" accept="image/*">
+            </div>
+        </div>
+
+        <div class="form-section-title">Approval & Timeline</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Approval Date</label>
+                <input type="date" name="approval_date" value="{{ hackathon.approval_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label>Approval Letter (PDF)</label>
+                <input type="file" name="approval_letter" accept=".pdf">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" id="status-select">
+                    <option value="Draft">Draft</option>
+                    <option value="Live">Live</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group"><label>Poster Launch</label><input type="date" name="poster_launching_date" value="{{ hackathon.poster_launching_date|date:'Y-m-d' }}"></div>
+            <div class="form-group"><label>Website Launch</label><input type="date" name="website_launching_date" value="{{ hackathon.website_launching_date|date:'Y-m-d' }}"></div>
+            <div class="form-group"><label>Registration Open</label><input type="date" name="registration_open" value="{{ hackathon.registration_open|date:'Y-m-d' }}"></div>
+            <div class="form-group"><label>Registration Close</label><input type="date" name="registration_close" value="{{ hackathon.registration_close|date:'Y-m-d' }}"></div>
+        </div>
+
+        <div class="form-section-title">Round Management</div>
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label>Total Number of Rounds</label>
+            <input type="number" name="number_of_rounds" id="num-rounds-input" value="{{ hackathon.number_of_rounds }}" min="1" max="5">
+        </div>
+
+        <div id="rounds-container">
+            <div class="round-row" data-round="1">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 1 Details</div>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_1_is_enabled" {% if hackathon.round_1_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
+                </div>
+                <div class="form-group"><label>Round 1 Name</label><input type="text" name="round_1_name" value="{{ hackathon.round_1_name }}"></div>
+                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_1_start_date" value="{{ hackathon.round_1_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_1_end_date" value="{{ hackathon.round_1_end_date|date:'Y-m-d' }}"></div></div>
+                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_1_num_params" value="{{ round_params.1.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 1)">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_1_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.1.has_others|yesno:'checked,' }}> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_1_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        {% for p in round_params.1.params %}
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
+                            <input type="text" name="round_1_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="round-row" data-round="2">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 2 Details</div>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_2_is_enabled" {% if hackathon.round_2_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
+                </div>
+                <div class="form-group"><label>Round 2 Name</label><input type="text" name="round_2_name" value="{{ hackathon.round_2_name }}"></div>
+                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_2_start_date" value="{{ hackathon.round_2_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_2_end_date" value="{{ hackathon.round_2_end_date|date:'Y-m-d' }}"></div></div>
+                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_2_num_params" value="{{ round_params.2.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 2)">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_2_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.2.has_others|yesno:'checked,' }}> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_2_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        {% for p in round_params.2.params %}
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
+                            <input type="text" name="round_2_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="round-row" data-round="3">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 3 Details</div>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_3_is_enabled" {% if hackathon.round_3_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
+                </div>
+                <div class="form-group"><label>Round 3 Name</label><input type="text" name="round_3_name" value="{{ hackathon.round_3_name }}"></div>
+                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_3_start_date" value="{{ hackathon.round_3_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_3_end_date" value="{{ hackathon.round_3_end_date|date:'Y-m-d' }}"></div></div>
+                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_3_num_params" value="{{ round_params.3.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 3)">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_3_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.3.has_others|yesno:'checked,' }}> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_3_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        {% for p in round_params.3.params %}
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
+                            <input type="text" name="round_3_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="round-row" data-round="4">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 4 Details</div>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_4_is_enabled" {% if hackathon.round_4_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
+                </div>
+                <div class="form-group"><label>Round 4 Name</label><input type="text" name="round_4_name" value="{{ hackathon.round_4_name }}"></div>
+                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_4_start_date" value="{{ hackathon.round_4_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_4_end_date" value="{{ hackathon.round_4_end_date|date:'Y-m-d' }}"></div></div>
+                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_4_num_params" value="{{ round_params.4.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 4)">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_4_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.4.has_others|yesno:'checked,' }}> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_4_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        {% for p in round_params.4.params %}
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
+                            <input type="text" name="round_4_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="round-row" data-round="5">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 5 Details</div>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_5_is_enabled" {% if hackathon.round_5_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
+                </div>
+                <div class="form-group"><label>Round 5 Name</label><input type="text" name="round_5_name" value="{{ hackathon.round_5_name }}"></div>
+                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_5_start_date" value="{{ hackathon.round_5_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_5_end_date" value="{{ hackathon.round_5_end_date|date:'Y-m-d' }}"></div></div>
+                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
+                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
+                        <div class="form-group" style="margin:0; max-width: 250px;">
+                            <label>No. of Marking Parameters</label>
+                            <input type="number" name="round_5_num_params" value="{{ round_params.5.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 5)">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
+                            <input type="checkbox" name="round_5_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.5.has_others|yesno:'checked,' }}> Include 'Others' Option
+                        </label>
+                    </div>
+                    <div id="round_5_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        {% for p in round_params.5.params %}
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
+                            <input type="text" name="round_5_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" style="margin-top: 40px; display: flex; gap: 16px;">
+            <a href="{% url 'superadmin_dashboard' %}?tab=events" style="flex: 1; text-align: center; text-decoration: none; padding: 14px; border-radius: 8px; background: #e5e7eb; color: #374151; font-weight: 700;">Cancel</a>
+            <button type="submit" style="flex: 2; padding: 14px; border-radius: 8px; background: #ea580c; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 16px;">Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const select = document.getElementById('status-select');
+        if (select) select.value = "{{ hackathon.status }}";
+
+        const numRoundsInput = document.getElementById('num-rounds-input');
+        const roundRows = document.querySelectorAll('.round-row');
+
+        function updateRounds() {
+            const count = parseInt(numRoundsInput.value) || 1;
+            roundRows.forEach(row => {
+                const roundNum = parseInt(row.getAttribute('data-round'));
+                row.style.display = (roundNum <= count) ? 'block' : 'none';
+            });
+        }
+
+        numRoundsInput.addEventListener('input', updateRounds);
+        updateRounds();
+    });
+
+    function updateMarkingParams(inputElem, roundNum) {
+        const count = parseInt(inputElem.value) || 0;
+        const container = document.getElementById(`round_${roundNum}_params_container`);
+        if (!container) return;
+        
+        const existingInputs = container.querySelectorAll('input[type="text"]');
+        const values = Array.from(existingInputs).map(input => input.value);
+        
+        container.innerHTML = '';
+        for (let j = 1; j <= count; j++) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.style.marginBottom = '0';
+            const val = values[j-1] ? `value="${values[j-1]}"` : '';
+            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
+                             <input type="text" name="round_${roundNum}_param_${j}_name" required ${val} placeholder="e.g. Innovation">`;
+            container.appendChild(div);
+        }
+    }
+</script>
+{% endblock %}

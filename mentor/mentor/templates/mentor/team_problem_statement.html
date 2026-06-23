@@ -1,0 +1,69 @@
+{% extends "mentor/base.html" %}
+{% block title %}Problem Statement - {{ team.team_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Problem Statement</div>
+        <div class="page-subtitle">{{ team.team_name }} · {{ team.hackathon.name }}</div>
+    </div>
+    <a href="{% url 'mentor_dashboard' %}" class="section-btn">Back to Dashboard</a>
+</div>
+
+{% if problem_statement %}
+<div class="two-grid">
+    <div class="table-wrap" style="padding:22px">
+        <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:18px">
+            <div>
+                <div class="badge badge-green" style="margin-bottom:10px">{{ problem_statement.domain|default:"General" }}</div>
+                <div style="font-size:22px;font-weight:800;color:var(--text)">{{ problem_statement.title }}</div>
+                <div class="meta-text" style="margin-top:8px">{{ problem_statement.hackathon.name }}</div>
+            </div>
+            <a href="{% url 'mentor_team_resources' team.id %}" class="section-btn primary">Related Podcast & Documentary</a>
+        </div>
+        <div style="font-size:14px;line-height:1.8;color:var(--muted2)">
+            {{ problem_statement.description|default:"No description available for this problem statement yet."|linebreaksbr }}
+        </div>
+        {% if problem_statement.pdf_file %}
+        <div style="margin-top:18px">
+            <a href="{{ problem_statement.pdf_file.url }}" target="_blank" class="section-btn">Open PS PDF</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="stack">
+        <div class="table-wrap" style="padding:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">PS Summary</div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span class="meta-text" style="font-weight:700">Team</span>
+                <span style="font-size:13px;font-weight:700">{{ team.team_name }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span class="meta-text" style="font-weight:700">Leader</span>
+                <span style="font-size:13px;font-weight:700">{{ team.team_leader.get_full_name|default:team.team_leader.username }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span class="meta-text" style="font-weight:700">Podcasts</span>
+                <span class="badge badge-blue">{{ podcasts|length }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0">
+                <span class="meta-text" style="font-weight:700">Documentaries</span>
+                <span class="badge badge-purple">{{ documentaries|length }}</span>
+            </div>
+        </div>
+
+        <div class="table-wrap" style="padding:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Quick Actions</div>
+            <div class="stack">
+                <a href="{% url 'mentor_team_resources' team.id %}" class="section-btn primary" style="text-align:center">View PS Related Media</a>
+                <a href="{% url 'mentor_team_detail' team.id %}" class="section-btn" style="text-align:center">Back to Team Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="table-wrap empty-state">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No Problem Statement Assigned</div>
+    <div>The team does not have a problem statement linked yet.</div>
+</div>
+{% endif %}
+{% endblock %}

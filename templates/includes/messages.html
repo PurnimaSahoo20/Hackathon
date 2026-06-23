@@ -1,0 +1,11 @@
+{% if messages %}
+<div style="margin-bottom: 24px;">
+    {% for message in messages %}
+    <div style="padding: 14px 18px; border-radius: 12px; background: white; margin-bottom: 10px;
+                border: 1px solid {% if message.tags == 'success' %}#059669{% elif message.tags == 'warning' %}#d97706{% else %}#dc2626{% endif %};
+                border-left: 4px solid {% if message.tags == 'success' %}#059669{% elif message.tags == 'warning' %}#d97706{% else %}#dc2626{% endif %};">
+        <strong>{{ message }}</strong>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

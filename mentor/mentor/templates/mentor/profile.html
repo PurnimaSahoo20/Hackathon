@@ -1,0 +1,93 @@
+{% extends "mentor/base.html" %}
+{% block title %}Mentor Profile{% endblock %}
+{% block extra_css %}
+<style>
+.password-wrap{position:relative}
+.password-wrap input{padding-right:46px}
+.password-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0}
+.password-toggle:hover{color:var(--mentor)}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><div class="page-title">Profile & Settings</div><div class="page-subtitle">Your mentor account details</div></div>
+</div>
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:20px">Personal Information</div>
+        <form method="POST" enctype="multipart/form-data">{% csrf_token %}
+            <input type="hidden" name="form_type" value="profile">
+            <div class="field"><label>First Name</label><input type="text" name="first_name" value="{{ request.user.first_name }}"></div>
+            <div class="field"><label>Last Name</label><input type="text" name="last_name" value="{{ request.user.last_name }}"></div>
+            <div class="field"><label>Phone Number</label><input type="text" name="phone_number" value="{{ request.user.phone_number|default:'' }}"></div>
+            <div class="field"><label>Expertise / Domain</label><input type="text" name="expertise" value="{{ mentor.expertise|default:'' }}" placeholder="e.g. Machine Learning, IoT"></div>
+            <div class="field"><label>Profile Photo</label><input type="file" name="profile_image" accept="image/*"></div>
+            <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Save Changes</button>
+        </form>
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:20px">Account Details</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Email / Username</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">{{ request.user.email }}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Role</div>
+                <div style="font-size:14px;font-weight:700;color:#059669">Mentor 🎓</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Account Status</div>
+                <span class="badge badge-green">✓ Active</span>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Member Since</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">{{ request.user.date_joined|date:"M j, Y" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="table-wrap" style="padding:24px;margin-top:24px">
+    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Change Password</div>
+    <form method="POST">{% csrf_token %}
+        <input type="hidden" name="form_type" value="password">
+        <div class="field">
+            <label>Current Password</label>
+            <div class="password-wrap">
+                <input type="password" name="current_password" id="mentor-current-password" required>
+                <button type="button" class="password-toggle" data-target="mentor-current-password" aria-label="Show password">👁</button>
+            </div>
+        </div>
+        <div class="field">
+            <label>New Password</label>
+            <div class="password-wrap">
+                <input type="password" name="new_password" id="mentor-new-password" required>
+                <button type="button" class="password-toggle" data-target="mentor-new-password" aria-label="Show password">👁</button>
+            </div>
+        </div>
+        <div class="field">
+            <label>Confirm New Password</label>
+            <div class="password-wrap">
+                <input type="password" name="confirm_password" id="mentor-confirm-password" required>
+                <button type="button" class="password-toggle" data-target="mentor-confirm-password" aria-label="Show password">👁</button>
+            </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">{{ password_help_text }}</div>
+        <button type="submit" class="section-btn primary" style="padding:12px 18px">Update Password</button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('.password-toggle').forEach(function(button) {
+    button.addEventListener('click', function() {
+        const input = document.getElementById(button.dataset.target);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.textContent = show ? '🙈' : '👁';
+        button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+});
+</script>
+{% endblock %}

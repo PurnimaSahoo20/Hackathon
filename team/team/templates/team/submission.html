@@ -1,0 +1,86 @@
+{% extends "team/base.html" %}
+{% block title %}Submit Solution{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Submit Solution</div><div class="page-subtitle">Upload your team's project files and links</div></div></div>
+{% if not is_approved %}
+<div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:14px;padding:32px;text-align:center;margin-bottom:24px">
+    <div style="font-size:36px;margin-bottom:12px">🔒</div>
+    <div style="font-size:16px;font-weight:800;color:#dc2626;margin-bottom:8px">Dashboard Locked</div>
+    <div style="font-size:14px;color:var(--muted)">Your team registration must be approved by the SPOC before you can submit solutions.</div>
+    <a href="{% url 'team_dashboard' %}" class="section-btn" style="margin-top:16px;display:inline-block">← Back to Dashboard</a>
+</div>
+{% else %}
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+            <ion-icon name="cloud-upload-outline" style="color:var(--accent);font-size:20px;"></ion-icon> Upload Submission
+        </div>
+        <form method="POST" enctype="multipart/form-data">{% csrf_token %}
+            <div class="field"><label>Title *</label><input type="text" name="title" required placeholder="e.g. Final Submission"></div>
+            
+            <div style="margin-top:20px;margin-bottom:12px;font-weight:700;font-size:13px;color:var(--text);border-bottom:1px solid rgba(148,163,184,.14);padding-bottom:8px;">Files & Links</div>
+            
+            <div class="field">
+                <label>Presentation (PPT/PDF) *</label>
+                <input type="file" name="ppt_file" required accept=".ppt,.pptx,.pdf">
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">Compulsory field</div>
+            </div>
+            
+            <div class="field">
+                <label>Report / Document</label>
+                <input type="file" name="report_file" accept=".doc,.docx,.pdf">
+            </div>
+            
+            <div class="field">
+                <label>Code / Zip</label>
+                <input type="file" name="code_file" accept=".zip,.rar,.tar,.gz">
+            </div>
+            
+            <div class="field">
+                <label>Demo Video URL</label>
+                <input type="url" name="video_url" placeholder="https://youtube.com/...">
+            </div>
+            
+            <div class="field">
+                <label>Other Asset</label>
+                <input type="file" name="other_file">
+            </div>
+            
+            <div class="field"><label>Description</label><textarea name="description" rows="3" placeholder="Brief description of the submission..."></textarea></div>
+            <button type="submit" class="section-btn primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <ion-icon name="paper-plane-outline"></ion-icon> Submit
+            </button>
+        </form>
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+            <ion-icon name="folder-open-outline" style="color:#eab308;font-size:20px;"></ion-icon> Your Submissions
+        </div>
+        {% if solutions %}
+        {% for sol in solutions %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+            <div style="font-size:24px;color:var(--accent);">
+                {% if sol.doc_type == 'ppt' %}<ion-icon name="easel-outline"></ion-icon>
+                {% elif sol.doc_type == 'code' %}<ion-icon name="code-slash-outline"></ion-icon>
+                {% elif sol.doc_type == 'video' %}<ion-icon name="film-outline"></ion-icon>
+                {% elif sol.doc_type == 'report' %}<ion-icon name="document-text-outline"></ion-icon>
+                {% else %}<ion-icon name="document-outline"></ion-icon>{% endif %}
+            </div>
+            <div style="flex:1">
+                <div style="font-size:13px;font-weight:700">{{ sol.title }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ sol.get_doc_type_display }} · {{ sol.uploaded_at|date:"M j, Y" }}</div>
+            </div>
+            {% if sol.file %}<a href="{{ sol.file.url }}" target="_blank" class="act-btn act-view" style="background:rgba(234,88,12,0.1);color:#ea580c;padding:5px 10px;border-radius:7px;font-size:16px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;"><ion-icon name="download-outline"></ion-icon></a>
+            {% elif sol.video_url %}<a href="{{ sol.video_url }}" target="_blank" class="act-btn act-view" style="background:rgba(234,88,12,0.1);color:#ea580c;padding:5px 10px;border-radius:7px;font-size:16px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;"><ion-icon name="open-outline"></ion-icon></a>{% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="padding:32px;text-align:center;color:var(--muted)">
+            <div style="font-size:32px;margin-bottom:10px;"><ion-icon name="mailbox-outline"></ion-icon></div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">No submissions yet</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

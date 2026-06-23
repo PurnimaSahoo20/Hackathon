@@ -1,0 +1,31 @@
+{% extends "team/base.html" %}
+{% block title %}Communication{% endblock %}
+{% block content %}
+<div class="page-header"><div><div class="page-title">Communication</div><div class="page-subtitle">Send messages to admin, SPOC, and mentor</div></div></div>
+<div class="two-grid">
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Send New Message</div>
+        <form method="POST" action="{% url 'team_send_support_message' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="field"><label>Category</label><select name="category"><option value="venue">Venue Admin</option><option value="health">Health Admin</option><option value="grievance">Grievance Admin</option><option value="logistics">Logistics Admin</option><option value="spoc">SPOC</option><option value="mentor">Mentor</option><option value="general">General Support</option></select></div>
+            <div class="field"><label>Subject</label><input type="text" name="subject" required placeholder="Short summary"></div>
+            <div class="field"><label>Message</label><textarea name="message" rows="5" required placeholder="Write your message"></textarea></div>
+            <div class="field"><label>Attachment</label><input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>
+            <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Send Message</button>
+        </form>
+    </div>
+    <div class="table-wrap" style="padding:24px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Recent Messages</div>
+        {% for msg in support_messages %}
+        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:6px"><strong>{{ msg.subject }}</strong><span class="badge {% if msg.status == 'resolved' %}badge-green{% elif msg.status == 'reviewed' %}badge-blue{% else %}badge-amber{% endif %}">{{ msg.status|title }}</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ msg.get_category_display }} · {{ msg.created_at|date:"M j, Y H:i" }}</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.5">{{ msg.message }}</div>
+            {% if msg.admin_reply %}<div style="margin-top:10px;padding:10px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-size:12px">{{ msg.admin_reply }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--muted)">No messages yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
