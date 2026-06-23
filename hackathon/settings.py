@@ -1,38 +1,38 @@
 """
 Django settings for hackathon project.
 """
-
+ 
 from django.apps import config
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
+ 
 # Load environment variables from .env file
 load_dotenv()
-
-
+ 
+ 
 def _clean_env(name, default=''):
     value = os.getenv(name, default)
     if value is None:
         return default
     return value.strip().strip('"').strip("'")
-
+ 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+ 
+ 
 # Quick-start development settings - unsuitable for production
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-change-this')
-
+ 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
-
+ 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
-
+ 
+ 
 # Application definition
-
+ 
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+ 
     'accounts',
     'events',
     'features',
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'team.team.apps.TeamConfig',
     'jury',
 ]
-
+ 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -60,9 +60,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+ 
 ROOT_URLCONF = 'hackathon.urls'
-
+ 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -79,13 +79,13 @@ TEMPLATES = [
         },
     },
 ]
-
+ 
 WSGI_APPLICATION = 'hackathon.wsgi.application'
-
-
+ 
+ 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+ 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -96,11 +96,11 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-
-
+ 
+ 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+ 
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -115,43 +115,43 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-
+ 
+ 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+ 
 LANGUAGE_CODE = 'en-us'
-
+ 
 TIME_ZONE = 'UTC'
-
+ 
 USE_I18N = True
-
+ 
 USE_TZ = True
-
-
+ 
+ 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+ 
 STATIC_URL = 'static/'
-
+ 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+ 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
+ 
+ 
 # Manually added
 AUTH_USER_MODEL = 'accounts.User'
-
+ 
 # Auth settings
 LOGIN_URL = '/accounts/'                     # Where @login_required redirects unauthenticated users
 LOGIN_REDIRECT_URL = '/accounts/dashboard/'  # After successful Django auth (fallback)
 LOGOUT_REDIRECT_URL = '/'                    # After logout
-
+ 
 # -----------------------------------------------
 # Email Configuration (SMTP via Gmail)
 # -----------------------------------------------
-
+ 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = _clean_env('EMAIL_HOST', 'smtp-mail.outlook.com')
 EMAIL_PORT = int(_clean_env('EMAIL_PORT', '587'))
@@ -162,7 +162,7 @@ DEFAULT_FROM_EMAIL = _clean_env(
     'DEFAULT_FROM_EMAIL',
     EMAIL_HOST_USER or 'HackNexus <no-reply@hacknexus.com>',
 )
-
+ 
  
 # Media Files
 MEDIA_URL = '/media/'
@@ -188,7 +188,7 @@ STORAGES = {
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
 }
  
-
+ 
 # OneDrive (Microsoft Graph) — delegated auth + proxied serving.
 # Files land under <user OneDrive>/<ONEDRIVE_BASE_FOLDER>/<relative media path>.
 ONEDRIVE_TENANT_ID = _clean_env('ONEDRIVE_TENANT_ID', default='')
@@ -201,11 +201,14 @@ ONEDRIVE_BASE_FOLDER = _clean_env('ONEDRIVE_BASE_FOLDER', default='assetMonitori
 ONEDRIVE_TOKEN_CACHE = _clean_env(
     'ONEDRIVE_TOKEN_CACHE', default=str(BASE_DIR / '.onedrive_token_cache.json')
 )
-
-
-
+ 
+ 
+ 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = _clean_env('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = (
+    os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower()
+    == 'true'
+)
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
