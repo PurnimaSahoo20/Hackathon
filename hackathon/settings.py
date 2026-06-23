@@ -205,11 +205,11 @@ ONEDRIVE_TOKEN_CACHE = _clean_env(
 
 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = _clean_env('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in config(
+    for origin in _clean_env(
         'CSRF_TRUSTED_ORIGINS',
         default='http://hackathon.okcl.org',
     ).split(',')
