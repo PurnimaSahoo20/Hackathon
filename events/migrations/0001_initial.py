@@ -13,79 +13,105 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Hackathon',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('organization_name', models.CharField(max_length=255)),
-                ('organization_logo', models.ImageField(blank=True, null=True, upload_to='hackathon_logos/')),
-                ('approval_date', models.DateField(blank=True, null=True)),
-                ('approval_letter', models.FileField(blank=True, null=True, upload_to='approvals/')),
-                ('poster_launching_date', models.DateField(blank=True, null=True)),
-                ('website_launching_date', models.DateField(blank=True, null=True)),
-                ('registration_open', models.DateField(blank=True, null=True)),
-                ('registration_close', models.DateField(blank=True, null=True)),
-                ('round_1_name', models.CharField(default='Round 1', max_length=255)),
-                ('round_1_start_date', models.DateField(blank=True, null=True)),
-                ('round_1_end_date', models.DateField(blank=True, null=True)),
-                ('round_2_name', models.CharField(default='Round 2', max_length=255)),
-                ('round_2_start_date', models.DateField(blank=True, null=True)),
-                ('round_2_end_date', models.DateField(blank=True, null=True)),
-                ('round_3_name', models.CharField(default='Round 3', max_length=255)),
-                ('round_3_start_date', models.DateField(blank=True, null=True)),
-                ('round_3_end_date', models.DateField(blank=True, null=True)),
-                ('round_4_name', models.CharField(default='Round 4', max_length=255)),
-                ('round_4_start_date', models.DateField(blank=True, null=True)),
-                ('round_4_end_date', models.DateField(blank=True, null=True)),
-                ('round_5_name', models.CharField(default='Round 5', max_length=255)),
-                ('round_5_start_date', models.DateField(blank=True, null=True)),
-                ('round_5_end_date', models.DateField(blank=True, null=True)),
-                ('min_team_size', models.IntegerField(default=1)),
-                ('max_team_size', models.IntegerField(default=4)),
-                ('number_of_mentors', models.IntegerField(default=0)),
-                ('total_team_members', models.IntegerField(default=4)),
-                ('number_of_rounds', models.IntegerField(default=1)),
-                ('status', models.CharField(default='Draft', max_length=50)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.superadminprofile')),
+        # These tables (accounts_hackathon / accounts_creativematerial /
+        # accounts_problemstatement) were originally created by the accounts
+        # app and still exist physically. We adopt the models into the events
+        # app at the Django-state level ONLY -- no physical CREATE TABLE -- so
+        # that running migrations on a fresh database does not attempt to
+        # create tables that the accounts migrations already created.
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                # accounts/0015 physically dropped the `hackathon` FK column
+                # from these two tables. The accounts models are now re-adopted
+                # here, so re-add the columns (idempotently -- they already
+                # exist on databases where accounts/0015 had not dropped them).
+                migrations.RunSQL(
+                    sql="ALTER TABLE accounts_creativematerial "
+                        "ADD COLUMN IF NOT EXISTS hackathon_id bigint;",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="ALTER TABLE accounts_problemstatement "
+                        "ADD COLUMN IF NOT EXISTS hackathon_id bigint;",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
             ],
-            options={
-                'db_table': 'accounts_hackathon',
-            },
-        ),
-        migrations.CreateModel(
-            name='CreativeMaterial',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255)),
-                ('file', models.FileField(upload_to='creatives/')),
-                ('is_published', models.BooleanField(default=False)),
-                ('is_suspended', models.BooleanField(default=False)),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('hackathon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='creatives', to='events.hackathon')),
+            state_operations=[
+                migrations.CreateModel(
+                    name='Hackathon',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('name', models.CharField(max_length=255)),
+                        ('organization_name', models.CharField(max_length=255)),
+                        ('organization_logo', models.ImageField(blank=True, null=True, upload_to='hackathon_logos/')),
+                        ('approval_date', models.DateField(blank=True, null=True)),
+                        ('approval_letter', models.FileField(blank=True, null=True, upload_to='approvals/')),
+                        ('poster_launching_date', models.DateField(blank=True, null=True)),
+                        ('website_launching_date', models.DateField(blank=True, null=True)),
+                        ('registration_open', models.DateField(blank=True, null=True)),
+                        ('registration_close', models.DateField(blank=True, null=True)),
+                        ('round_1_name', models.CharField(default='Round 1', max_length=255)),
+                        ('round_1_start_date', models.DateField(blank=True, null=True)),
+                        ('round_1_end_date', models.DateField(blank=True, null=True)),
+                        ('round_2_name', models.CharField(default='Round 2', max_length=255)),
+                        ('round_2_start_date', models.DateField(blank=True, null=True)),
+                        ('round_2_end_date', models.DateField(blank=True, null=True)),
+                        ('round_3_name', models.CharField(default='Round 3', max_length=255)),
+                        ('round_3_start_date', models.DateField(blank=True, null=True)),
+                        ('round_3_end_date', models.DateField(blank=True, null=True)),
+                        ('round_4_name', models.CharField(default='Round 4', max_length=255)),
+                        ('round_4_start_date', models.DateField(blank=True, null=True)),
+                        ('round_4_end_date', models.DateField(blank=True, null=True)),
+                        ('round_5_name', models.CharField(default='Round 5', max_length=255)),
+                        ('round_5_start_date', models.DateField(blank=True, null=True)),
+                        ('round_5_end_date', models.DateField(blank=True, null=True)),
+                        ('min_team_size', models.IntegerField(default=1)),
+                        ('max_team_size', models.IntegerField(default=4)),
+                        ('number_of_mentors', models.IntegerField(default=0)),
+                        ('total_team_members', models.IntegerField(default=4)),
+                        ('number_of_rounds', models.IntegerField(default=1)),
+                        ('status', models.CharField(default='Draft', max_length=50)),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('updated_at', models.DateTimeField(auto_now=True)),
+                        ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.superadminprofile')),
+                    ],
+                    options={
+                        'db_table': 'accounts_hackathon',
+                    },
+                ),
+                migrations.CreateModel(
+                    name='CreativeMaterial',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('title', models.CharField(max_length=255)),
+                        ('file', models.FileField(upload_to='creatives/')),
+                        ('is_published', models.BooleanField(default=False)),
+                        ('is_suspended', models.BooleanField(default=False)),
+                        ('uploaded_at', models.DateTimeField(auto_now_add=True)),
+                        ('hackathon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='creatives', to='events.hackathon')),
+                    ],
+                    options={
+                        'db_table': 'accounts_creativematerial',
+                    },
+                ),
+                migrations.CreateModel(
+                    name='ProblemStatement',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('title', models.CharField(max_length=255)),
+                        ('domain', models.CharField(blank=True, max_length=255, null=True)),
+                        ('description', models.TextField(blank=True, null=True)),
+                        ('is_published', models.BooleanField(default=False)),
+                        ('is_suspended', models.BooleanField(default=False)),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('updated_at', models.DateTimeField(auto_now=True)),
+                        ('pdf_file', models.FileField(blank=True, null=True, upload_to='problem_statements/pdfs/')),
+                        ('hackathon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='events.hackathon')),
+                    ],
+                    options={
+                        'db_table': 'accounts_problemstatement',
+                    },
+                ),
             ],
-            options={
-                'db_table': 'accounts_creativematerial',
-            },
-        ),
-        migrations.CreateModel(
-            name='ProblemStatement',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255)),
-                ('domain', models.CharField(blank=True, max_length=255, null=True)),
-                ('description', models.TextField(blank=True, null=True)),
-                ('is_published', models.BooleanField(default=False)),
-                ('is_suspended', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('pdf_file', models.FileField(blank=True, null=True, upload_to='problem_statements/pdfs/')),
-                ('hackathon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='events.hackathon')),
-            ],
-            options={
-                'db_table': 'accounts_problemstatement',
-            },
         ),
     ]

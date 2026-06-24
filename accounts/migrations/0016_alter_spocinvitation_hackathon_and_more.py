@@ -17,6 +17,17 @@ class Migration(migrations.Migration):
             name='hackathon',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='events.hackathon'),
         ),
+        # Drop the composite unique constraints BEFORE removing their member
+        # fields, otherwise Django cannot resolve the columns of the index it
+        # needs to drop (FieldDoesNotExist on a fresh database).
+        migrations.AlterUniqueTogether(
+            name='teammember',
+            unique_together=None,
+        ),
+        migrations.AlterUniqueTogether(
+            name='teammentor',
+            unique_together=None,
+        ),
         migrations.RemoveField(
             model_name='volunteerassignment',
             name='hackathon',
@@ -89,17 +100,9 @@ class Migration(migrations.Migration):
             model_name='teamdocument',
             name='uploaded_by',
         ),
-        migrations.AlterUniqueTogether(
-            name='teammember',
-            unique_together=None,
-        ),
         migrations.RemoveField(
             model_name='teammember',
             name='user',
-        ),
-        migrations.AlterUniqueTogether(
-            name='teammentor',
-            unique_together=None,
         ),
         migrations.RemoveField(
             model_name='teammentor',
@@ -137,9 +140,25 @@ class Migration(migrations.Migration):
             model_name='venuefoodrefreshment',
             name='venue',
         ),
-        migrations.DeleteModel(
-            name='CreativeMaterial',
+        # Hackathon, ProblemStatement and CreativeMaterial have been re-adopted
+        # by the events app (see events/0001_initial) and KEEP their physical
+        # tables. Remove the old accounts-app models from Django's state only --
+        # do NOT issue DROP TABLE, otherwise the events-owned tables vanish.
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.DeleteModel(
+                    name='CreativeMaterial',
+                ),
+                migrations.DeleteModel(
+                    name='Hackathon',
+                ),
+                migrations.DeleteModel(
+                    name='ProblemStatement',
+                ),
+            ],
+            database_operations=[],
         ),
+        # The models below are genuinely removed -- drop their tables for real.
         migrations.DeleteModel(
             name='Documentation',
         ),
@@ -156,13 +175,7 @@ class Migration(migrations.Migration):
             name='SponsorshipFund',
         ),
         migrations.DeleteModel(
-            name='Hackathon',
-        ),
-        migrations.DeleteModel(
             name='Podcast',
-        ),
-        migrations.DeleteModel(
-            name='ProblemStatement',
         ),
         migrations.DeleteModel(
             name='Team',

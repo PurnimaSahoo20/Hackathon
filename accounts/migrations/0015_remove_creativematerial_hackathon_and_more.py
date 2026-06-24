@@ -9,6 +9,13 @@ class Migration(migrations.Migration):
         ('accounts', '0014_volunteerassignment_venuefoodrefreshment_and_more'),
     ]
 
+    # NOTE: This migration physically drops `created_by` from Hackathon and
+    # `hackathon` from CreativeMaterial / ProblemStatement. Those three models
+    # are immediately re-adopted by the `events` app (events/0001_initial),
+    # which re-adds the dropped FK columns. This migration is already applied in
+    # existing databases, so its physical effect must NOT change -- the events
+    # app is written to reconcile whatever schema this migration leaves behind,
+    # which keeps fresh installs and already-deployed databases on the same path.
     operations = [
         migrations.RemoveField(
             model_name='creativematerial',

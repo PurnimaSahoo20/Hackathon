@@ -10,8 +10,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='hackathon',
-            name='created_by',
+        # Drop created_by from state, but drop the physical column idempotently:
+        # accounts/0015 may have already dropped created_by_id on existing
+        # databases, so a plain RemoveField would fail with "column does not
+        # exist". events/0003 re-adds created_by_id afterwards.
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.RemoveField(
+                    model_name='hackathon',
+                    name='created_by',
+                ),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="ALTER TABLE accounts_hackathon "
+                        "DROP COLUMN IF EXISTS created_by_id;",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
         ),
     ]
