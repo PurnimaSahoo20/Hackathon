@@ -109,8 +109,16 @@
             <div class="field"><label>First Name</label><input type="text" name="leader_first_name" value="{{ request.user.first_name|default:'' }}"></div>
             <div class="field"><label>Last Name</label><input type="text" name="leader_last_name" value="{{ request.user.last_name|default:'' }}"></div>
             <div class="field"><label>Email</label><input type="email" value="{{ request.user.email }}" disabled></div>
-            <div class="field"><label>Phone Number</label><input type="text" name="leader_phone_number" value="{{ request.user.phone_number|default:'' }}"></div>
-            <div class="field"><label>Date of Birth</label><input type="date" name="leader_date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d' }}"></div>
+            <div class="field">
+                <label>Phone Number</label>
+                <input type="text" name="leader_phone_number" value="{{ request.user.phone_number|default:'' }}">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a 10-digit mobile number.</div>
+            </div>
+            <div class="field">
+                <label>Date of Birth</label>
+                <input type="date" name="leader_date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d' }}">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a valid date of birth (cannot be in the future).</div>
+            </div>
             <div class="field">
                 <label>Gender</label>
                 <select name="leader_gender">
@@ -141,24 +149,36 @@
                     <option value="XXL" {% if leader_details.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
                 </select>
             </div>
-            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="leader_aadhaar_number" value="{{ leader_details.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX"></div>
-            <div class="field"><label>Bank Account Number</label><input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number"></div>
-            <div class="field"><label>IFSC Code</label><input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234"></div>
-            <div class="field"><label>Bank Name</label><input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name"></div>
+            <div class="field">
+                <label>Aadhaar Card Number</label>
+                <input type="text" name="leader_aadhaar_number" value="{{ leader_details.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a 12-digit number.</div>
+            </div>
+            <div class="field">
+                <label>Bank Account Number</label>
+                <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be between 9 and 18 digits.</div>
+            </div>
+            <div class="field">
+                <label>IFSC Code</label>
+                <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a valid 11-character IFSC (e.g. SBIN0001234).</div>
+            </div>
+            <div class="field">
+                <label>Bank Name</label>
+                <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name">
+            </div>
             <div class="field">
                 <label>Aadhaar Proof</label>
                 <input type="file" name="leader_aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 2MB.</div>
                 {% if leader_details.aadhaar_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
             </div>
             <div class="field">
                 <label>College ID Proof</label>
                 <input type="file" name="leader_college_id_proof" accept=".pdf,.jpg,.jpeg,.png">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 2MB.</div>
                 {% if leader_details.college_id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.college_id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
-            </div>
-            <div class="field">
-                <label>ID Proof (Upload)</label>
-                <input type="file" name="leader_id_proof" accept=".pdf,.jpg,.jpeg,.png">
-                {% if leader_details.id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
             </div>
         </div>
         </fieldset>
@@ -183,8 +203,16 @@
         <div class="two-grid">
             <div class="field"><label>First Name</label><input type="text" name="first_name" placeholder="First name"></div>
             <div class="field"><label>Last Name</label><input type="text" name="last_name" placeholder="Last name"></div>
-            <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="member@email.com"></div>
-            <div class="field"><label>Phone Number</label><input type="text" name="phone_number" placeholder="Phone number"></div>
+            <div class="field">
+                <label>Email *</label>
+                <input type="email" name="email" required placeholder="member@email.com">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a unique valid email address.</div>
+            </div>
+            <div class="field">
+                <label>Phone Number</label>
+                <input type="text" name="phone_number" placeholder="Phone number">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a 10-digit mobile number.</div>
+            </div>
             <div class="field"><label>Role in Team</label>
                 <select name="role">
                     <option>Member</option>
@@ -194,7 +222,11 @@
                     <option>Researcher</option>
                 </select>
             </div>
-            <div class="field"><label>Date of Birth</label><input type="date" name="date_of_birth"></div>
+            <div class="field">
+                <label>Date of Birth</label>
+                <input type="date" name="date_of_birth">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a valid date of birth (cannot be in the future).</div>
+            </div>
             <div class="field"><label>Gender</label>
                 <select name="gender">
                     <option value="">Select Gender</option>
@@ -222,13 +254,35 @@
                     <option value="XXL">XXL</option>
                 </select>
             </div>
-            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="aadhaar_number" placeholder="XXXX-XXXX-XXXX"></div>
-            <div class="field"><label>Bank Account Number</label><input type="text" name="bank_account" placeholder="Account Number"></div>
-            <div class="field"><label>IFSC Code</label><input type="text" name="ifsc" placeholder="SBIN0001234"></div>
-            <div class="field"><label>Bank Name</label><input type="text" name="bank_name" placeholder="Bank Name"></div>
-            <div class="field"><label>Aadhaar Proof</label><input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="field"><label>College ID Proof</label><input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="field"><label>ID Proof (Upload)</label><input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="field">
+                <label>Aadhaar Card Number</label>
+                <input type="text" name="aadhaar_number" placeholder="XXXX-XXXX-XXXX">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a 12-digit number.</div>
+            </div>
+            <div class="field">
+                <label>Bank Account Number</label>
+                <input type="text" name="bank_account" placeholder="Account Number">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be between 9 and 18 digits.</div>
+            </div>
+            <div class="field">
+                <label>IFSC Code</label>
+                <input type="text" name="ifsc" placeholder="SBIN0001234">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Must be a valid 11-character IFSC (e.g. SBIN0001234).</div>
+            </div>
+            <div class="field">
+                <label>Bank Name</label>
+                <input type="text" name="bank_name" placeholder="Bank Name">
+            </div>
+            <div class="field">
+                <label>Aadhaar Proof</label>
+                <input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 2MB.</div>
+            </div>
+            <div class="field">
+                <label>College ID Proof</label>
+                <input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png">
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 2MB.</div>
+            </div>
         </div>
         <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Add Member</button>
     </form>

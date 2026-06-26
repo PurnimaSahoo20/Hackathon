@@ -45,15 +45,21 @@
     <div class="brand">Hack<span>Nexus</span></div>
     <div class="header-actions">
         <a href="{% url 'team_login' %}" class="btn-outline">Sign In</a>
-        <a href="{% url 'team_register' %}" class="btn-solid">Register Your Team →</a>
+        <a href="{% url 'team_register' %}" class="btn-solid" {% if not hackathons %}onclick="alert('Registration for {{ latest_hackathon.name|default:"the hackathon"|escapejs }} is closed.'); return false;"{% endif %}>Register Your Team →</a>
     </div>
 </header>
 
+{% for message in messages %}
+<div style="max-width: 900px; margin: 20px auto 0; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; text-align: center;">
+    {{ message }}
+</div>
+{% endfor %}
+
 <div class="hero">
-    <h1>Register Your Team for<br><span>HackNexus 2025</span></h1>
+    <h1>Register Your Team</h1>
     <p>Build innovative solutions, get mentored by industry experts, and compete with the best teams across institutions.</p>
     <div class="cta-row">
-        <a href="{% url 'team_register' %}" class="cta-primary">🚀 Register Your Team</a>
+        <a href="{% url 'team_register' %}" class="cta-primary" {% if not hackathons %}onclick="alert('Registration for {{ latest_hackathon.name|default:"the hackathon"|escapejs }} is closed.'); return false;"{% endif %}>🚀 Register Your Team</a>
         <a href="{% url 'team_login' %}" class="cta-secondary">Already registered? Login →</a>
     </div>
 </div>
@@ -108,5 +114,7 @@
     {% endfor %}
 </div>
 {% endif %}
+
+
 </body>
 </html>

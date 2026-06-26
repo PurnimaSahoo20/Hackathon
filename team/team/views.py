@@ -161,17 +161,34 @@ def _send_otp(user, otp_code):
     except Exception as exc:
         logger.error(f"Team OTP email error: {exc}")
 
+def _get_open_hackathons():
+    from events.models import Hackathon
+    from django.db.models import Q
+    today = timezone.localdate()
+    return Hackathon.objects.filter(
+        status='Live'
+    ).filter(
+        Q(registration_open__isnull=True) | Q(registration_open__lte=today)
+    ).filter(
+        Q(registration_close__isnull=True) | Q(registration_close__gte=today)
+    ).order_by('-created_at')
+
 # ─────────────────────────────────────────────────────────────
 #  LANDING / REGISTER
 # ─────────────────────────────────────────────────────────────
 
+@never_cache
 def team_landing(request):
     """Public landing page — register or login."""
     if request.user.is_authenticated and _team_required(request):
         return redirect('team_dashboard')
+    hackathons = _get_open_hackathons()
     from events.models import Hackathon
-    hackathons = Hackathon.objects.filter(status='Live').order_by('-created_at')
-    return render(request, 'team/landing.html', {'hackathons': hackathons})
+    latest_hackathon = Hackathon.objects.filter(status='Live').order_by('-created_at').first()
+    return render(request, 'team/landing.html', {
+        'hackathons': hackathons,
+        'latest_hackathon': latest_hackathon,
+    })
 
 
 def team_register(request):
@@ -180,7 +197,11 @@ def team_register(request):
         return redirect('team_dashboard')
 
     from events.models import Hackathon
-    hackathons = Hackathon.objects.filter(status='Live').order_by('-created_at')
+    hackathons = _get_open_hackathons()
+    if not hackathons.exists():
+        messages.error(request, 'Registration is closed. No active hackathons are currently open for registration.')
+        return redirect('team_landing')
+
     institutions = _get_available_institutions()
 
     if request.method == 'POST':
@@ -215,10 +236,9 @@ def team_register(request):
         if not hackathon_id and hackathons.exists():
             hackathon = hackathons.first()
         else:
-            try:
-                hackathon = Hackathon.objects.get(id=hackathon_id)
-            except Hackathon.DoesNotExist:
-                messages.error(request, 'Please select a valid hackathon.')
+            hackathon = hackathons.filter(id=hackathon_id).first()
+            if not hackathon:
+                messages.error(request, 'Please select a valid hackathon with open registration.')
                 return render(request, 'team/register.html', {'hackathons': hackathons, 'institutions': institutions})
 
         institution = institutions.filter(id=institution_id).first()
@@ -418,39 +438,102 @@ def team_details(request):
 
         leader_details = dict(reg.leader_details or {})
         leader = request.user
+
+        # Backend validations for Team Lead details
+        leader_phone = request.POST.get('leader_phone_number', '').strip()
+        if leader_phone:
+            cleaned_phone = leader_phone.replace(' ', '').replace('-', '')
+            if cleaned_phone.startswith('+91'):
+                cleaned_phone = cleaned_phone[3:]
+            import re
+            if not re.match(r'^[6-9]\d{9}$', cleaned_phone):
+                messages.error(request, 'Team Lead phone number must be a valid 10-digit mobile number.')
+                return redirect('team_details')
+            leader.phone_number = cleaned_phone
+        else:
+            leader.phone_number = None
+
+        leader_dob = request.POST.get('leader_date_of_birth', '').strip()
+        if leader_dob:
+            import datetime
+            try:
+                dob_val = datetime.datetime.strptime(leader_dob, '%Y-%m-%d').date()
+                if dob_val >= timezone.localdate():
+                    messages.error(request, 'Team Lead Date of Birth cannot be in the future.')
+                    return redirect('team_details')
+            except ValueError:
+                messages.error(request, 'Invalid Team Lead Date of Birth format.')
+                return redirect('team_details')
+            leader.date_of_birth = leader_dob
+        else:
+            leader.date_of_birth = None
+
+        leader_aadhaar_num = request.POST.get('leader_aadhaar_number', '').strip().replace(' ', '').replace('-', '')
+        if leader_aadhaar_num:
+            import re
+            if not re.match(r'^\d{12}$', leader_aadhaar_num):
+                messages.error(request, 'Team Lead Aadhaar number must be exactly 12 digits.')
+                return redirect('team_details')
+
+        leader_bank_acc = request.POST.get('leader_bank_account', '').strip()
+        if leader_bank_acc:
+            import re
+            if not re.match(r'^\d{9,18}$', leader_bank_acc):
+                messages.error(request, 'Team Lead Bank Account number must be between 9 and 18 digits.')
+                return redirect('team_details')
+
+        leader_ifsc = request.POST.get('leader_ifsc', '').strip().upper()
+        if leader_ifsc:
+            import re
+            if not re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', leader_ifsc):
+                messages.error(request, 'Team Lead IFSC code must be a valid 11-character alphanumeric code (e.g. SBIN0001234).')
+                return redirect('team_details')
+
+        allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+        max_file_size = 2 * 1024 * 1024  # 2MB
+
+        leader_aadhaar = request.FILES.get('leader_aadhaar_proof')
+        if leader_aadhaar:
+            import os
+            ext = os.path.splitext(leader_aadhaar.name)[1].lower()
+            if ext not in allowed_extensions:
+                messages.error(request, 'Team Lead Aadhaar proof must be a PDF, JPG, JPEG, or PNG file.')
+                return redirect('team_details')
+            if leader_aadhaar.size > max_file_size:
+                messages.error(request, 'Team Lead Aadhaar proof file size must not exceed 2MB.')
+                return redirect('team_details')
+
+        leader_college_id = request.FILES.get('leader_college_id_proof')
+        if leader_college_id:
+            import os
+            ext = os.path.splitext(leader_college_id.name)[1].lower()
+            if ext not in allowed_extensions:
+                messages.error(request, 'Team Lead College ID proof must be a PDF, JPG, JPEG, or PNG file.')
+                return redirect('team_details')
+            if leader_college_id.size > max_file_size:
+                messages.error(request, 'Team Lead College ID proof file size must not exceed 2MB.')
+                return redirect('team_details')
+
         leader.first_name = request.POST.get('leader_first_name', leader.first_name).strip()
         leader.last_name = request.POST.get('leader_last_name', leader.last_name).strip()
-        leader.phone_number = request.POST.get('leader_phone_number', leader.phone_number or '').strip() or None
         leader.gender = request.POST.get('leader_gender', leader.gender or '').strip() or None
-        leader_dob = request.POST.get('leader_date_of_birth', '').strip()
-        leader.date_of_birth = leader_dob or None
-
-        leader_id_proof = request.FILES.get('leader_id_proof')
-        if leader_id_proof:
-            leader.id_proof = leader_id_proof
-
         leader.save()
 
         leader_details.update({
             'role_in_team': request.POST.get('leader_role_in_team', leader_details.get('role_in_team', 'Team Lead')).strip() or 'Team Lead',
             'cast': request.POST.get('leader_cast', leader_details.get('cast', '')).strip(),
             'tshirt_size': request.POST.get('leader_tshirt_size', leader_details.get('tshirt_size', '')).strip(),
-            'aadhaar_number': request.POST.get('leader_aadhaar_number', leader_details.get('aadhaar_number', '')).strip(),
-            'bank_account': request.POST.get('leader_bank_account', leader_details.get('bank_account', '')).strip(),
-            'ifsc': request.POST.get('leader_ifsc', leader_details.get('ifsc', '')).strip(),
+            'aadhaar_number': leader_aadhaar_num,
+            'bank_account': leader_bank_acc,
+            'ifsc': leader_ifsc,
             'bank_name': request.POST.get('leader_bank_name', leader_details.get('bank_name', '')).strip(),
         })
 
-        leader_aadhaar = request.FILES.get('leader_aadhaar_proof')
         if leader_aadhaar:
             leader_details['aadhaar_proof'] = _store_registration_upload(leader_aadhaar, 'team_registration/leader/aadhaar')
 
-        leader_college_id = request.FILES.get('leader_college_id_proof')
         if leader_college_id:
             leader_details['college_id_proof'] = _store_registration_upload(leader_college_id, 'team_registration/leader/college_ids')
-
-        if leader.id_proof:
-            leader_details['id_proof'] = leader.id_proof.name
 
         reg.leader_details = leader_details
         reg.save()
@@ -499,41 +582,123 @@ def team_add_member(request):
         messages.error(request, 'Email is required.')
         return redirect('team_details')
 
+    if email == reg.team_leader.email.lower().strip():
+        messages.error(request, 'The team leader cannot be added as a member.')
+        return redirect('team_details')
+
     # Add to members_data JSON
     members = list(reg.members_data or [])
     if any(m.get('email', '').lower() == email for m in members):
         messages.warning(request, 'This member is already in the team.')
         return redirect('team_details')
 
+    # Backend validations for Team Member
+    phone = request.POST.get('phone_number', '').strip()
+    if phone:
+        cleaned_phone = phone.replace(' ', '').replace('-', '')
+        if cleaned_phone.startswith('+91'):
+            cleaned_phone = cleaned_phone[3:]
+        import re
+        if not re.match(r'^[6-9]\d{9}$', cleaned_phone):
+            messages.error(request, 'Member phone number must be a valid 10-digit mobile number.')
+            return redirect('team_details')
+        phone_val = cleaned_phone
+    else:
+        phone_val = ''
+
+    dob_str = request.POST.get('date_of_birth', '').strip()
+    if dob_str:
+        import datetime
+        try:
+            dob_val = datetime.datetime.strptime(dob_str, '%Y-%m-%d').date()
+            if dob_val >= timezone.localdate():
+                messages.error(request, 'Member Date of Birth cannot be in the future.')
+                return redirect('team_details')
+        except ValueError:
+            messages.error(request, 'Invalid Member Date of Birth format.')
+            return redirect('team_details')
+        dob_val = dob_str
+    else:
+        dob_val = ''
+
+    aadhaar = request.POST.get('aadhaar_number', '').strip().replace(' ', '').replace('-', '')
+    if aadhaar:
+        import re
+        if not re.match(r'^\d{12}$', aadhaar):
+            messages.error(request, 'Member Aadhaar Card number must be exactly 12 digits.')
+            return redirect('team_details')
+        aadhaar_val = aadhaar
+    else:
+        aadhaar_val = ''
+
+    bank_acc = request.POST.get('bank_account', '').strip()
+    if bank_acc:
+        import re
+        if not re.match(r'^\d{9,18}$', bank_acc):
+            messages.error(request, 'Member Bank Account number must be between 9 and 18 digits.')
+            return redirect('team_details')
+        bank_acc_val = bank_acc
+    else:
+        bank_acc_val = ''
+
+    ifsc = request.POST.get('ifsc', '').strip().upper()
+    if ifsc:
+        import re
+        if not re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', ifsc):
+            messages.error(request, 'Member IFSC code must be a valid 11-character alphanumeric code (e.g. SBIN0001234).')
+            return redirect('team_details')
+        ifsc_val = ifsc
+    else:
+        ifsc_val = ''
+
+    allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+    max_file_size = 2 * 1024 * 1024  # 2MB
+
+    aadhaar_proof = request.FILES.get('aadhaar_proof')
+    if aadhaar_proof:
+        import os
+        ext = os.path.splitext(aadhaar_proof.name)[1].lower()
+        if ext not in allowed_extensions:
+            messages.error(request, 'Member Aadhaar proof must be a PDF, JPG, JPEG, or PNG file.')
+            return redirect('team_details')
+        if aadhaar_proof.size > max_file_size:
+            messages.error(request, 'Member Aadhaar proof file size must not exceed 2MB.')
+            return redirect('team_details')
+
+    college_id_proof = request.FILES.get('college_id_proof')
+    if college_id_proof:
+        import os
+        ext = os.path.splitext(college_id_proof.name)[1].lower()
+        if ext not in allowed_extensions:
+            messages.error(request, 'Member College ID proof must be a PDF, JPG, JPEG, or PNG file.')
+            return redirect('team_details')
+        if college_id_proof.size > max_file_size:
+            messages.error(request, 'Member College ID proof file size must not exceed 2MB.')
+            return redirect('team_details')
+
     member_data = {
         'name': name,
         'first_name': first_name,
         'last_name': last_name,
         'email': email,
-        'phone_number': request.POST.get('phone_number', '').strip(),
+        'phone_number': phone_val,
         'role': role,
         'role_in_team': role,
-        'date_of_birth': request.POST.get('date_of_birth', '').strip(),
+        'date_of_birth': dob_val,
         'gender': request.POST.get('gender', '').strip(),
         'cast': request.POST.get('cast', '').strip(),
         'tshirt_size': request.POST.get('tshirt_size', '').strip(),
-        'aadhaar_number': request.POST.get('aadhaar_number', '').strip(),
-        'bank_account': request.POST.get('bank_account', '').strip(),
-        'ifsc': request.POST.get('ifsc', '').strip(),
+        'aadhaar_number': aadhaar_val,
+        'bank_account': bank_acc_val,
+        'ifsc': ifsc_val,
         'bank_name': request.POST.get('bank_name', '').strip(),
     }
 
-    aadhaar_proof = request.FILES.get('aadhaar_proof')
     if aadhaar_proof:
         member_data['aadhaar_proof'] = _store_registration_upload(aadhaar_proof, 'team_registration/members/aadhaar')
 
-    college_id_proof = request.FILES.get('college_id_proof')
     if college_id_proof:
         member_data['college_id_proof'] = _store_registration_upload(college_id_proof, 'team_registration/members/college_ids')
-
-    id_proof = request.FILES.get('id_proof')
-    if id_proof:
-        member_data['id_proof'] = _store_registration_upload(id_proof, 'team_registration/members/id_proofs')
 
     members.append(member_data)
     reg.members_data = members

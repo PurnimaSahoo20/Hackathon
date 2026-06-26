@@ -31,8 +31,8 @@ class Team(models.Model):
     )
     declared_member_count = models.PositiveIntegerField(default=1)
     leader_role_in_team = models.CharField(max_length=100, default='Leader')
-    leader_aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', null=True, blank=True)
-    leader_college_id_proof = models.FileField(upload_to='team_documents/college_ids/', null=True, blank=True)
+    leader_aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', max_length=255, null=True, blank=True)
+    leader_college_id_proof = models.FileField(upload_to='team_documents/college_ids/', max_length=255, null=True, blank=True)
     status = models.CharField(max_length=50, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -49,8 +49,8 @@ class TeamMember(models.Model):
     team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
     role_in_team = models.CharField(max_length=100, blank=True, default='Member')
-    aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', null=True, blank=True)
-    college_id_proof = models.FileField(upload_to='team_documents/college_ids/', null=True, blank=True)
+    aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', max_length=255, null=True, blank=True)
+    college_id_proof = models.FileField(upload_to='team_documents/college_ids/', max_length=255, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -226,7 +226,7 @@ class TeamDocument(models.Model):
     )
     doc_type = models.CharField(max_length=30, choices=DOC_TYPE_CHOICES, default='other')
     title = models.CharField(max_length=255)
-    file = models.FileField(upload_to='team_documents/')
+    file = models.FileField(upload_to='team_documents/', max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

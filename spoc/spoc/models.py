@@ -47,7 +47,7 @@ class SpocTeamApproval(models.Model):
         related_name='spoc_approvals'
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    auth_letter = models.FileField(upload_to='spoc/auth_letters/', null=True, blank=True)
+    auth_letter = models.FileField(upload_to='spoc/auth_letters/', max_length=255, null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
     decided_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -76,7 +76,7 @@ class SpocModificationDecision(models.Model):
     requested_change = models.CharField(max_length=500)
     reason = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    auth_letter = models.FileField(upload_to='spoc/mod_letters/', null=True, blank=True)
+    auth_letter = models.FileField(upload_to='spoc/mod_letters/', max_length=255, null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
     requested_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)

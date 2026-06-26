@@ -44,9 +44,12 @@
 </head>
 <body>
 <div class="wrapper">
-    <div class="brand">Hack<span>Nexus</span></div>
+    <div class="brand">{{ hackathons.0.name }}</div>
     <div class="card">
         <h2>Team Registration Form</h2>
+        {% if hackathons %}
+        <!-- <div style="font-size: 15px; font-weight: 700; color: #2563eb; margin: 4px 0 16px 0;">for {{ hackathons.0.name }}</div> -->
+        {% endif %}
         <p class="sub">As a Team Leader fill the details below to register your Team</p>
         {% for message in messages %}<div class="msg">{{ message }}</div>{% endfor %}
         <form method="POST">

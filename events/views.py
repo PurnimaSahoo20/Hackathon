@@ -1,7 +1,7 @@
 
 import logging
 from collections import defaultdict
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.contrib import messages
@@ -616,7 +616,7 @@ def delete_creative_material(request, creative_id):
             messages.success(request, f'Creative material "{title}" deleted.')
         except Exception as e:
             messages.error(request, f'Error: {e}')
-    return render_route(request, '/accounts/dashboard/?tab=creatives')
+    return redirect('/accounts/dashboard/?tab=creatives')
 
 
 def suspend_creative_material(request, creative_id):
@@ -634,6 +634,7 @@ def suspend_creative_material(request, creative_id):
 
 # ─────────────────────────── PUBLIC LANDING PAGE ───────────────────────────
 
+@never_cache
 def landing_page(request):
     """Public landing page displaying HackNexus statistics and info."""
     from accounts.models import ExpertInvitation, Institution, JuryInvitation
@@ -1249,8 +1250,8 @@ def landing_page(request):
                 {'icon': '🎯', 'text': f'{themes_count or len(top_tracks)} Themes'},
                 {'icon': '🎙️', 'text': f'{len(expert_talks)} Expert Talks'},
             ],
-            'primary_label': 'View Timeline',
-            'primary_target': '#timeline',
+            'primary_label': 'View Tracks',
+            'primary_target': '#tracksSection',
             'secondary_label': 'Browse Problems',
             'secondary_target': '#tracksSection',
             'primary_type': 'orange',
@@ -1270,8 +1271,8 @@ def landing_page(request):
                 {'icon': '📈', 'text': 'Launch Visibility'},
                 {'icon': '🌟', 'text': 'Recognition'},
             ],
-            'primary_label': 'View Prizes',
-            'primary_target': '#prizeSection',
+            'primary_label': 'Browse Problems',
+            'primary_target': '#tracksSection',
             'secondary_label': 'Explore Talks',
             'secondary_target': '#podcasts',
             'primary_type': 'primary',

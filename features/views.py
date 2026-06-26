@@ -9,7 +9,7 @@ import io
 import uuid
 import logging
 import secrets
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.contrib import messages
@@ -3824,6 +3824,9 @@ def media_communications_management(request):
     edit_gallery_id = request.GET.get('edit_gallery', '').strip()
     edit_news_id = request.GET.get('edit_news', '').strip()
     edit_feed_id = request.GET.get('edit_feed', '').strip()
+    edit_voice_inspiration_id = request.GET.get('edit_voice_inspiration', '').strip()
+    voice_inspiration_items = []
+    edit_voice_inspiration = None
 
     if active_hackathon:
         creative_queryset = CreativeMaterial.objects.filter(hackathon=active_hackathon).order_by('-uploaded_at')
@@ -3835,7 +3838,19 @@ def media_communications_management(request):
             Q(title__startswith=GALLERY_PREFIX) |
             Q(title__icontains='testimonial')
         )
-        creatives = creative_queryset.exclude(testimonial_filter)
+        creatives = creative_queryset.exclude(testimonial_filter).exclude(
+            Q(material_type='voice_of_inspiration') | Q(landing_sections__contains='voice-of-inspiration')
+        )
+        voice_inspiration_assets = creative_queryset.filter(
+            Q(material_type='voice_of_inspiration') | Q(landing_sections__contains='voice-of-inspiration')
+        ).order_by('-uploaded_at')
+        voice_inspiration_items = [
+            {
+                'asset': asset,
+                'display_title': asset.speaker_name or _display_asset_title(asset.title),
+            }
+            for asset in voice_inspiration_assets
+        ]
         gallery_assets = _extract_prefixed_assets(creative_queryset, GALLERY_PREFIX)
         creative_items = [
             {
@@ -3981,6 +3996,8 @@ def media_communications_management(request):
                 edit_news_kind = edit_news['kind']
         if edit_feed_id.isdigit():
             edit_feed = next((item for item in feed_items if item['item'].id == int(edit_feed_id)), None)
+        if edit_voice_inspiration_id.isdigit():
+            edit_voice_inspiration = next((item for item in voice_inspiration_items if item['asset'].id == int(edit_voice_inspiration_id)), None)
 
     context = _feature_context(
         request,
@@ -4007,6 +4024,8 @@ def media_communications_management(request):
         edit_feed=edit_feed,
         landing_section_choices=LANDING_SECTION_CHOICES,
         feed_platform_choices=FEED_PLATFORM_CHOICES,
+        voice_inspiration_items=voice_inspiration_items,
+        edit_voice_inspiration=edit_voice_inspiration,
     )
     return render(request, 'features/media_communications.html', context)
 
@@ -4028,12 +4047,21 @@ def save_creative_asset(request):
     testimonial_kind = request.POST.get('testimonial_kind', 'jury').strip().lower()
     if testimonial_kind not in TESTIMONIAL_PREFIX_MAP:
         testimonial_kind = 'jury'
+
+    # Voice of Inspiration sends the image as 'profile_image', not 'file'
+    is_voice_inspiration = (focus == 'voice-inspiration')
+    profile_image_upload = request.FILES.get('profile_image')
+    if is_voice_inspiration and upload is None:
+        upload = profile_image_upload
+
     landing_sections = _clean_landing_sections(request.POST.getlist('landing_sections'))
     legacy_landing_section = request.POST.get('landing_section', '').strip()
     if not landing_sections and legacy_landing_section:
         landing_sections = _clean_landing_sections([legacy_landing_section])
     if not landing_sections:
-        if asset_kind == 'testimonial':
+        if is_voice_inspiration:
+            landing_sections = ['voice-of-inspiration']
+        elif asset_kind == 'testimonial':
             landing_sections = ['testimonials']
         elif asset_kind == 'gallery':
             landing_sections = ['gallery']
@@ -4044,7 +4072,7 @@ def save_creative_asset(request):
         label = 'testimonial' if asset_kind == 'testimonial' else 'creative element'
         messages.error(request, f'Hackathon and title are required for {label}s.')
         suffix = f'&testimonial_kind={testimonial_kind}' if focus == 'testimonials' else ''
-        return render_route(request, f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
+        return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
 
     if asset_kind == 'testimonial':
         stored_title = _testimonial_title(testimonial_kind, title, landing_sections[0] if landing_sections else '')
@@ -4052,6 +4080,18 @@ def save_creative_asset(request):
         stored_title = _prefixed_title(GALLERY_PREFIX, title)
     else:
         stored_title = _attach_landing_section(title, landing_sections[0] if landing_sections else '')
+
+    # Voice of Inspiration extra fields
+    voi_speaker_name = request.POST.get('title', '').strip() if is_voice_inspiration else ''
+    voi_designation = request.POST.get('designation', '').strip() if is_voice_inspiration else ''
+    voi_institute = request.POST.get('institute_name', '').strip() if is_voice_inspiration else ''
+    voi_quote = request.POST.get('quote_text', '').strip() if is_voice_inspiration else ''
+    voi_priority = 0
+    if is_voice_inspiration:
+        try:
+            voi_priority = int(request.POST.get('display_priority', 0))
+        except (ValueError, TypeError):
+            voi_priority = 0
 
     try:
         if creative_id:
@@ -4062,28 +4102,54 @@ def save_creative_asset(request):
                 creative.file = upload
             creative.is_published = action == 'publish'
             creative.landing_sections = landing_sections
+            if is_voice_inspiration:
+                creative.speaker_name = voi_speaker_name
+                creative.designation = voi_designation
+                creative.institute_name = voi_institute
+                creative.quote_text = voi_quote
+                creative.display_priority = voi_priority
+                if profile_image_upload:
+                    creative.profile_image = profile_image_upload
             creative.save()
             label = (
-                f'{testimonial_kind.title()} testimonial' if asset_kind == 'testimonial'
+                'Voice of Inspiration item' if is_voice_inspiration
+                else f'{testimonial_kind.title()} testimonial' if asset_kind == 'testimonial'
                 else 'media gallery item' if asset_kind == 'gallery'
                 else 'creative element'
             )
             messages.success(request, f'{label.title()} "{title}" updated.')
         else:
-            if upload is None:
+            if upload is None and not is_voice_inspiration:
                 label = 'testimonial video' if asset_kind == 'testimonial' else 'gallery image' if asset_kind == 'gallery' else 'creative file'
                 messages.error(request, f'Please upload a {label}.')
                 suffix = f'&testimonial_kind={testimonial_kind}' if focus == 'testimonials' else ''
-                return render_route(request, f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
-            CreativeMaterial.objects.create(
-                hackathon_id=hackathon_id,
-                title=stored_title,
-                file=upload,
-                is_published=action == 'publish',
-                landing_sections=landing_sections,
-            )
+                return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
+            if is_voice_inspiration and not profile_image_upload:
+                messages.error(request, 'Please upload a profile image for Voice of Inspiration.')
+                return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}')
+
+            create_kwargs = {
+                'hackathon_id': hackathon_id,
+                'title': stored_title,
+                'is_published': action == 'publish',
+                'landing_sections': landing_sections,
+            }
+            if is_voice_inspiration:
+                create_kwargs['file'] = profile_image_upload
+                create_kwargs['profile_image'] = profile_image_upload
+                create_kwargs['speaker_name'] = voi_speaker_name
+                create_kwargs['designation'] = voi_designation
+                create_kwargs['institute_name'] = voi_institute
+                create_kwargs['quote_text'] = voi_quote
+                create_kwargs['display_priority'] = voi_priority
+                create_kwargs['material_type'] = 'voice_of_inspiration'
+            else:
+                create_kwargs['file'] = upload
+
+            CreativeMaterial.objects.create(**create_kwargs)
             label = (
-                f'{testimonial_kind.title()} testimonial' if asset_kind == 'testimonial'
+                'Voice of Inspiration item' if is_voice_inspiration
+                else f'{testimonial_kind.title()} testimonial' if asset_kind == 'testimonial'
                 else 'media gallery item' if asset_kind == 'gallery'
                 else 'creative element'
             )
@@ -4092,7 +4158,7 @@ def save_creative_asset(request):
         messages.error(request, f'Unable to save item: {exc}')
 
     suffix = f'&testimonial_kind={testimonial_kind}' if focus == 'testimonials' else ''
-    return render_route(request, f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
+    return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
 
 
 @login_required(login_url='/accounts/')
@@ -4110,7 +4176,7 @@ def toggle_creative_asset_status(request, creative_id):
     messages.success(request, f'Item "{_normalize_testimonial_title(creative.title)}" {state}.')
     testimonial_kind = request.POST.get('testimonial_kind', '').strip().lower()
     suffix = f'&testimonial_kind={testimonial_kind}' if focus == 'testimonials' and testimonial_kind in TESTIMONIAL_PREFIX_MAP else ''
-    return render_route(request, f'/features/media-comms/?focus={focus}&hackathon={creative.hackathon_id}{suffix}')
+    return redirect(f'/features/media-comms/?focus={focus}&hackathon={creative.hackathon_id}{suffix}')
 
 
 @login_required(login_url='/accounts/')
@@ -4232,7 +4298,7 @@ def delete_creative_asset(request, creative_id):
     messages.success(request, f'Item "{title}" deleted.')
     testimonial_kind = request.POST.get('testimonial_kind', '').strip().lower()
     suffix = f'&testimonial_kind={testimonial_kind}' if focus == 'testimonials' and testimonial_kind in TESTIMONIAL_PREFIX_MAP else ''
-    return render_route(request, f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
+    return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
 
 
 @login_required(login_url='/accounts/')

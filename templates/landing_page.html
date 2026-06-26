@@ -9865,7 +9865,7 @@
 
       <div class="nav-cta-area">
 
-        <a href="{% url 'team_register' %}" class="btn-header">Register</a>
+        <a href="{% url 'team_landing' %}" class="btn-header">Register</a>
 
 
 
@@ -9917,7 +9917,7 @@
 
 
 
-            <a href="{% url 'team_register' %}" class="ticker-link">Register Team</a>
+            <a href="{% url 'team_landing' %}" class="ticker-link">Register Team</a>
 
           </div>
 
@@ -9941,7 +9941,7 @@
 
 
 
-            <a href="{% url 'team_register' %}" class="ticker-link">Register Team</a>
+            <a href="{% url 'team_landing' %}" class="ticker-link">Register Team</a>
 
           </div>
 
@@ -10031,7 +10031,7 @@
 
 
           <a class="btn {% if slide.primary_type == 'orange' %}btn-orange{% else %}btn-primary{% endif %}"
-            href="{% url 'team_register' %}">{{ slide.primary_label }}</a>
+            href="{% url 'team_landing' %}">{{ slide.primary_label }}</a>
 
 
 
@@ -12797,7 +12797,7 @@
 
     <div class="cta-buttons">
 
-      <a href="{% url 'team_register' %}" class="btn btn-primary" style="background: white; color: var(--blue)">Register
+      <a href="{% url 'team_landing' %}" class="btn btn-primary" style="background: white; color: var(--blue)">Register
         Team Now</a>
 
 
@@ -12882,7 +12882,7 @@
 
 
 
-        <a href="{% url 'team_register' %}">Register Team</a>
+        <a href="{% url 'team_landing' %}">Register Team</a>
 
 
 
@@ -12950,23 +12950,30 @@
 
   <!-- ── GALLERY VIDEO MODAL ── -->
   <div class="modal" id="galleryVideoModal">
-    <div class="modal-content" style="max-width: 800px; background: #000; padding: 0; border-radius: 12px; overflow: hidden;">
-      <button class="modal-close" id="closeGalleryVideoModal" style="position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 20px; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
+    <div class="modal-content"
+      style="max-width: 800px; background: #000; padding: 0; border-radius: 12px; overflow: hidden;">
+      <button class="modal-close" id="closeGalleryVideoModal"
+        style="position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 20px; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
       <video id="galleryVideoPlayer" controls autoplay style="width: 100%; display: block; max-height: 80vh;"></video>
     </div>
   </div>
 
   <!-- ── PODCAST PLAYER MODAL ── -->
   <div class="modal" id="podcastPlayerModal">
-    <div class="modal-content" style="max-width: 800px; background: #000; padding: 0; border-radius: 12px; overflow: hidden; position: relative;">
-      <button class="modal-close" id="closePodcastPlayerModal" style="position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 20px; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
-      <div id="podcastPlayerContainer" style="width: 100%; aspect-ratio: 16/9; background: #000; display: flex; align-items: center; justify-content: center;">
+    <div class="modal-content"
+      style="max-width: 800px; background: #000; padding: 0; border-radius: 12px; overflow: hidden; position: relative;">
+      <button class="modal-close" id="closePodcastPlayerModal"
+        style="position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 20px; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
+      <div id="podcastPlayerContainer"
+        style="width: 100%; aspect-ratio: 16/9; background: #000; display: flex; align-items: center; justify-content: center;">
         <!-- Dynamic Player will be inserted here -->
       </div>
       <div style="background: #fff; padding: 20px; color: #111827;">
         <h3 id="podcastPlayerTitle" style="margin: 0 0 6px; font-size: 18px; font-weight: 800;"></h3>
         <p id="podcastPlayerSpeaker" style="margin: 0 0 10px; font-size: 14px; font-weight: 700; color: #ea580c;"></p>
-        <p id="podcastPlayerDesc" style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.5; max-height: 100px; overflow-y: auto;"></p>
+        <p id="podcastPlayerDesc"
+          style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.5; max-height: 100px; overflow-y: auto;">
+        </p>
       </div>
     </div>
   </div>
@@ -13029,7 +13036,7 @@
 
 
 
-        <a href="{% url 'team_register' %}" class="btn btn-primary">Register to Participate</a>
+        <a href="{% url 'team_landing' %}" class="btn btn-primary">Register to Participate</a>
 
       </div>
 
@@ -13859,7 +13866,7 @@
       const speaker = card.dataset.podcastSpeaker || "";
       const role = card.dataset.podcastRole || "";
       const desc = card.dataset.podcastDesc || "";
-      
+
       let thumb = "";
       const thumbDiv = card.querySelector(".podcast-thumbnail");
       if (thumbDiv && thumbDiv.style.backgroundImage) {
