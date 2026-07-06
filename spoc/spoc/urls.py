@@ -17,6 +17,8 @@ urlpatterns = [
     path('teams/<int:reg_id>/',             views.spoc_team_detail,     name='spoc_team_detail'),
     path('teams/<int:reg_id>/approve/',     views.spoc_approve_team,    name='spoc_approve_team'),
     path('teams/<int:reg_id>/reject/',      views.spoc_reject_team,     name='spoc_reject_team'),
+    path('teams/<int:reg_id>/download-template/', views.spoc_download_approval_template, name='spoc_download_approval_template'),
+    path('teams/<int:reg_id>/final-letter/', views.spoc_submit_final_letter, name='spoc_submit_final_letter'),
 
     # Modifications
     path('modifications/',                          views.spoc_modifications,           name='spoc_modifications'),
@@ -43,6 +45,7 @@ urlpatterns = [
     path('mentors/<int:invite_id>/approve/', views.spoc_approve_mentor,    name='spoc_approve_mentor'),
     path('mentors/<int:invite_id>/reject/',  views.spoc_reject_mentor,     name='spoc_reject_mentor'),
 
-    # Notifications AJAX
+    # Notifications
+    path('notifications/', views.spoc_notifications, name='spoc_notifications'),
     path('notifications/read/', views.spoc_mark_notifications_read, name='spoc_mark_notifications_read'),
 ]

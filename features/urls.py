@@ -57,6 +57,7 @@ urlpatterns = [
     path('finance/', feature_views.finance_management, name='finance_management'),
     path('finance/budget/save/', feature_views.save_budget, name='save_budget'),
     path('finance/sponsorships/save/', feature_views.save_sponsorship, name='save_sponsorship'),
+    path('finance/sponsorships/<int:sponsor_id>/delete/', feature_views.delete_sponsorship, name='delete_sponsorship'),
     path('finance/transactions/save/', feature_views.save_transaction, name='save_transaction'),
     path('support/', feature_views.support_operations_management, name='support_operations_management'),
     path('support/messages/<int:message_id>/update/', feature_views.update_support_message, name='update_support_message'),

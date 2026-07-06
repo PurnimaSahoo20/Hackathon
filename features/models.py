@@ -34,6 +34,7 @@ class Team(models.Model):
     leader_aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', max_length=255, null=True, blank=True)
     leader_college_id_proof = models.FileField(upload_to='team_documents/college_ids/', max_length=255, null=True, blank=True)
     status = models.CharField(max_length=50, default='Active')
+    current_round = models.IntegerField(default=1, help_text="The round this team is currently in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -476,6 +477,8 @@ class SponsorshipFund(models.Model):
         'events.Hackathon', on_delete=models.CASCADE, related_name='sponsorships'
     )
     sponsor_name = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True, default='')
+    logo = models.ImageField(upload_to='sponsor_logos/', null=True, blank=True)
     amount_pledged = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     amount_received = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     status = models.CharField(max_length=50, default='Pending')

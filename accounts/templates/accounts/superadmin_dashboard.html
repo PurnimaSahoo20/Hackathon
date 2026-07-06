@@ -41,13 +41,13 @@
         background: #fff;
         cursor: pointer;
         transition: all .2s;
-        box-shadow: 0 1px 2px rgba(0,0,0,.03);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
     }
 
     .placement-option:hover {
         border-color: #f97316;
         transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(249,115,22,.08);
+        box-shadow: 0 8px 18px rgba(249, 115, 22, .08);
     }
 
     .placement-option input {
@@ -75,7 +75,7 @@
     .placement-option:has(input:checked) {
         border-color: #f97316;
         background: linear-gradient(180deg, #fff7ed, #fff);
-        box-shadow: 0 10px 22px rgba(249,115,22,.12);
+        box-shadow: 0 10px 22px rgba(249, 115, 22, .12);
     }
 
     /* ── User row highlight when editing ── */
@@ -465,7 +465,7 @@
 <div class="page-header" style="margin-bottom: 32px; display:flex; justify-content:space-between; align-items:center;">
     <div>
         <h1 class="page-title" style="font-size: 32px; margin:0;">{% if live_hackathon %}{{ live_hackathon.name }}{% else %}Super Admin Control{% endif %}</h1>
-        <p style="color: #6b7280; font-weight: 500; margin:4px 0 0;">BPUT Hackathon Platform • HubNexus v2.4</p>
+        <!-- <p style="color: #6b7280; font-weight: 500; margin:4px 0 0;">BPUT Hackathon Platform • HubNexus v2.4</p> -->
     </div>
     <div style="display:flex; gap:8px;">
         {% if live_hackathon %}
@@ -493,7 +493,8 @@
                 users in 30 days</div>
             <div class="analytics-chip"><ion-icon name="git-network-outline"></ion-icon> {{ total_registrations }} total
                 registrations</div>
-            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate }}% evaluation assignment coverage</div>
+            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate
+                }}% evaluation assignment coverage</div>
         </div>
     </div>
     <div class="analytics-mini-stack">
@@ -515,7 +516,8 @@
     <div class="stat-card">
         <div class="sc-icon-top">🎯</div>
         <div class="sc-value">{{ events_total }}</div>
-        <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑ {{events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
+        <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑
+            {{events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
             month</div>{% endif %}<a href="?tab=events" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
@@ -787,6 +789,46 @@
                 <div class="form-group"><label>Organization Logo</label><input type="file" name="organization_logo"
                         accept="image/*"></div>
             </div>
+            <div class="form-section-title">Branding &amp; Media</div>
+            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Upload logos and banner images for the landing
+                page. Event logo appears on the right side of the navbar, Platform logo on the left side, and the hero
+                banner as the background of the hero section.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Event Logo <small style="color:#9ca3af;">(Navbar Right)</small></label>
+                    <input type="file" name="event_logo" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label>Platform Logo (HackNexus) <small style="color:#9ca3af;">(Navbar Left)</small></label>
+                    <input type="file" name="platform_logo" accept="image/*">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Hero Banner Images <small style="color:#9ca3af;">(Hero Background – multiple banners for
+                            carousel)</small></label>
+                    <div id="createHeroBannerUploads">
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <input type="file" name="hero_banners" accept="image/*">
+                        </div>
+                    </div>
+                    <button type="button"
+                        onclick="(function(){ var c=document.getElementById('createHeroBannerUploads'); var d=document.createElement('div'); d.className='form-group'; d.style.marginBottom='8px'; d.innerHTML='<input type=\'file\' name=\'hero_banners\' accept=\'image/*\'>'; c.appendChild(d); })()"
+                        style="padding:8px 16px; border:1px dashed #ea580c; background:transparent; color:#ea580c; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; margin-top:4px;">
+                        + Add Another Banner
+                    </button>
+                </div>
+            </div>
+            <div class="form-section-title">Problem Statement Domains</div>
+            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Define the domains/tracks for problem
+                statements. These domains will appear as categories in the PS creation dropdown and on the landing page.
+            </p>
+            <div class="form-group" style="margin-bottom:16px;">
+                <label>Number of Domains</label>
+                <input type="number" name="num_domains" id="numDomainsInput" value="0" min="0" max="20"
+                    style="max-width:200px;" oninput="updateDomainFields(this)">
+            </div>
+            <div id="domainsContainer"
+                style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:10px; margin-bottom:16px;">
+            </div>
             <div class="form-section-title">Approval & Status</div>
             <div class="form-grid">
                 <div class="form-group"><label>Approval Date</label><input type="date" name="approval_date"></div>
@@ -802,73 +844,146 @@
                 </div>
             </div>
             <div class="form-section-title">Key Timeline</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Poster Launch Date</label><input type="date"
-                        name="poster_launching_date"></div>
-                <div class="form-group"><label>Website Launch Date</label><input type="date"
-                        name="website_launching_date"></div>
-                <div class="form-group"><label>Registration Opens</label><input type="date" name="registration_open">
-                </div>
-                <div class="form-group"><label>Registration Closes</label><input type="date" name="registration_close">
-                </div>
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">
+                <div class="form-group"><label>Poster Launch</label><input type="date" name="poster_launching_date" id="c_poster_launching_date" onchange="chainDates_create()"></div>
+                <div class="form-group"><label>Website Launch</label><input type="date" name="website_launching_date" id="c_website_launching_date" onchange="chainDates_create()"></div>
+                <div class="form-group"><label>Registration Opens</label><input type="date" name="registration_open" id="c_registration_open" onchange="chainDates_create()"></div>
+                <div class="form-group"><label>Registration Closes</label><input type="date" name="registration_close" id="c_registration_close" onchange="chainDates_create()"></div>
             </div>
-            <div class="form-section-title">Team Configurations</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1">
-                </div>
-                <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4">
-                </div>
-                <div class="form-group"><label>Total Members Allowed</label><input type="number"
-                        name="total_team_members" value="4"></div>
-                <div class="form-group"><label>Mentors per Team</label><input type="number" name="number_of_mentors"
-                        value="1"></div>
+
+            <div class="form-section-title">Team Configuration</div>
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px;">
+                <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1" min="1"></div>
+                <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4" min="1"></div>
+                <div class="form-group"><label>Total Members</label><input type="number" name="total_team_members" value="4" min="1"></div>
+                <div class="form-group"><label>Mentors / Team</label><input type="number" name="number_of_mentors" value="1" min="0"></div>
             </div>
+
             <div class="form-section-title">Rounds</div>
-            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Enabled rounds become active automatically
-                when today falls between their start and end dates. Admins can activate or deactivate rounds later.</p>
-            <div class="form-group" style="margin-bottom:16px;"><label>Total Number of Rounds</label><input
-                    type="number" name="number_of_rounds" value="1" min="1" max="5" style="max-width:200px;"></div>
-            {% for i in "12345" %}
-            <div class="round-row"
-                style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:14px; background:#fffbf7; padding:14px; border-radius:10px; margin-bottom:12px; align-items:end;">
-                <div class="form-group"><label>Round {{ i }} Name</label><input type="text" name="round_{{ i }}_name"
-                        value="Round {{ i }}"></div>
-                <div class="form-group"><label>Start Date</label><input type="date" name="round_{{ i }}_start_date">
+            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Each round's start date must be after the previous round's end date. Venue is required for Offline rounds.</p>
+            <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+                <div class="form-group" style="margin:0; max-width:200px;">
+                    <label>Total Rounds</label>
+                    <input type="number" name="number_of_rounds" id="c_number_of_rounds" value="1" min="1" max="5" oninput="updateRoundVisibility_create(this.value)">
                 </div>
-                <div class="form-group"><label>End Date</label><input type="date" name="round_{{ i }}_end_date"></div>
-                <label
-                    style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c; padding-bottom:12px; white-space:nowrap;">
-                    <input type="checkbox" name="round_{{ i }}_is_enabled" checked
-                        style="width:16px; height:16px; accent-color:#ea580c;"> Active
-                </label>
-                <div
-                    style="grid-column: 1 / -1; width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
+            </div>
+
+            {% for i in "12345" %}
+            <div class="create-round-card" id="c_round_card_{{ i }}"
+                style="background:linear-gradient(135deg,#fffbf7,#fff8f0); border:1.5px solid #fed7aa; border-radius:14px; padding:16px 18px; margin-bottom:14px; {% if i != '1' %}display:none;{% endif %}">
+                <!-- Row 1: Name + Active toggle -->
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+                    <div style="flex:1; max-width:300px; min-width:120px;">
+                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Round {{ i }} Name</label>
+                        <input type="text" name="round_{{ i }}_name" value="Round {{ i }}"
+                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit;">
+                    </div>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:#ea580c; white-space:nowrap; padding-top:20px;">
+                        <input type="checkbox" name="round_{{ i }}_is_enabled" checked style="width:15px; height:15px; accent-color:#ea580c;"> Active
+                    </label>
+                </div>
+                <!-- Row 2: Dates -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Start Date</label>
+                        <input type="date" name="round_{{ i }}_start_date" id="c_round_{{ i }}_start_date" onchange="chainDates_create()"
+                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">End Date</label>
+                        <input type="date" name="round_{{ i }}_end_date" id="c_round_{{ i }}_end_date" onchange="chainDates_create()"
+                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                    </div>
+                </div>
+                <!-- Row 3: Mode + Venue -->
+                <div style="display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:end; margin-bottom:12px;">
+                    <div>
+                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Mode</label>
+                        <select name="round_{{ i }}_type" id="c_round_{{ i }}_type" onchange="toggleVenue_create('{{ i }}')"
+                            style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; background:white; cursor:pointer;">
+                            <option value="Online">🌐 Online</option>
+                            <option value="Offline">🏢 Offline</option>
+                        </select>
+                    </div>
+                    <div id="c_venue_group_{{ i }}" style="display:none;">
+                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Venue <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="round_{{ i }}_venue" id="c_round_{{ i }}_venue" placeholder="Enter venue location"
+                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                    </div>
+                </div>
+                <!-- Row 4: Marking params (collapsible) -->
+                <div style="border-top:1px dashed #fed7aa; padding-top:12px; margin-top:4px;">
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <div class="form-group" style="margin:0; max-width:180px;">
+                            <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Marking Parameters</label>
                             <input type="number" name="round_{{ i }}_num_params" value="0" min="0"
-                                oninput="updateMarkingParams(this, {{ i }})">
+                                oninput="updateMarkingParams(this, {{ i }})"
+                                style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit;">
                         </div>
-                        <label
-                            style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_{{ i }}_has_others"
-                                style="width:16px; height:16px; accent-color:#ea580c;"> Include 'Others' Option
+                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#374151; padding-top:18px; white-space:nowrap;">
+                            <input type="checkbox" name="round_{{ i }}_has_others" style="width:14px; height:14px; accent-color:#ea580c;"> Include 'Others'
                         </label>
                     </div>
                     <div id="round_{{ i }}_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                    </div>
+                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-top:10px;"></div>
                 </div>
             </div>
             {% endfor %}
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('hackathonForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="button" onclick="saveHackathonAsDraft()" class="draft-btn" style="flex:1;"><ion-icon
-                        name="save-outline"></ion-icon> Save as Draft</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Publish Hackathon Event</button>
+
+            <div style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap;">
+                <button type="button" onclick="toggleForm('hackathonForm')" class="draft-btn" style="flex:1; min-width:100px;">Cancel</button>
+                <button type="button" onclick="saveHackathonAsDraft()" class="draft-btn" style="flex:1; min-width:100px;"><ion-icon name="save-outline"></ion-icon> Draft</button>
+                <button type="submit" class="cta-btn-v2" style="flex:2; min-width:160px;">Publish Hackathon</button>
             </div>
         </form>
+
+        <script>
+        /* ── Creation form: date chaining ── */
+        function chainDates_create() {
+            var ids = [
+                'c_poster_launching_date',
+                'c_website_launching_date',
+                'c_registration_open',
+                'c_registration_close',
+                'c_round_1_start_date','c_round_1_end_date',
+                'c_round_2_start_date','c_round_2_end_date',
+                'c_round_3_start_date','c_round_3_end_date',
+                'c_round_4_start_date','c_round_4_end_date',
+                'c_round_5_start_date','c_round_5_end_date',
+            ];
+            var prev = null;
+            ids.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (prev) el.min = prev;
+                if (el.value) prev = el.value;
+            });
+        }
+
+        /* ── Creation form: show/hide rounds based on count ── */
+        function updateRoundVisibility_create(count) {
+            count = parseInt(count) || 1;
+            for (var i = 1; i <= 5; i++) {
+                var card = document.getElementById('c_round_card_' + i);
+                if (card) card.style.display = i <= count ? '' : 'none';
+            }
+        }
+
+        /* ── Creation form: toggle venue field ── */
+        function toggleVenue_create(roundNum) {
+            var sel = document.getElementById('c_round_' + roundNum + '_type');
+            var grp = document.getElementById('c_venue_group_' + roundNum);
+            var inp = document.getElementById('c_round_' + roundNum + '_venue');
+            if (!sel || !grp) return;
+            if (sel.value === 'Offline') {
+                grp.style.display = '';
+                if (inp) inp.required = true;
+            } else {
+                grp.style.display = 'none';
+                if (inp) { inp.required = false; inp.value = ''; }
+            }
+        }
+        </script>
     </div>
 </div>
 
@@ -905,7 +1020,8 @@
                     style="border-bottom:1px solid #eee; {% if h.status == 'Suspended' %}opacity:0.6; background:#f1f5f9;{% endif %}">
                     <td style="padding:14px;"><strong>{{ h.name }}</strong><br><small style="color:#6b7280;">{% if h.round_1_start_date %}{{ h.round_1_start_date|date:"d M Y" }}{% else %}TBD{% endif %}</small></td>
                     <td style="padding:14px;">{{ h.organization_name }}</td>
-                    <td style="padding:14px;"><span class="badge {% if h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">{{ h.status }}</span></td>
+                    <td style="padding:14px;"><span
+                            class="badge {% if h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">{{ h.status }}</span></td>
                     <td style="padding:14px;">
                         {% if h.active_round %}
                         <strong>{{ h.active_round.name }}</strong><br><small style="color:#059669;">{{ h.active_round.start_date|date:"d M Y" }} to {{ h.active_round.end_date|date:"d M Y" }}</small>
@@ -935,6 +1051,12 @@
                             <a href="{% url 'edit_hackathon' h.id %}" title="Edit"
                                 style="color:#2563eb; font-size:20px;"><ion-icon name="create-outline"></ion-icon></a>
                             {% if h.status != 'Suspended' %}
+                            <button type="button" title="Launch Event" onclick="openLaunchModal('{{ h.id }}', '{{ h.name|escapejs }}')"
+                                style="background:linear-gradient(135deg,#f97316,#ea580c); color:#fff; border:none; cursor:pointer; padding:5px 10px; border-radius:8px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(249,115,22,0.3); transition:all .2s;"
+                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(249,115,22,0.4)';"
+                                onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(249,115,22,0.3)';">
+                                <ion-icon name="rocket-outline" style="font-size:15px;"></ion-icon> Live
+                            </button>
                             <form action="{% url 'delete_hackathon' h.id %}" method="POST" style="display:inline;"
                                 onsubmit="return confirm('Suspend this event?')">
                                 {% csrf_token %}
@@ -956,6 +1078,157 @@
         </table>
     </div>
 </div>
+
+<!-- ══════════════════════════════════════════
+     LAUNCH EVENT MODAL
+══════════════════════════════════════════ -->
+<div id="launchModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+    <div style="background:linear-gradient(145deg,#ffffff,#fffbf5); border-radius:24px; padding:0; width:520px; max-width:92vw; box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(249,115,22,0.12); animation:launchModalIn 0.4s cubic-bezier(.16,1,.3,1); overflow:hidden;">
+        <!-- Modal Header -->
+        <div style="background:linear-gradient(135deg,#ea580c,#f97316,#fb923c); padding:28px 32px 24px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(255,255,255,0.08); border-radius:50%;"></div>
+            <div style="position:absolute; bottom:-20px; left:-20px; width:80px; height:80px; background:rgba(255,255,255,0.06); border-radius:50%;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1;">
+                <div>
+                    <div style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.15em; color:rgba(255,255,255,0.8); margin-bottom:6px;">Event Launch Pad</div>
+                    <h2 id="launchModalTitle" style="margin:0; font-size:22px; font-weight:900; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.12);">Launch Event</h2>
+                </div>
+                <button onclick="closeLaunchModal()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center; transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <ion-icon name="close"></ion-icon>
+                </button>
+            </div>
+        </div>
+        <!-- Modal Body -->
+        <div style="padding:32px 32px 28px;">
+            <input type="hidden" id="launchHackathonId" value="">
+            <input type="hidden" id="launchHackathonName" value="">
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:8px;">📅 Launch Date</label>
+                <input type="date" id="launchDate" required style="width:100%; padding:14px 16px; border:2px solid #fed7aa; border-radius:14px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; color:#1e293b; background:#fffbf7; transition:all .2s; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 4px rgba(249,115,22,0.1)';" onblur="this.style.borderColor='#fed7aa';this.style.boxShadow='none';">
+            </div>
+            <div style="margin-bottom:28px;">
+                <label style="display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:8px;">👤 Launched By</label>
+                <input type="text" id="launchPerson" required placeholder="Enter the name of the person launching..." style="width:100%; padding:14px 16px; border:2px solid #fed7aa; border-radius:14px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; color:#1e293b; background:#fffbf7; transition:all .2s; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 4px rgba(249,115,22,0.1)';" onblur="this.style.borderColor='#fed7aa';this.style.boxShadow='none';">
+            </div>
+            <button onclick="openLaunchCeremony()" id="readyToLaunchBtn" style="width:100%; padding:16px; background:linear-gradient(135deg,#ea580c,#f97316); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; font-family:'Outfit',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 24px rgba(249,115,22,0.3); transition:all .3s; letter-spacing:0.02em;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(249,115,22,0.4)';" onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(249,115,22,0.3)';">
+                <ion-icon name="rocket" style="font-size:20px;"></ion-icon>
+                Ready to Launch
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FULLSCREEN LAUNCH CEREMONY
+══════════════════════════════════════════ -->
+<div id="launchCeremony" style="display:none; position:fixed; inset:0; z-index:10000; overflow:hidden;">
+    <!-- Animated Background -->
+    <div id="ceremonyBg" style="position:absolute; inset:0; background:linear-gradient(135deg,#0f0a1a 0%,#1a0e2e 25%,#0d1b2a 50%,#1a0e2e 75%,#0f0a1a 100%); transition:background 1s;"></div>
+    <!-- Stars / Particles -->
+    <canvas id="starsCanvas" style="position:absolute; inset:0; z-index:1;"></canvas>
+    <!-- Content -->
+    <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:40px;">
+        <!-- Close button -->
+        <button onclick="closeLaunchCeremony()" style="position:absolute; top:24px; right:32px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; transition:all .3s; z-index:10;" onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.color='#fff';" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)';">
+            <ion-icon name="close"></ion-icon>
+        </button>
+
+        <!-- Rocket Animation Container -->
+        <div id="rocketContainer" style="margin-bottom:40px; animation:rocketFloat 3s ease-in-out infinite;">
+            <div style="font-size:80px; filter:drop-shadow(0 0 30px rgba(249,115,22,0.5));" id="rocketEmoji">🚀</div>
+        </div>
+
+        <!-- Event Name -->
+        <div id="ceremonyEventName" style="font-family:'Outfit',sans-serif; font-size:42px; font-weight:900; color:#fff; margin-bottom:16px; text-shadow:0 2px 20px rgba(249,115,22,0.3); animation:fadeSlideUp 0.6s 0.2s both;"></div>
+
+        <!-- Event Info Cards -->
+        <div style="display:flex; gap:24px; margin-bottom:48px; flex-wrap:wrap; justify-content:center; animation:fadeSlideUp 0.6s 0.4s both;">
+            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; backdrop-filter:blur(10px);">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:rgba(249,115,22,0.8); margin-bottom:8px;">Launch Date</div>
+                <div id="ceremonyDate" style="font-size:22px; font-weight:800; color:#fff; font-family:'Outfit',sans-serif;"></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; backdrop-filter:blur(10px);">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:rgba(249,115,22,0.8); margin-bottom:8px;">Launched By</div>
+                <div id="ceremonyPerson" style="font-size:22px; font-weight:800; color:#fff; font-family:'Outfit',sans-serif;"></div>
+            </div>
+        </div>
+
+        <!-- Launch Button -->
+        <div id="launchBtnContainer" style="animation:fadeSlideUp 0.6s 0.6s both;">
+            <button id="launchTheEventBtn" onclick="executeEventLaunch()" style="position:relative; padding:20px 64px; background:linear-gradient(135deg,#ea580c,#f97316,#fb923c); color:#fff; border:none; border-radius:20px; font-size:22px; font-weight:900; font-family:'Outfit',sans-serif; cursor:pointer; letter-spacing:0.04em; box-shadow:0 0 40px rgba(249,115,22,0.4),0 0 80px rgba(249,115,22,0.15); transition:all .3s; overflow:hidden;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 0 60px rgba(249,115,22,0.5),0 0 120px rgba(249,115,22,0.2)';" onmouseout="this.style.transform='';this.style.boxShadow='0 0 40px rgba(249,115,22,0.4),0 0 80px rgba(249,115,22,0.15)';">
+                <span style="position:relative; z-index:1; display:flex; align-items:center; gap:12px;">
+                    <ion-icon name="rocket" style="font-size:26px;"></ion-icon>
+                    LAUNCH THE EVENT
+                </span>
+                <div style="position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); animation:shimmer 2.5s infinite;"></div>
+            </button>
+        </div>
+
+        <!-- Success State (hidden initially) -->
+        <div id="launchSuccess" style="display:none; animation:fadeSlideUp 0.6s both;">
+            <div style="font-size:100px; margin-bottom:20px; animation:celebratePop 0.6s cubic-bezier(.16,1,.3,1);">🎉</div>
+            <div style="font-size:36px; font-weight:900; color:#fff; font-family:'Outfit',sans-serif; margin-bottom:12px;">Event Launched Successfully!</div>
+            <div style="font-size:18px; color:rgba(255,255,255,0.6); font-weight:600; margin-bottom:40px;">The event is now live and ready for participants</div>
+            <button onclick="closeLaunchCeremony(); window.location.reload();" style="padding:14px 48px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:14px; font-size:16px; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; transition:all .3s;" onmouseover="this.style.background='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.12)';">
+                Close & Return to Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Launch Modal Animation */
+@keyframes launchModalIn {
+    from { opacity:0; transform:scale(0.9) translateY(20px); }
+    to { opacity:1; transform:scale(1) translateY(0); }
+}
+
+/* Rocket floating animation */
+@keyframes rocketFloat {
+    0%, 100% { transform:translateY(0) rotate(-5deg); }
+    50% { transform:translateY(-15px) rotate(5deg); }
+}
+
+/* Fade slide up */
+@keyframes fadeSlideUp {
+    from { opacity:0; transform:translateY(30px); }
+    to { opacity:1; transform:translateY(0); }
+}
+
+/* Shimmer effect on launch button */
+@keyframes shimmer {
+    0% { transform:translateX(-100%); }
+    100% { transform:translateX(100%); }
+}
+
+/* Celebration pop */
+@keyframes celebratePop {
+    0% { transform:scale(0); opacity:0; }
+    50% { transform:scale(1.3); }
+    100% { transform:scale(1); opacity:1; }
+}
+
+/* Rocket launch animation */
+@keyframes rocketLaunch {
+    0% { transform:translateY(0) rotate(0deg); opacity:1; }
+    30% { transform:translateY(-10px) rotate(-5deg); }
+    100% { transform:translateY(-800px) rotate(0deg); opacity:0; }
+}
+
+/* Confetti animation */
+@keyframes confettiFall {
+    0% { transform:translateY(-100vh) rotate(0deg); opacity:1; }
+    100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+}
+
+.confetti-piece {
+    position:absolute;
+    width:10px;
+    height:10px;
+    top:-10px;
+    animation:confettiFall linear forwards;
+}
+</style>
 
 <!-- ══════════════════════════════════════════
      TAB: ADMIN MANAGEMENT
@@ -1078,7 +1351,8 @@
                                     style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:800;">DRAFT</span>
                                 {% endif %}
                                 <br>
-                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} • {{ admin.user.email }}</small>
+                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} • {{
+                                    admin.user.email }}</small>
                             </div>
                         </div>
                     </td>
@@ -1095,7 +1369,8 @@
                         <div style="display:flex; flex-wrap:wrap; gap:4px;">
                             {% for p in admin.permissions.all %}
                             <span class="badge"
-                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{ p.name }}</span>
+                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{
+                                p.name }}</span>
                             {% empty %}
                             <span style="font-size:11px; color:#9ca3af; font-style:italic;">No permissions</span>
                             {% endfor %}
@@ -1425,7 +1700,7 @@
                         {% endfor %}
                     </select>
                 </div>
-            <div class="form-group"><label>Asset Title</label><input type="text" name="title" required
+                <div class="form-group"><label>Asset Title</label><input type="text" name="title" required
                         placeholder="e.g. Event Header Poster"></div>
             </div>
             <div class="form-group"><label>File Upload (Image/PDF)</label><input type="file" name="file" required></div>
@@ -1442,7 +1717,8 @@
                     </label>
                     {% endfor %}
                 </div>
-                <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset should appear.</small>
+                <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset
+                    should appear.</small>
             </div>
             <div style="display:flex; gap:16px; margin-top:28px;">
                 <button type="button" onclick="toggleForm('creativeForm')" class="draft-btn"
@@ -1501,11 +1777,13 @@
                     <td style="padding:14px;">{{ cr.hackathon.name }}</td>
                     <td style="padding:14px; color:#6b7280; font-size:13px;">
                         {% if cr.landing_sections %}
-                            {% for value, label in landing_section_choices %}
-                                {% if value in cr.landing_sections %}<span style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{ label }}</span>{% endif %}
-                            {% endfor %}
+                        {% for value, label in landing_section_choices %}
+                        {% if value in cr.landing_sections %}<span
+                            style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{
+                            label }}</span>{% endif %}
+                        {% endfor %}
                         {% else %}
-                            <span style="color:#9ca3af;">Not selected</span>
+                        <span style="color:#9ca3af;">Not selected</span>
                         {% endif %}
                     </td>
                     <td style="padding:14px;">
@@ -1776,6 +2054,24 @@
     }
 
 
+    // ── Dynamic Problem Statement Domain Fields ──
+    function updateDomainFields(inputElem) {
+        const count = parseInt(inputElem.value) || 0;
+        const container = document.getElementById('domainsContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        for (let d = 1; d <= count; d++) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.style.marginBottom = '0';
+            div.innerHTML = `<label style="font-size:11px;">Domain ${d} Name</label>
+                             <input type="text" name="domain_${d}_name" required placeholder="e.g. Agriculture, Healthcare">`;
+            container.appendChild(div);
+        }
+    }
+
+
     // ── Monitor number of rounds and show/hide corresponding date fields ──
     function initRoundsLogic() {
         const numRoundsInput = document.querySelector('input[name="number_of_rounds"]');
@@ -1883,11 +2179,204 @@
         if (form) form.submit();
     }
 
+    // ══════════════════════════════════════════
+    //  EVENT LAUNCH CEREMONY FUNCTIONS
+    // ══════════════════════════════════════════
+
+    function openLaunchModal(hackathonId, hackathonName) {
+        document.getElementById('launchHackathonId').value = hackathonId;
+        document.getElementById('launchHackathonName').value = hackathonName;
+        document.getElementById('launchModalTitle').textContent = 'Launch: ' + hackathonName;
+        document.getElementById('launchDate').value = '';
+        document.getElementById('launchPerson').value = '';
+        const modal = document.getElementById('launchModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeLaunchModal() {
+        document.getElementById('launchModal').style.display = 'none';
+    }
+
+    // Close modal on backdrop click
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('launchModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeLaunchModal();
+            });
+        }
+    });
+
+    function openLaunchCeremony() {
+        const launchDate = document.getElementById('launchDate').value;
+        const launchPerson = document.getElementById('launchPerson').value.trim();
+        const eventName = document.getElementById('launchHackathonName').value;
+
+        if (!launchDate) {
+            alert('Please select a launch date.');
+            return;
+        }
+        if (!launchPerson) {
+            alert('Please enter the name of the person who will launch this event.');
+            return;
+        }
+
+        // Close the modal
+        closeLaunchModal();
+
+        // Format the date nicely
+        const dateObj = new Date(launchDate + 'T00:00:00');
+        const options = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+        const formattedDate = dateObj.toLocaleDateString('en-US', options);
+
+        // Populate ceremony screen
+        document.getElementById('ceremonyEventName').textContent = eventName;
+        document.getElementById('ceremonyDate').textContent = formattedDate;
+        document.getElementById('ceremonyPerson').textContent = launchPerson;
+
+        // Reset state
+        document.getElementById('launchBtnContainer').style.display = '';
+        document.getElementById('launchSuccess').style.display = 'none';
+        const rocketEmoji = document.getElementById('rocketEmoji');
+        rocketEmoji.style.animation = 'rocketFloat 3s ease-in-out infinite';
+        const rocketContainer = document.getElementById('rocketContainer');
+        rocketContainer.style.display = '';
+
+        // Show ceremony
+        const ceremony = document.getElementById('launchCeremony');
+        ceremony.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Initialize stars canvas
+        initStars();
+    }
+
+    function closeLaunchCeremony() {
+        document.getElementById('launchCeremony').style.display = 'none';
+        document.body.style.overflow = '';
+        // Remove confetti
+        document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+    }
+
+    function executeEventLaunch() {
+        const hackathonId = document.getElementById('launchHackathonId').value;
+        const btn = document.getElementById('launchTheEventBtn');
+
+        // Disable button
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'not-allowed';
+
+        // Rocket launch animation
+        const rocketContainer = document.getElementById('rocketContainer');
+        const rocketEmoji = document.getElementById('rocketEmoji');
+        rocketEmoji.style.animation = 'rocketLaunch 1.2s cubic-bezier(.5,0,.75,.15) forwards';
+
+        // Change background to launch colors after delay
+        setTimeout(function() {
+            document.getElementById('ceremonyBg').style.background = 'linear-gradient(135deg,#0a0a2e 0%,#1a0530 30%,#2d1050 50%,#1a0530 70%,#0a0a2e 100%)';
+        }, 600);
+
+        // Show success + confetti after rocket launches
+        setTimeout(function() {
+            rocketContainer.style.display = 'none';
+            document.getElementById('launchBtnContainer').style.display = 'none';
+            document.getElementById('launchSuccess').style.display = 'block';
+            spawnConfetti();
+        }, 1400);
+
+        // Make the AJAX call to change status to Live
+        fetch('/events/launch-event/' + hackathonId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                launch_date: document.getElementById('launchDate').value,
+                launched_by: document.getElementById('launchPerson').value.trim(),
+            })
+        }).then(function(response) {
+            if (!response.ok) {
+                console.log('Launch API returned non-OK, but ceremony continues.');
+            }
+        }).catch(function(err) {
+            console.log('Launch API error:', err);
+        });
+    }
+
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let c of cookies) {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) return c.substring('csrftoken='.length);
+        }
+        // Fallback: get from meta tag or hidden input
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) return meta.content;
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input) return input.value;
+        return '';
+    }
+
+    function spawnConfetti() {
+        const colors = ['#f97316','#ea580c','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6','#fb7185','#22d3ee'];
+        const ceremony = document.getElementById('launchCeremony');
+        for (let i = 0; i < 80; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-piece';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const left = Math.random() * 100;
+            const delay = Math.random() * 2;
+            const duration = 2 + Math.random() * 3;
+            const size = 6 + Math.random() * 10;
+            const shapes = ['50%','0','4px'];
+            confetti.style.cssText = `left:${left}%; background:${color}; width:${size}px; height:${size}px; border-radius:${shapes[Math.floor(Math.random()*shapes.length)]}; animation-delay:${delay}s; animation-duration:${duration}s; z-index:3;`;
+            ceremony.appendChild(confetti);
+        }
+    }
+
+    function initStars() {
+        const canvas = document.getElementById('starsCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.8 + 0.3,
+                opacity: Math.random() * 0.7 + 0.3,
+                speed: Math.random() * 0.015 + 0.005,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        function animate() {
+            if (document.getElementById('launchCeremony').style.display === 'none') return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const time = Date.now() * 0.001;
+            stars.forEach(s => {
+                const twinkle = 0.5 + 0.5 * Math.sin(time * s.speed * 60 + s.phase);
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${s.opacity * twinkle})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
     // ── Dashboard charts (overview only) ──
     {% if tab == 'overview' %}
     document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data|safe }};
-    const domainData = {{ domain_chart_data|safe }};
+        const statusData = {{ status_chart_data| safe
+    }};
+    const domainData = {{ domain_chart_data| safe }};
 
     new Chart(document.getElementById('statusChart').getContext('2d'), {
         type: 'doughnut',
@@ -1910,12 +2399,13 @@
     {% endif %}
     {% if tab == 'overview' or tab == 'analytics' %}
     document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data|safe }};
-    const registrationData = {{ registration_chart_data|safe }};
-    const roleData = {{ role_chart_data|safe }};
-    const growthData = {{ growth_chart_data|safe }};
+        const statusData = {{ status_chart_data| safe
+    }};
+    const registrationData = {{ registration_chart_data| safe }};
+    const roleData = {{ role_chart_data| safe }};
+    const growthData = {{ growth_chart_data| safe }};
 
-    const domainData = {{ domain_chart_data|safe }};
+    const domainData = {{ domain_chart_data| safe }};
 
     Chart.defaults.font.family = "'Outfit', sans-serif";
     Chart.defaults.color = '#64748b';

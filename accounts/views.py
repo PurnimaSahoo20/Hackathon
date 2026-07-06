@@ -30,7 +30,7 @@ from .models import (
 )
 
 # cross-app imports
-from events.models import Hackathon, ProblemStatement, CreativeMaterial
+from events.models import Hackathon, HackathonDomain, ProblemStatement, CreativeMaterial
 from features.models import Team, Venue, TeamRegistration, TeamEvaluationAssignment
 from jury.models import EvaluatorProfile, TeamEvaluation
 from .rendering import render_route
@@ -812,6 +812,16 @@ def superadmin_dashboard(request):
         context['DOMAIN_CHOICES'] = [
             "Agriculture", "Healthcare", "Animal Resource", "Education"
         ]
+        # Override with dynamic domains if configured on any live hackathon
+        live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+        if live_hackathon:
+            dynamic_domains = list(
+                HackathonDomain.objects.filter(hackathon=live_hackathon)
+                .order_by('display_order', 'name')
+                .values_list('name', flat=True)
+            )
+            if dynamic_domains:
+                context['DOMAIN_CHOICES'] = dynamic_domains
 
     elif tab == 'creatives':
         query = request.GET.get('search_creatives', '')

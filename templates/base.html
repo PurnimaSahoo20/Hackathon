@@ -106,6 +106,43 @@
         .badge-gray { background: #f3f4f6; color: #6b7280; }
         .badge-pill { background: #f3f4f6; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; }
         .badge-live { background: #ecfdf5; color: #059669; }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.08);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.18);
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            vertical-align: middle;
+            margin-left: 10px;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.04);
+        }
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #ef4444;
+            animation: livePulse 1.2s infinite alternate;
+        }
+        @keyframes livePulse {
+            from {
+                transform: scale(0.95);
+                opacity: 0.7;
+            }
+            to {
+                transform: scale(1.2);
+                opacity: 1;
+                box-shadow: 0 0 10px #ef4444;
+            }
+        }
         .active-event-banner {
             display: flex; align-items: center; justify-content: space-between; gap: 16px;
             background: rgba(255,255,255,.92); border: 1px solid var(--admin-border); border-left: 5px solid #ea580c;
@@ -137,9 +174,13 @@
             {% if request.user.is_authenticated %}
             <div class="active-event-banner">
                 <div>
-                    <div class="active-event-title">
+                    <div class="active-event-title" style="display: flex; align-items: center;">
                         {% if global_active_hackathon %}
                             Active Event: {{ global_active_hackathon.name }}
+                            <span class="live-badge">
+                                <span class="live-dot"></span>
+                                LIVE
+                            </span>
                         {% else %}
                             Active Event: No live event
                         {% endif %}

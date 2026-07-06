@@ -1,13 +1,14 @@
 """
 events/models.py
 
-Contains: Hackathon, ProblemStatement, CreativeMaterial
+Contains: Hackathon, HackathonDomain, ProblemStatement, CreativeMaterial
 
 IMPORTANT: db_table is set to preserve existing database table names
 (originally created by the accounts app) so NO data migration is needed.
 All ForeignKey references to User/SuperadminProfile use string app_label.
 """
 from django.db import models
+from django.utils.text import slugify
 from django.utils import timezone
 
 
@@ -41,26 +42,42 @@ class Hackathon(models.Model):
     registration_open = models.DateField(null=True, blank=True)
     registration_close = models.DateField(null=True, blank=True)
 
+    ROUND_TYPE_CHOICES = [('Online', 'Online'), ('Offline', 'Offline')]
+
     round_1_name = models.CharField(max_length=255, default='Round 1')
     round_1_start_date = models.DateField(null=True, blank=True)
     round_1_end_date = models.DateField(null=True, blank=True)
     round_1_is_enabled = models.BooleanField(default=True)
+    round_1_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
+    round_1_venue = models.CharField(max_length=255, null=True, blank=True)
+
     round_2_name = models.CharField(max_length=255, default='Round 2')
     round_2_start_date = models.DateField(null=True, blank=True)
     round_2_end_date = models.DateField(null=True, blank=True)
     round_2_is_enabled = models.BooleanField(default=True)
+    round_2_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
+    round_2_venue = models.CharField(max_length=255, null=True, blank=True)
+
     round_3_name = models.CharField(max_length=255, default='Round 3')
     round_3_start_date = models.DateField(null=True, blank=True)
     round_3_end_date = models.DateField(null=True, blank=True)
     round_3_is_enabled = models.BooleanField(default=True)
+    round_3_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
+    round_3_venue = models.CharField(max_length=255, null=True, blank=True)
+
     round_4_name = models.CharField(max_length=255, default='Round 4')
     round_4_start_date = models.DateField(null=True, blank=True)
     round_4_end_date = models.DateField(null=True, blank=True)
     round_4_is_enabled = models.BooleanField(default=True)
+    round_4_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
+    round_4_venue = models.CharField(max_length=255, null=True, blank=True)
+
     round_5_name = models.CharField(max_length=255, default='Round 5')
     round_5_start_date = models.DateField(null=True, blank=True)
     round_5_end_date = models.DateField(null=True, blank=True)
     round_5_is_enabled = models.BooleanField(default=True)
+    round_5_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
+    round_5_venue = models.CharField(max_length=255, null=True, blank=True)
 
     min_team_size = models.IntegerField(default=1)
     max_team_size = models.IntegerField(default=4)
@@ -68,6 +85,14 @@ class Hackathon(models.Model):
     total_team_members = models.IntegerField(default=4)
 
     number_of_rounds = models.IntegerField(default=1)
+
+    # Branding & Media
+    event_logo = models.ImageField(upload_to='hackathon_logos/', null=True, blank=True,
+                                   help_text='Event logo displayed on the right side of the landing page navbar.')
+    platform_logo = models.ImageField(upload_to='hackathon_logos/', null=True, blank=True,
+                                      help_text='HackNexus/platform logo displayed on the left side of the landing page navbar.')
+    hero_banner = models.ImageField(upload_to='hackathon_banners/', null=True, blank=True,
+                                    help_text='Background banner image for the hero section on the landing page.')
 
     status = models.CharField(max_length=50, default='Draft')
 
@@ -90,6 +115,8 @@ class Hackathon(models.Model):
                 'start_date': getattr(self, f'round_{number}_start_date'),
                 'end_date': getattr(self, f'round_{number}_end_date'),
                 'is_enabled': getattr(self, f'round_{number}_is_enabled'),
+                'type': getattr(self, f'round_{number}_type', 'Online'),
+                'venue': getattr(self, f'round_{number}_venue', None),
             })
         return rounds
 
@@ -163,9 +190,48 @@ class RoundMarkingParameter(models.Model):
     round_number = models.IntegerField()
     name = models.CharField(max_length=255)
     is_others = models.BooleanField(default=False)
+    cutoff_score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="The cutoff score required for this parameter")
 
     class Meta:
         db_table = 'events_roundmarkingparameter'
 
     def __str__(self):
         return f"{self.hackathon.name} - R{self.round_number} - {self.name}"
+
+
+class HackathonDomain(models.Model):
+    """Dynamic PS domains configured per hackathon event."""
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name='domains')
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, blank=True)
+    icon = models.CharField(max_length=10, default='🧩')
+    color = models.CharField(max_length=20, default='#eef2ff')
+    subtitle = models.CharField(max_length=500, blank=True, default='')
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'events_hackathondomain'
+        ordering = ['display_order', 'name']
+
+    def __str__(self):
+        return f"{self.hackathon.name} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class HeroBannerImage(models.Model):
+    """Multiple hero banner images per hackathon for carousel rotation."""
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name='hero_banners')
+    image = models.ImageField(upload_to='hackathon_banners/')
+    display_order = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'events_herobannerimage'
+        ordering = ['display_order', 'uploaded_at']
+
+    def __str__(self):
+        return f"{self.hackathon.name} - Banner #{self.display_order}"

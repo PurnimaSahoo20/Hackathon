@@ -23,7 +23,11 @@
 </div>
 {% endif %}
 
-{% if not existing_invite or existing_invite.status in "invited,spoc_rejected,admin_rejected" %}
+{% if not can_edit_registration %}
+<div class="info-box" style="background:rgba(124, 58, 237, 0.07);border-color:rgba(124, 58, 237, 0.2)">
+    <strong style="color:var(--spoc)">🔒 Registration Locked.</strong> Your team has been approved by the SPOC. You cannot invite or replace a mentor unless you submit a modification request from the <a href="{% url 'team_details' %}" style="color:var(--accent); font-weight: 700;">Team Details</a> page.
+</div>
+{% elif not existing_invite or existing_invite.status in "invited,spoc_rejected,admin_rejected" %}
 <div class="table-wrap" style="padding:28px;max-width:560px">
     <div style="font-size:15px;font-weight:800;margin-bottom:6px">📧 Send Mentor Invitation</div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:20px">The mentor will receive an email with your team details and a form to fill in their information before accepting.</p>

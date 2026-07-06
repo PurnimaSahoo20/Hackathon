@@ -201,7 +201,15 @@
         <input type="hidden" name="creative_id" value="{% if edit_testimonial %}{{ edit_testimonial.asset.id }}{% endif %}">
         <div class="form-grid">
             <div class="fg"><input name="title" placeholder="{{ testimonial_kind|title }} testimonial title" value="{% if edit_testimonial %}{{ edit_testimonial.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="file" name="file" accept="video/*" {% if not edit_testimonial %}required{% endif %}></div>
+            <div class="fg"><label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;display:block;">Video File</label><input type="file" name="file" accept="video/*" {% if not edit_testimonial %}required{% endif %}></div>
+        </div>
+        <div class="form-grid" style="margin-top:10px;">
+            <div class="fg"><label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;display:block;">Thumbnail Image</label><input type="file" name="profile_image" accept="image/*">{% if edit_testimonial and edit_testimonial.asset.profile_image %}<small style="color:#059669;">Current: {{ edit_testimonial.asset.profile_image.name }}</small>{% endif %}</div>
+            <div class="fg"><input name="speaker_name" placeholder="Speaker / Person Name" value="{% if edit_testimonial %}{{ edit_testimonial.asset.speaker_name }}{% endif %}"></div>
+        </div>
+        <div class="form-grid" style="margin-top:10px;">
+            <div class="fg"><input name="designation" placeholder="Designation (e.g. Professor, CEO)" value="{% if edit_testimonial %}{{ edit_testimonial.asset.designation }}{% endif %}"></div>
+            <div class="fg"><input name="institute_name" placeholder="Institute / Organization" value="{% if edit_testimonial %}{{ edit_testimonial.asset.institute_name }}{% endif %}"></div>
         </div>
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>

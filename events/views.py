@@ -12,7 +12,8 @@ from django.utils import timezone
 from accounts.models import User, Role, SuperadminProfile, AdminProfile
 from accounts.rendering import render_route
 from events.models import (
-    Hackathon, ProblemStatement, CreativeMaterial, RoundMarkingParameter,
+    Hackathon, HackathonDomain, ProblemStatement, CreativeMaterial,
+    RoundMarkingParameter, HeroBannerImage,
     LANDING_SECTION_CHOICES, LANDING_SECTION_LABELS,
 )
 from features.models import Team, Venue, SponsorshipFund, Podcast
@@ -120,49 +121,79 @@ def _build_public_problem_statement_context(active_hackathon):
             'url': podcast.video_url or _safe_file_url(podcast.video_file),
         })
 
-    track_specs = [
-        {
-            'slug': 'agriculture',
-            'title': 'Agriculture',
-            'icon': '🌾',
-            'color': '#fefce8',
-            'subtitle': 'Crops, rural innovation, and farm sustainability',
-            'image': '/media/creatives/hero2.jpg',
-            'keywords': ['agri', 'agriculture', 'farm', 'crop', 'rural', 'soil', 'harvest', 'livestock'],
-        },
-        {
-            'slug': 'healthcare',
-            'title': 'Healthcare',
-            'icon': '🏥',
-            'color': '#dbeafe',
-            'subtitle': 'Medical care, public health, and wellness systems',
-            'image': '/media/creatives/hero1-bg.jpg',
-            'keywords': ['health', 'healthcare', 'medical', 'med', 'clinic', 'hospital', 'patient'],
-        },
-        {
-            'slug': 'animal-resource',
-            'title': 'Animal Resource',
-            'icon': '🐾',
-            'color': '#fdf2f8',
-            'subtitle': 'Livestock, veterinary, and animal systems',
-            'image': '/media/creatives/hero4.jpg',
-            'keywords': ['animal', 'veterinary', 'livestock', 'dairy', 'poultry', 'cattle', 'pet'],
-        },
-        {
-            'slug': 'education',
-            'title': 'Education',
-            'icon': '📚',
-            'color': '#fdf4ff',
-            'subtitle': 'Learning, inclusion, and skill development',
-            'image': '/media/creatives/hero3.jpg',
-            'keywords': ['education', 'learning', 'school', 'college', 'student', 'teaching', 'ed'],
-        },
-    ]
+    # Default color palette for auto-assigned domain colors
+    _default_colors = ['#fefce8', '#dbeafe', '#fdf2f8', '#fdf4ff', '#ecfdf5', '#fff7ed', '#f0fdf4', '#fef2f2']
+    _default_icons = ['🌾', '🏥', '🐾', '📚', '💻', '🔬', '🌍', '⚡']
+
+    # Try to load dynamic domains from HackathonDomain model
+    dynamic_domains = []
+    if active_hackathon:
+        dynamic_domains = list(HackathonDomain.objects.filter(hackathon=active_hackathon).order_by('display_order', 'name'))
+
+    if dynamic_domains:
+        # Build track_specs from dynamic HackathonDomain entries
+        track_specs = []
+        for idx, domain in enumerate(dynamic_domains):
+            track_specs.append({
+                'slug': domain.slug or domain.name.lower().replace(' ', '-'),
+                'title': domain.name,
+                'badge': getattr(domain, 'badge', None) or domain.name,
+                'icon': domain.icon or _default_icons[idx % len(_default_icons)],
+                'color': domain.color or _default_colors[idx % len(_default_colors)],
+                'subtitle': domain.subtitle or f'Problem statements in {domain.name}',
+                'image': '/media/creatives/hero2.jpg',
+                'keywords': [domain.name.lower()],
+            })
+    else:
+        # Fallback: hardcoded track specs
+        track_specs = [
+            {
+                'slug': 'agriculture',
+                'title': 'Agriculture',
+                'badge': 'SDG - 12',
+                'icon': '🌾',
+                'color': '#fefce8',
+                'subtitle': 'Crops, rural innovation, and farm sustainability',
+                'image': '/media/creatives/hero2.jpg',
+                'keywords': ['agri', 'agriculture', 'farm', 'crop', 'rural', 'soil', 'harvest', 'livestock'],
+            },
+            {
+                'slug': 'healthcare',
+                'title': 'Healthcare',
+                'badge': 'SDG - 3',
+                'icon': '🏥',
+                'color': '#dbeafe',
+                'subtitle': 'Medical care, public health, and wellness systems',
+                'image': '/media/creatives/hero1-bg.jpg',
+                'keywords': ['health', 'healthcare', 'medical', 'med', 'clinic', 'hospital', 'patient'],
+            },
+            {
+                'slug': 'animal-resource',
+                'title': 'Animal Resource',
+                'badge': 'SDG - 12',
+                'icon': '🐾',
+                'color': '#fdf2f8',
+                'subtitle': 'Livestock, veterinary, and animal systems',
+                'image': '/media/creatives/hero4.jpg',
+                'keywords': ['animal', 'veterinary', 'livestock', 'dairy', 'poultry', 'cattle', 'pet'],
+            },
+            {
+                'slug': 'education',
+                'title': 'Education',
+                'badge': 'SDG - 4',
+                'icon': '📚',
+                'color': '#fdf4ff',
+                'subtitle': 'Learning, inclusion, and skill development',
+                'image': '/media/creatives/hero3.jpg',
+                'keywords': ['education', 'learning', 'school', 'college', 'student', 'teaching', 'ed'],
+            },
+        ]
 
     grouped_problem_map = {
         spec['title']: {
             'slug': spec['slug'],
             'title': spec['title'],
+            'badge': spec.get('badge', spec['title']),
             'icon': spec['icon'],
             'color': spec['color'],
             'subtitle': spec['subtitle'],
@@ -189,9 +220,10 @@ def _build_public_problem_statement_context(active_hackathon):
 
     for problem in published_problems:
         matched = False
+        domain_text = (problem.domain or '').strip().lower()
         for spec in track_specs:
-            domain_text = (problem.domain or '').strip().lower()
-            if _matches_track(problem, spec['keywords']) or domain_text == spec['title'].lower():
+            # Match by exact domain name first, then by keywords
+            if domain_text == spec['title'].lower() or _matches_track(problem, spec['keywords']):
                 entry = grouped_problem_map[spec['title']]
                 entry['count'] += 1
                 entry['problems'].append({
@@ -241,6 +273,7 @@ def _build_public_problem_statement_context(active_hackathon):
     }
 
 
+
 def _resolve_problem_domain_filter(problem_groups, selected_domain):
     selected = _normalise_lookup(selected_domain)
     if not selected or selected == 'all':
@@ -260,6 +293,9 @@ def create_hackathon(request):
         name = request.POST.get('name')
         organization_name = request.POST.get('organization_name')
         organization_logo = request.FILES.get('organization_logo')
+        event_logo = request.FILES.get('event_logo')
+        platform_logo = request.FILES.get('platform_logo')
+        hero_banner = request.FILES.get('hero_banner')
         approval_date = request.POST.get('approval_date') or None
         approval_letter = request.FILES.get('approval_letter')
         poster_launching_date = request.POST.get('poster_launching_date') or None
@@ -275,22 +311,32 @@ def create_hackathon(request):
         round_1_start_date = request.POST.get('round_1_start_date') or None
         round_1_end_date = request.POST.get('round_1_end_date') or None
         round_1_is_enabled = _round_enabled_from_post(request, 1)
+        round_1_type = request.POST.get('round_1_type', 'Online')
+        round_1_venue = request.POST.get('round_1_venue', '') or None
         round_2_name = request.POST.get('round_2_name', 'Round 2')
         round_2_start_date = request.POST.get('round_2_start_date') or None
         round_2_end_date = request.POST.get('round_2_end_date') or None
         round_2_is_enabled = _round_enabled_from_post(request, 2)
+        round_2_type = request.POST.get('round_2_type', 'Online')
+        round_2_venue = request.POST.get('round_2_venue', '') or None
         round_3_name = request.POST.get('round_3_name', 'Round 3')
         round_3_start_date = request.POST.get('round_3_start_date') or None
         round_3_end_date = request.POST.get('round_3_end_date') or None
         round_3_is_enabled = _round_enabled_from_post(request, 3)
+        round_3_type = request.POST.get('round_3_type', 'Online')
+        round_3_venue = request.POST.get('round_3_venue', '') or None
         round_4_name = request.POST.get('round_4_name', 'Round 4')
         round_4_start_date = request.POST.get('round_4_start_date') or None
         round_4_end_date = request.POST.get('round_4_end_date') or None
         round_4_is_enabled = _round_enabled_from_post(request, 4)
+        round_4_type = request.POST.get('round_4_type', 'Online')
+        round_4_venue = request.POST.get('round_4_venue', '') or None
         round_5_name = request.POST.get('round_5_name', 'Round 5')
         round_5_start_date = request.POST.get('round_5_start_date') or None
         round_5_end_date = request.POST.get('round_5_end_date') or None
         round_5_is_enabled = _round_enabled_from_post(request, 5)
+        round_5_type = request.POST.get('round_5_type', 'Online')
+        round_5_venue = request.POST.get('round_5_venue', '') or None
         status = request.POST.get('status', 'Draft')
 
         try:
@@ -298,6 +344,8 @@ def create_hackathon(request):
             hackathon = Hackathon.objects.create(
                 name=name, organization_name=organization_name,
                 organization_logo=organization_logo, created_by=superadmin,
+                event_logo=event_logo, platform_logo=platform_logo,
+                hero_banner=hero_banner,
                 approval_date=approval_date, approval_letter=approval_letter,
                 poster_launching_date=poster_launching_date,
                 website_launching_date=website_launching_date,
@@ -307,14 +355,19 @@ def create_hackathon(request):
                 registration_open=registration_open, registration_close=registration_close,
                 round_1_name=round_1_name, round_1_start_date=round_1_start_date,
                 round_1_end_date=round_1_end_date, round_1_is_enabled=round_1_is_enabled,
+                round_1_type=round_1_type, round_1_venue=round_1_venue,
                 round_2_name=round_2_name, round_2_start_date=round_2_start_date,
                 round_2_end_date=round_2_end_date, round_2_is_enabled=round_2_is_enabled,
+                round_2_type=round_2_type, round_2_venue=round_2_venue,
                 round_3_name=round_3_name, round_3_start_date=round_3_start_date,
                 round_3_end_date=round_3_end_date, round_3_is_enabled=round_3_is_enabled,
+                round_3_type=round_3_type, round_3_venue=round_3_venue,
                 round_4_name=round_4_name, round_4_start_date=round_4_start_date,
                 round_4_end_date=round_4_end_date, round_4_is_enabled=round_4_is_enabled,
+                round_4_type=round_4_type, round_4_venue=round_4_venue,
                 round_5_name=round_5_name, round_5_start_date=round_5_start_date,
                 round_5_end_date=round_5_end_date, round_5_is_enabled=round_5_is_enabled,
+                round_5_type=round_5_type, round_5_venue=round_5_venue,
                 status=status
             )
             
@@ -333,6 +386,29 @@ def create_hackathon(request):
                     RoundMarkingParameter.objects.create(
                         hackathon=hackathon, round_number=i, name="Others", is_others=True
                     )
+
+            # Save dynamic PS domains
+            try:
+                num_domains = int(request.POST.get('num_domains', 0))
+            except ValueError:
+                num_domains = 0
+            for d in range(1, num_domains + 1):
+                domain_name = (request.POST.get(f'domain_{d}_name') or '').strip()
+                if domain_name:
+                    HackathonDomain.objects.create(
+                        hackathon=hackathon,
+                        name=domain_name,
+                        display_order=d,
+                    )
+
+            # Save multiple hero banner images
+            hero_banner_files = request.FILES.getlist('hero_banners')
+            for idx, banner_file in enumerate(hero_banner_files):
+                HeroBannerImage.objects.create(
+                    hackathon=hackathon,
+                    image=banner_file,
+                    display_order=idx + 1,
+                )
             
             messages.success(request, f'Hackathon {name} created successfully.')
         except Exception as e:
@@ -353,6 +429,12 @@ def edit_hackathon(request, hackathon_id):
         hackathon.organization_name = request.POST.get('organization_name', hackathon.organization_name)
         if 'organization_logo' in request.FILES:
             hackathon.organization_logo = request.FILES['organization_logo']
+        if 'event_logo' in request.FILES:
+            hackathon.event_logo = request.FILES['event_logo']
+        if 'platform_logo' in request.FILES:
+            hackathon.platform_logo = request.FILES['platform_logo']
+        if 'hero_banner' in request.FILES:
+            hackathon.hero_banner = request.FILES['hero_banner']
         hackathon.min_team_size = request.POST.get('min_team_size', hackathon.min_team_size)
         hackathon.max_team_size = request.POST.get('max_team_size', hackathon.max_team_size)
         hackathon.number_of_mentors = request.POST.get('number_of_mentors', hackathon.number_of_mentors)
@@ -376,6 +458,10 @@ def edit_hackathon(request, hackathon_id):
                 val = request.POST.get(f'round_{i}_{suffix}')
                 setattr(hackathon, f'round_{i}_{suffix}', val or None)
             setattr(hackathon, f'round_{i}_is_enabled', _round_enabled_from_post(request, i))
+            rtype = request.POST.get(f'round_{i}_type', 'Online')
+            setattr(hackathon, f'round_{i}_type', rtype)
+            rvenue = request.POST.get(f'round_{i}_venue', '') or None
+            setattr(hackathon, f'round_{i}_venue', rvenue)
 
         status = request.POST.get('status')
         if status:
@@ -400,6 +486,37 @@ def edit_hackathon(request, hackathon_id):
                     RoundMarkingParameter.objects.create(
                         hackathon=hackathon, round_number=i, name="Others", is_others=True
                     )
+
+            # Re-create dynamic PS domains
+            hackathon.domains.all().delete()
+            try:
+                num_domains = int(request.POST.get('num_domains', 0))
+            except ValueError:
+                num_domains = 0
+            for d in range(1, num_domains + 1):
+                domain_name = (request.POST.get(f'domain_{d}_name') or '').strip()
+                if domain_name:
+                    HackathonDomain.objects.create(
+                        hackathon=hackathon,
+                        name=domain_name,
+                        display_order=d,
+                    )
+
+            # Handle hero banner deletions
+            delete_banner_ids = request.POST.getlist('delete_banner')
+            if delete_banner_ids:
+                hackathon.hero_banners.filter(id__in=delete_banner_ids).delete()
+
+            # Handle new hero banner uploads
+            new_banners = request.FILES.getlist('hero_banners')
+            if new_banners:
+                max_order = hackathon.hero_banners.order_by('-display_order').values_list('display_order', flat=True).first() or 0
+                for idx, banner_file in enumerate(new_banners):
+                    HeroBannerImage.objects.create(
+                        hackathon=hackathon,
+                        image=banner_file,
+                        display_order=max_order + idx + 1,
+                    )
                     
             messages.success(request, f'Hackathon {hackathon.name} updated successfully.')
             return render_route(request, '/accounts/dashboard/?tab=events')
@@ -417,9 +534,15 @@ def edit_hackathon(request, hackathon_id):
             'has_others': has_others
         }
 
+    existing_domains = list(hackathon.domains.order_by('display_order'))
+
+    existing_banners = list(hackathon.hero_banners.order_by('display_order'))
+
     return render(request, 'events/edit_hackathon.html', {
         'hackathon': hackathon,
-        'round_params': round_params
+        'round_params': round_params,
+        'existing_domains': existing_domains,
+        'existing_banners': existing_banners,
     })
 
 
@@ -746,15 +869,26 @@ def landing_page(request):
                 role = invite.designation or invite.domain or role
                 organization = invite.organization or ''
         file_name = getattr(asset.file, 'name', '').lower()
+        thumbnail_url = ''
+        if asset.profile_image:
+            try:
+                thumbnail_url = asset.profile_image.url
+            except Exception:
+                pass
+        # Use model fields if available, otherwise fall back to user-derived values
+        final_name = asset.speaker_name.strip() if asset.speaker_name else display_title
+        final_designation = asset.designation.strip() if asset.designation else role
+        final_institute = asset.institute_name.strip() if asset.institute_name else organization
         testimonial_items.append({
             'kind': kind,
-            'name': display_title,
-            'role': role,
-            'organization': organization,
+            'name': final_name,
+            'role': final_designation,
+            'organization': final_institute,
             'quote': f'Published {kind.lower()} testimonial from the HackNexus media library.',
             'media_url': asset.file.url if asset.file else '',
             'is_video': file_name.endswith(('.mp4', '.webm', '.ogg', '.mov', '.m4v')),
             'uploaded_at': asset.uploaded_at,
+            'thumbnail_url': thumbnail_url,
         })
     if not testimonial_items:
         testimonial_items = [
@@ -984,11 +1118,8 @@ def landing_page(request):
                 'date': item['date'],
                 'label': item['label'],
             }
-            for index, (_, item) in enumerate(timeline_events[:5])
+            for index, (_, item) in enumerate(timeline_events)
         ]
-        timeline_positions = ['pos-1', 'pos-2', 'pos-3', 'pos-4', 'pos-5']
-        for index, item in enumerate(timeline_events):
-            item['position_class'] = timeline_positions[index]
 
     judging_criteria = []
     if active_hackathon:
@@ -1096,8 +1227,8 @@ def landing_page(request):
             'name': display_name,
             'organization_name': display_name,
             'text': display_name,
-            'location': institution.location if institution and institution.location else 'Location not shared',
-            'logo_url': _safe_media_url(getattr(extended, 'logo', None)),
+            'location': sponsorship.location or (institution.location if institution and institution.location else 'Location not shared'),
+            'logo_url': _safe_media_url(sponsorship.logo) or _safe_media_url(getattr(extended, 'logo', None)),
             'logo_initials': _institution_initials(display_name),
             'tier_slug': tier_slug,
             'tier_label': f'{tier_slug.title()} Partner',
@@ -1212,22 +1343,58 @@ def landing_page(request):
         {'value': f'{active_hackathon.number_of_rounds if active_hackathon else 1}', 'label': 'Rounds'},
     ]
 
-    hero_slides = [
+    # Resolve branding URLs from the active hackathon
+    hero_banner_url = ''
+    event_logo_url = ''
+    platform_logo_url = ''
+    hero_banner_urls = []
+    if active_hackathon:
+        # Get multiple hero banner images
+        banner_images = list(active_hackathon.hero_banners.order_by('display_order'))
+        for b in banner_images:
+            try:
+                hero_banner_urls.append(b.image.url)
+            except Exception:
+                pass
+        # Fallback to legacy single hero_banner field
+        if not hero_banner_urls and active_hackathon.hero_banner:
+            try:
+                hero_banner_url = active_hackathon.hero_banner.url
+                hero_banner_urls = [hero_banner_url]
+            except Exception:
+                pass
+        if hero_banner_urls:
+            hero_banner_url = hero_banner_urls[0]
+        if active_hackathon.event_logo:
+            try:
+                event_logo_url = active_hackathon.event_logo.url
+            except Exception:
+                pass
+        if active_hackathon.platform_logo:
+            try:
+                platform_logo_url = active_hackathon.platform_logo.url
+            except Exception:
+                pass
+
+    # Default fallback banner images
+    default_banners = [
+        '/media/creatives/hero1-bg.jpg',
+        '/media/creatives/hero2.jpg',
+        '/media/creatives/hero3.jpg',
+        '/media/creatives/hero4.jpg',
+    ]
+
+    # Slide content definitions (text/CTA per slide)
+    slide_defs = [
         {
             'title_prefix': 'Build Solutions for',
             'highlight': 'Smart India',
             'description': 'Transform ideas into impactful innovations that drive national development.',
-            'background_image': '/media/creatives/hero1-bg.jpg',
-            'title_color': "#0f172a",
-            'muted_color': '#1f2937',
-            'accent_color': '#ff6b1a',
-            'label_color': '#0f172a',
             'highlights': [
                 {'icon': '📅', 'text': active_hackathon.registration_open.strftime('%b %d, %Y') if active_hackathon and active_hackathon.registration_open else 'Registrations Live'},
                 {'icon': '📍', 'text': active_hackathon.organization_name if active_hackathon else 'HackNexus Platform'},
                 {'icon': '💡', 'text': f'{total_problem_statements or 75}+ Challenges'},
                 {'icon': '🌍', 'text': 'National Level'},
-                
             ],
             'primary_label': 'Register Now',
             'primary_target': '#registerModal',
@@ -1239,11 +1406,6 @@ def landing_page(request):
             'title_prefix': 'Code. Innovate.',
             'highlight': 'Transform.',
             'description': 'Join builders, mentors, and institutions in solving India-first challenges with execution-focused ideas.',
-            'background_image': '/media/creatives/hero2.jpg',
-            'title_color': '#0f172a',
-            'muted_color': '#1f2937',
-            'accent_color': '#ff6b1a',
-            'label_color': '#0f172a',
             'highlights': [
                 {'icon': '👥', 'text': f'{total_teams or 500}+ Teams'},
                 {'icon': '🏫', 'text': f'{total_institutions or 150}+ Institutions'},
@@ -1260,11 +1422,6 @@ def landing_page(request):
             'title_prefix': 'Innovation for',
             'highlight': 'Nation',
             'description': 'A developed, self-reliant India needs bold prototypes, sharp teams, and practical follow-through.',
-            'background_image': '/media/creatives/hero3.jpg',
-            'title_color': '#0f172a',
-            'muted_color': '#1f2937',
-            'accent_color': '#ff6b1a',
-            'label_color': '#0f172a',
             'highlights': [
                 {'icon': '🏆', 'text': 'Prize Support'},
                 {'icon': '👨‍🏫', 'text': 'Expert Mentorship'},
@@ -1281,11 +1438,6 @@ def landing_page(request):
             'title_prefix': 'Think Bold.',
             'highlight': 'Build Fast.',
             'description': 'Move from idea to prototype with a national-stage platform built for real outcomes and visible momentum.',
-            'background_image': '/media/creatives/hero4.jpg',
-            'title_color': '#0f172a',
-            'muted_color': '#1f2937',
-            'accent_color': '#ff6b1a',
-            'label_color': '#0f172a',
             'highlights': [
                 {'icon': 'IDEA', 'text': 'Creative Thinking'},
                 {'icon': 'ROCKET', 'text': 'Rapid Prototyping'},
@@ -1299,6 +1451,20 @@ def landing_page(request):
             'primary_type': 'orange',
         },
     ]
+
+    # Use uploaded banners; if more banners than slide_defs, duplicate defs cyclically
+    banners = hero_banner_urls if hero_banner_urls else default_banners
+    num_slides = max(len(banners), len(slide_defs))
+
+    hero_slides = []
+    for i in range(num_slides):
+        slide_content = slide_defs[i % len(slide_defs)].copy()
+        slide_content['background_image'] = banners[i % len(banners)]
+        slide_content['title_color'] = '#0f172a'
+        slide_content['muted_color'] = '#1f2937'
+        slide_content['accent_color'] = '#ff6b1a'
+        slide_content['label_color'] = '#0f172a'
+        hero_slides.append(slide_content)
 
     ticker_message = ''
     if news_items:
@@ -1336,7 +1502,7 @@ def landing_page(request):
         'track_domains': track_domains,
         'ps_modal_data': ps_modal_data,
         'expert_talks': expert_talks,
-        'timeline_events': timeline_events[:6],
+        'timeline_events': timeline_events,
         'judging_criteria': judging_criteria,
         'jury_members': jury_members[:8],
         'sponsor_cards': sponsor_cards[:10],
@@ -1344,6 +1510,9 @@ def landing_page(request):
         'faq_items': faq_items,
         'documentation_links': resource_links,
         'stat_cards': stat_cards,
+        'event_logo_url': event_logo_url,
+        'platform_logo_url': platform_logo_url,
+        'hero_banner_url': hero_banner_url,
     })
 
 
@@ -1372,3 +1541,35 @@ def public_problem_statements(request):
         'themes_count': problem_context['themes_count'],
         'selected_domain': selected_domain,
     })
+
+
+@login_required(login_url="/accounts/")
+def launch_event(request, hackathon_id):
+    """Launch an event — set its status to Live and record the launch metadata."""
+    import json
+    from django.http import JsonResponse
+    from django.views.decorators.http import require_POST
+
+    if not _can_manage_events(request):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        data = {}
+
+    hackathon.status = 'Live'
+    hackathon.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': f'{hackathon.name} has been launched successfully!',
+        'hackathon_id': hackathon.id,
+        'status': hackathon.status,
+    })
+

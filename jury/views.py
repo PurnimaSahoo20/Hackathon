@@ -209,6 +209,58 @@ def jury_dashboard(request):
     conversations, _ = _build_conversation_list(request.user, role)
     evaluator_profile, _ = EvaluatorProfile.objects.get_or_create(user=request.user)
 
+    live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+    news_items = []
+    if live_hackathon:
+        news_prefixes = (
+            ('[News]', 'news'),
+            ('[Announcement]', 'announcement'),
+        )
+        documentation_links = Documentation.objects.filter(
+            hackathon=live_hackathon,
+            is_published=True,
+        ).order_by('-created_at')
+        for item in documentation_links:
+            landing_sections = []
+            if item.landing_sections:
+                if isinstance(item.landing_sections, str):
+                    landing_sections = [item.landing_sections]
+                else:
+                    landing_sections = list(item.landing_sections)
+            
+            raw_title = (item.title or '').strip()
+            is_match = 'latest-news' in landing_sections or any(raw_title.startswith(prefix) for prefix in ('[News]', '[Announcement]'))
+            if not is_match:
+                continue
+
+            news_type = None
+            title = raw_title
+            for prefix, mapped_type in news_prefixes:
+                if raw_title.startswith(prefix):
+                    news_type = mapped_type
+                    title = raw_title[len(prefix):].strip(" |:-")
+                    break
+            if not news_type:
+                news_type = 'news'
+            
+            summary = (item.description or '').strip()
+            news_items.append({
+                'item': item,
+                'title': title or raw_title or item.title,
+                'summary': summary,
+                'link': item.external_url or (item.file.url if item.file else '#'),
+                'type': news_type,
+                'type_label': news_type.title(),
+                'search_text': ' '.join([
+                    raw_title,
+                    summary,
+                    news_type,
+                    item.created_at.strftime('%d %b %Y %I:%M %p') if item.created_at else '',
+                ]).lower(),
+            })
+            if len(news_items) >= 5:
+                break
+
     context = {
         'role': role,
         'role_label': _get_role_label(role),
@@ -217,12 +269,85 @@ def jury_dashboard(request):
         'total_assigned': len(team_cards),
         'total_evaluated': total_evaluated,
         'total_pending': total_pending,
-        'live_hackathon': Hackathon.objects.filter(status='Live').order_by('-updated_at').first(),
+        'live_hackathon': live_hackathon,
         'latest_conversations': conversations[:4],
         'evaluator_profile': evaluator_profile,
         'active_nav': 'jury_dashboard',
+        'news_items': news_items,
     }
     return render(request, 'jury/dashboard.html', context)
+
+
+@login_required(login_url='/accounts/')
+@never_cache
+def jury_announcements(request):
+    role = _get_evaluator_role(request.user)
+    if not role:
+        messages.error(request, 'Access denied. This area is for Jury and Expert members only.')
+        return redirect('login')
+
+    live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+    news_items = []
+    if live_hackathon:
+        news_prefixes = (
+            ('[News]', 'news'),
+            ('[Announcement]', 'announcement'),
+        )
+        documentation_links = Documentation.objects.filter(
+            hackathon=live_hackathon,
+            is_published=True,
+        ).order_by('-created_at')
+        for item in documentation_links:
+            landing_sections = []
+            if item.landing_sections:
+                if isinstance(item.landing_sections, str):
+                    landing_sections = [item.landing_sections]
+                else:
+                    landing_sections = list(item.landing_sections)
+            
+            raw_title = (item.title or '').strip()
+            is_match = 'latest-news' in landing_sections or any(raw_title.startswith(prefix) for prefix in ('[News]', '[Announcement]'))
+            if not is_match:
+                continue
+
+            news_type = None
+            title = raw_title
+            for prefix, mapped_type in news_prefixes:
+                if raw_title.startswith(prefix):
+                    news_type = mapped_type
+                    title = raw_title[len(prefix):].strip(" |:-")
+                    break
+            if not news_type:
+                news_type = 'news'
+            
+            summary = (item.description or '').strip()
+            news_items.append({
+                'item': item,
+                'title': title or raw_title or item.title,
+                'summary': summary,
+                'link': item.external_url or (item.file.url if item.file else '#'),
+                'type': news_type,
+                'type_label': news_type.title(),
+                'search_text': ' '.join([
+                    raw_title,
+                    summary,
+                    news_type,
+                    item.created_at.strftime('%d %b %Y %I:%M %p') if item.created_at else '',
+                ]).lower(),
+            })
+
+    rounds = live_hackathon.get_rounds() if live_hackathon else []
+
+    context = {
+        'role': role,
+        'role_label': _get_role_label(role),
+        'dashboard_title': f'{_get_role_label(role)} Announcements',
+        'live_hackathon': live_hackathon,
+        'news_items': news_items,
+        'rounds': rounds,
+        'active_nav': 'jury_announcements',
+    }
+    return render(request, 'jury/announcements.html', context)
 
 
 @login_required(login_url='/accounts/')

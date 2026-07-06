@@ -30,6 +30,7 @@
         <div class="nav-section">
             <div class="nav-section-label">Main</div>
             <a href="{% url 'jury_dashboard' %}" class="nav-item {% if active_nav == 'jury_dashboard' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="grid-outline"></ion-icon></div> Dashboard</a>
+            <a href="{% url 'jury_announcements' %}" class="nav-item {% if active_nav == 'jury_announcements' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="megaphone-outline"></ion-icon></div> News & Announcements</a>
             <a href="{% url 'jury_team_evaluations' %}" class="nav-item {% if active_nav == 'jury_evaluations' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="clipboard-outline"></ion-icon></div> Team Evaluation</a>
             <a href="{% url 'jury_problem_statements' %}" class="nav-item {% if active_nav == 'jury_problem_statements' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="document-text-outline"></ion-icon></div> Problem Statements</a>
             <a href="{% url 'jury_media_resources' %}" class="nav-item {% if active_nav == 'jury_media_resources' %}active{% endif %}"><div class="nav-icon-wrap"><ion-icon name="videocam-outline"></ion-icon></div> Podcasts & Documentaries</a>

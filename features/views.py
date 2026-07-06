@@ -743,6 +743,9 @@ def send_spoc_invite(request):
 
     email = request.POST.get('email', '').strip().lower()
     hackathon_id = request.POST.get('hackathon_id')
+    institution_name = request.POST.get('institution_name', '').strip()
+    city = request.POST.get('city', '').strip()
+    state = request.POST.get('state', '').strip()
 
     if not email:
         messages.error(request, "Email is required.")
@@ -753,6 +756,9 @@ def send_spoc_invite(request):
             request=request,
             email=email,
             hackathon=hackathon,
+            institution_name=institution_name,
+            city=city,
+            state=state,
         )
         messages.success(request, f"Invitation sent to {email}.")
     except Exception as exc:
@@ -787,21 +793,25 @@ def send_bulk_spoc_invites(request):
         messages.error(request, "CSV file must be UTF-8 encoded.")
         return render_route(request, '/features/spoc/?sub=invitations')
 
-    emails = _extract_spoc_emails_from_csv(decoded)
-    if not emails:
-        messages.error(request, "No valid email entries were found in the uploaded CSV.")
+    records = _extract_spoc_data_from_csv(decoded)
+    if not records:
+        messages.error(request, "No valid entries were found in the uploaded CSV.")
         return render_route(request, '/features/spoc/?sub=invitations')
 
     hackathon = _get_selected_hackathon(hackathon_id)
     sent_count = 0
     failed = []
 
-    for email in emails:
+    for rec in records:
+        email = rec['email']
         try:
             _create_and_send_spoc_invitation(
                 request=request,
                 email=email,
                 hackathon=hackathon,
+                institution_name=rec['institution_name'],
+                city=rec['city'],
+                state=rec['state'],
             )
             sent_count += 1
         except Exception as exc:
@@ -823,7 +833,7 @@ def _get_selected_hackathon(hackathon_id):
     return None
 
 
-def _create_and_send_spoc_invitation(request, email, hackathon=None):
+def _create_and_send_spoc_invitation(request, email, hackathon=None, institution_name='', city='', state=''):
     from accounts.models import SpocInvitation
     from django.urls import reverse
 
@@ -847,68 +857,239 @@ def _create_and_send_spoc_invitation(request, email, hackathon=None):
 
     with transaction.atomic():
         token = uuid.uuid4().hex
-        SpocInvitation.objects.create(
+        invite = SpocInvitation.objects.create(
             invited_by=request.user,
             email=email,
             hackathon=hackathon,
             token=token,
             status='invited',
+            institution_name=institution_name,
+            city=city,
+            state=state,
         )
         form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[token]))
-        _send_spoc_invite_email(email, form_link, hackathon)
+        _send_spoc_invite_email(invite, form_link)
 
 
-def _extract_spoc_emails_from_csv(decoded_csv):
+def _extract_spoc_data_from_csv(decoded_csv):
     reader = csv.reader(io.StringIO(decoded_csv))
     rows = [row for row in reader if any((cell or '').strip() for cell in row)]
     if not rows:
         return []
 
     header = [cell.strip().lower() for cell in rows[0]]
-    email_header_candidates = {'email', 'emails', 'spoc email', 'spoc_email', 'mail', 'email address'}
-    email_index = next((idx for idx, name in enumerate(header) if name in email_header_candidates), None)
+    email_candidates = {'email', 'emails', 'spoc email', 'spoc_email', 'mail', 'email address'}
+    inst_candidates = {'institution', 'institution name', 'institution_name', 'college', 'college name', 'university'}
+    city_candidates = {'city', 'town', 'city/town'}
+    state_candidates = {'state', 'province'}
 
-    emails = []
-    seen = set()
-    data_rows = rows
+    email_idx = next((idx for idx, name in enumerate(header) if name in email_candidates), None)
+    inst_idx = next((idx for idx, name in enumerate(header) if name in inst_candidates), None)
+    city_idx = next((idx for idx, name in enumerate(header) if name in city_candidates), None)
+    state_idx = next((idx for idx, name in enumerate(header) if name in state_candidates), None)
 
-    if email_index is not None:
+    records = []
+    seen_emails = set()
+
+    if email_idx is not None:
         data_rows = rows[1:]
         for row in data_rows:
-            if email_index >= len(row):
+            if email_idx >= len(row):
                 continue
-            email = row[email_index].strip().lower()
-            if email and email not in seen:
-                seen.add(email)
-                emails.append(email)
-        return emails
+            email = row[email_idx].strip().lower()
+            if not email or email in seen_emails:
+                continue
+            seen_emails.add(email)
+            
+            inst_name = row[inst_idx].strip() if (inst_idx is not None and inst_idx < len(row)) else ''
+            city = row[city_idx].strip() if (city_idx is not None and city_idx < len(row)) else ''
+            state = row[state_idx].strip() if (state_idx is not None and state_idx < len(row)) else ''
+            
+            records.append({
+                'email': email,
+                'institution_name': inst_name,
+                'city': city,
+                'state': state
+            })
+        return records
 
     first_value = (rows[0][0] if rows[0] else '').strip().lower()
-    if first_value in email_header_candidates:
+    data_rows = rows
+    if first_value in email_candidates:
         data_rows = rows[1:]
 
     for row in data_rows:
         email = next((cell.strip().lower() for cell in row if '@' in (cell or '')), '')
-        if email and email not in seen:
-            seen.add(email)
-            emails.append(email)
+        if email and email not in seen_emails:
+            seen_emails.add(email)
+            records.append({
+                'email': email,
+                'institution_name': '',
+                'city': '',
+                'state': ''
+            })
 
-    return emails
+    return records
 
 
-def _send_spoc_invite_email(email, form_link, hackathon=None):
-    hn = hackathon.name if hackathon else "our upcoming Hackathon"
-    html = f"""<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
-        <h2 style="color:#ea580c;">You're Invited! 🎉</h2>
-        <p>You have been selected as a <strong>SPOC</strong> for <strong>{hn}</strong>.</p>
-        <a href="{form_link}" style="background:#ea580c;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin:16px 0;">Complete Registration →</a>
-    </div>"""
+def _send_spoc_invite_email(invite, form_link):
+    # Set defaults / get values
+    from django.utils import timezone
+    hackathon = invite.hackathon
+    event_name = hackathon.name if hackathon else "HackNexus"
+    org_name = hackathon.organization_name if hackathon else "HackNexus Secretariat"
+    
+    # Reference number: REF/HN/2026/0001 (or similar)
+    ref_no = f"REF/HN/2026/{invite.id:04d}"
+    
+    # Date
+    date_str = invite.invited_at.strftime('%d %B %Y') if invite.invited_at else timezone.now().strftime('%d %B %Y')
+    
+    institution_name = invite.institution_name or "Your Institution"
+    city = invite.city or "City"
+    state = invite.state or "State"
+    
+    # Event flagship state
+    event_state = "Odisha"
+    
+    event_admin_name = invite.invited_by.get_full_name() if (invite.invited_by and invite.invited_by.get_full_name()) else "Event Administrator"
+    
+    support_email = "support@hacknexus.com"
+    support_number = "+91 99999 99999"
+    website = "http://127.0.0.1:8000/"
+
+    subject = f"Invitation to Participate in {event_name} – Nomination of Institutional SPOC and Registration of Institution"
+    
+    plain_body = f"""Ref. No.: {ref_no}
+Date: {date_str}
+
+To
+The Principal / Director / Vice Chancellor
+{institution_name}
+{city}, {state}
+
+Subject: Invitation to participate in {event_name} and nomination of an Institutional Single Point of Contact (SPOC)
+
+Respected Sir/Madam,
+
+Greetings from {org_name}!
+
+The {event_name} is a flagship event of {event_state} organised by {org_name} to facilitate a platform for the students of our nation to showcase their skill and talent.
+
+We are pleased to invite {institution_name} to participate in {event_name}, an initiative aimed at fostering innovation, creativity, problem-solving, entrepreneurship, and collaborative learning among students.
+
+The event provides an excellent platform for students to transform innovative ideas into impactful solutions while working on real-world challenges across various domains. It also offers an opportunity for institutions to showcase the innovation potential of their students and strengthen their engagement with industry and academia.
+
+To facilitate smooth participation, we request your esteemed institution to nominate an Institutional Single Point of Contact (SPOC) who will coordinate all activities related to the event on behalf of your institution.
+
+The nominated SPOC will be responsible for:
+•	Registering the institution on the event portal. 
+•	Coordinating student participation. 
+•	Disseminating event-related information within the institution. 
+•	Facilitating communication between the organizing committee and participating students. 
+•	Monitoring registrations and submissions from the institution. 
+
+Once the institution is successfully registered, the institution's name will automatically become available in the student registration portal, enabling students to select {institution_name} while registering for {event_name}.
+
+Institution Registration
+The nominated SPOC may kindly register the institution using the following link:
+{form_link}
+
+Upon successful registration, login credentials and further communication regarding the event schedule, problem statements, guidelines, and important announcements will be shared with the registered SPOC.
+
+We sincerely request your kind support in encouraging maximum student participation and making this initiative a grand success.
+
+Should you require any clarification or assistance, please feel free to contact the Event Coordination Team.
+
+We look forward to the enthusiastic participation of {institution_name} in {event_name}.
+
+With warm regards,
+
+{event_admin_name}
+Event Administrator
+{event_name}
+{org_name}
+Email: {support_email}
+Mobile: {support_number}
+Website: {website}
+"""
+
+    html_body = f"""<div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 24px; color: #1f2937; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+    <div style="margin-bottom: 24px;">
+        <strong>Ref. No.:</strong> {ref_no}<br>
+        <strong>Date:</strong> {date_str}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        To<br>
+        <strong>The Principal / Director / Vice Chancellor</strong><br>
+        {institution_name}<br>
+        {city}, {state}
+    </div>
+
+    <div style="margin-bottom: 20px; font-weight: bold; text-decoration: underline;">
+        Subject: Invitation to participate in {event_name} and nomination of an Institutional Single Point of Contact (SPOC)
+    </div>
+
+    <div style="margin-bottom: 16px;">
+        Respected Sir/Madam,<br><br>
+        Greetings from {org_name}!
+    </div>
+
+    <p>The <strong>{event_name}</strong> is a flagship event of <strong>{event_state}</strong> organised by <strong>{org_name}</strong> to facilitate a platform for the students of our nation to showcase their skill and talent.</p>
+
+    <p>We are pleased to invite <strong>{institution_name}</strong> to participate in <strong>{event_name}</strong>, an initiative aimed at fostering innovation, creativity, problem-solving, entrepreneurship, and collaborative learning among students.</p>
+
+    <p>The event provides an excellent platform for students to transform innovative ideas into impactful solutions while working on real-world challenges across various domains. It also offers an opportunity for institutions to showcase the innovation potential of their students and strengthen their engagement with industry and academia.</p>
+
+    <p>To facilitate smooth participation, we request your esteemed institution to nominate an Institutional Single Point of Contact (SPOC) who will coordinate all activities related to the event on behalf of your institution.</p>
+
+    <div style="margin-bottom: 16px; padding-left: 20px;">
+        The nominated SPOC will be responsible for:
+        <ul style="margin: 8px 0; padding-left: 20px;">
+            <li>Registering the institution on the event portal.</li>
+            <li>Coordinating student participation.</li>
+            <li>Disseminating event-related information within the institution.</li>
+            <li>Facilitating communication between the organizing committee and participating students.</li>
+            <li>Monitoring registrations and submissions from the institution.</li>
+        </ul>
+    </div>
+
+    <p>Once the institution is successfully registered, the institution's name will automatically become available in the student registration portal, enabling students to select <strong>{institution_name}</strong> while registering for <strong>{event_name}</strong>.</p>
+
+    <div style="margin-top: 24px; margin-bottom: 24px; padding: 20px; background-color: #fff7ed; border-left: 4px solid #ea580c; border-radius: 6px;">
+        <h4 style="margin: 0 0 10px 0; color: #c2410c; font-size: 16px; font-weight: 700;">Institution Registration</h4>
+        <p style="margin: 0 0 16px 0; font-size: 14px;">The nominated SPOC may kindly register the institution using the following link:</p>
+        <a href="{form_link}" style="background-color: #ea580c; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-block; font-size: 14px;">Register Institution →</a>
+    </div>
+
+    <p>Upon successful registration, login credentials and further communication regarding the event schedule, problem statements, guidelines, and important announcements will be shared with the registered SPOC.</p>
+
+    <p>We sincerely request your kind support in encouraging maximum student participation and making this initiative a grand success.</p>
+
+    <p>Should you require any clarification or assistance, please feel free to contact the Event Coordination Team.</p>
+
+    <p>We look forward to the enthusiastic participation of <strong>{institution_name}</strong> in <strong>{event_name}</strong>.</p>
+
+    <div style="margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px; font-size: 14px;">
+        With warm regards,<br><br>
+        <strong>{event_admin_name}</strong><br>
+        Event Administrator<br>
+        {event_name}<br>
+        {org_name}<br><br>
+        <strong>Email:</strong> <a href="mailto:{support_email}" style="color: #ea580c; text-decoration: none;">{support_email}</a><br>
+        <strong>Mobile:</strong> {support_number}<br>
+        <strong>Website:</strong> <a href="{website}" style="color: #ea580c; text-decoration: none;">{website}</a>
+    </div>
+</div>
+"""
+
     msg = EmailMultiAlternatives(
-        f"SPOC Invitation — {hn}",
-        f"Register here: {form_link}",
-        settings.DEFAULT_FROM_EMAIL, [email]
+        subject,
+        plain_body,
+        settings.DEFAULT_FROM_EMAIL, [invite.email]
     )
-    msg.attach_alternative(html, "text/html")
+    msg.attach_alternative(html_body, "text/html")
     msg.send(fail_silently=False)
 
 
@@ -2408,6 +2589,19 @@ def save_sponsorship(request):
         except Exception as e:
             messages.error(request, f"Error: {e}")
     return render_route(request, '/features/finance/?sub=sponsorships&hackathon=' + str(request.POST.get('hackathon_id', '')))
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def delete_sponsorship(request, sponsor_id):
+    denied = _feature_permission_required(request, 'financial_mgt', 'media_sponsorship_mgt')
+    if denied:
+        return denied
+    s = get_object_or_404(SponsorshipFund, id=sponsor_id)
+    hackathon_id = s.hackathon_id
+    s.delete()
+    messages.success(request, "Sponsorship Fund deleted.")
+    return render_route(request, '/features/finance/?sub=sponsorships&hackathon=' + str(hackathon_id))
 
 
 @login_required(login_url='/accounts/')
@@ -4301,6 +4495,45 @@ def delete_creative_asset(request, creative_id):
     return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
 
 
+def _notify_team_not_qualified(team, round_number):
+    try:
+        from team.team.models import TeamNotification
+        from django.core.mail import EmailMultiAlternatives
+        from django.conf import settings
+        
+        # Create in-app notification
+        TeamNotification.objects.create(
+            team_leader=team.team_leader,
+            notif_type='system',
+            title=f"Not Qualified for Round {round_number + 1}",
+            body=f"We regret to inform you that your team '{team.team_name}' did not meet the required cutoff scores in Round {round_number} and has not qualified for the next round.",
+        )
+        
+        # Send email notification
+        subject = f"Evaluation Outcome - Round {round_number} - {team.hackathon.name}"
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
+                    padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+            <h2 style="color:#dc2626;">Evaluation Outcome</h2>
+            <p>Hello <strong>{team.team_leader.get_full_name() or team.team_leader.username}</strong>,</p>
+            <p>Thank you for your participation in the <strong>{team.hackathon.name}</strong>.</p>
+            <p>After compiling the evaluator marks for <strong>Round {round_number}</strong>, your team <strong>{team.team_name}</strong> did not meet the cutoff thresholds required to qualify for the next round.</p>
+            <p>As a result, your team dashboard has been suspended. We wish you the best of luck in your future endeavors!</p>
+        </div>"""
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=f"Hello, we regret to inform you that your team '{team.team_name}' did not qualify for the next round of {team.hackathon.name}.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[team.team_leader.email],
+        )
+        msg.attach_alternative(html, "text/html")
+        msg.send(fail_silently=True)
+    except Exception as exc:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to notify unqualified team {team.id}: {exc}", exc_info=True)
+
+
 @login_required(login_url='/accounts/')
 @never_cache
 def results_reporting_management(request):
@@ -4309,63 +4542,210 @@ def results_reporting_management(request):
         return denied
 
     hackathons, hackathon_filter, active_hackathon = _resolve_hackathon_scope(request)
-    focus = request.GET.get('focus', 'reports')
+    
+    from decimal import Decimal
+    from jury.models import TeamEvaluation
+    from events.models import RoundMarkingParameter
+    from features.models import Team, TeamStatusLog
+
+    selected_round = 1
+    if active_hackathon:
+        active_round_data = active_hackathon.active_round
+        if active_round_data:
+            selected_round = active_round_data['number']
+    
+    round_param = request.GET.get('round')
+    if round_param:
+        try:
+            selected_round = int(round_param)
+        except ValueError:
+            pass
 
     teams = Team.objects.none()
-    report = {}
-    award_candidates = Team.objects.none()
+    params = RoundMarkingParameter.objects.none()
+    teams_data = []
+    show_qualified = request.GET.get('show_qualified') == 'true'
 
     if active_hackathon:
-        teams = Team.objects.filter(hackathon=active_hackathon).select_related(
-            'institution', 'team_leader', 'problem_statement'
-        ).order_by('-updated_at')
-        award_candidates = teams.filter(status__in=['admin_approved', 'evaluated', 'submitted'])
-        total_budget = EventBudget.objects.filter(hackathon=active_hackathon).aggregate(total=Sum('total_budget'))['total'] or 0
-        total_sponsor = SponsorshipFund.objects.filter(hackathon=active_hackathon).aggregate(total=Sum('amount_received'))['total'] or 0
-        total_income = FinancialTransaction.objects.filter(hackathon=active_hackathon, transaction_type='Income').aggregate(total=Sum('amount'))['total'] or 0
-        total_expense = FinancialTransaction.objects.filter(hackathon=active_hackathon, transaction_type='Expense').aggregate(total=Sum('amount'))['total'] or 0
-        report = {
-            'status_counts': [
-                ('Registered', teams.filter(status='registered').count()),
-                ('Approved', teams.filter(status='admin_approved').count()),
-                ('Submitted', teams.filter(status='submitted').count()),
-                ('Evaluated', teams.filter(status='evaluated').count()),
-            ],
-            'total_budget': total_budget,
-            'total_sponsor': total_sponsor,
-            'total_income': total_income,
-            'total_expense': total_expense,
-            'net_balance': total_budget + total_sponsor + total_income - total_expense,
-            'award_expenses': FinancialTransaction.objects.filter(
-                hackathon=active_hackathon, category='Trophy and Awards'
-            ).order_by('-transaction_date'),
-        }
+        # Get marking parameters for this hackathon and round
+        params = RoundMarkingParameter.objects.filter(
+            hackathon=active_hackathon,
+            round_number=selected_round
+        ).order_by('id')
+        
+        # Get all teams in this hackathon and selected round
+        teams = Team.objects.filter(
+            hackathon=active_hackathon,
+            current_round=selected_round
+        ).select_related('institution', 'team_leader', 'problem_statement').order_by('-updated_at')
 
-        if request.GET.get('export') == 'teams':
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = f'attachment; filename=\"hacknexus-results-{active_hackathon.id}.csv\"'
-            writer = csv.writer(response)
-            writer.writerow(['Team Name', 'Institution', 'Leader', 'Problem Statement', 'Status'])
-            for team in teams:
-                writer.writerow([
-                    team.team_name,
-                    team.institution.name if team.institution else '',
-                    team.team_leader.get_full_name() or team.team_leader.email,
-                    team.problem_statement.title if team.problem_statement else '',
-                    team.status,
-                ])
-            return response
+        # Handle POST actions (Save Cutoffs / Promote Teams)
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            
+            if action == 'save_cutoffs':
+                for param in params:
+                    cutoff_val_raw = request.POST.get(f'cutoff_{param.id}', '').strip()
+                    if cutoff_val_raw:
+                        try:
+                            cutoff_val = Decimal(cutoff_val_raw)
+                            if Decimal('0') <= cutoff_val <= Decimal('100'):
+                                param.cutoff_score = cutoff_val
+                                param.save(update_fields=['cutoff_score'])
+                            else:
+                                messages.error(request, f"Cutoff for {param.name} must be between 0 and 100.")
+                        except (ValueError, Exception):
+                            messages.error(request, f"Invalid cutoff score for {param.name}.")
+                messages.success(request, "Cutoff thresholds saved successfully.")
+                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+
+            elif action == 'promote_team':
+                team_id = request.POST.get('team_id')
+                team_to_promote = get_object_or_404(Team, id=team_id, hackathon=active_hackathon, current_round=selected_round)
+                
+                # Check if team is qualified (we must compute it)
+                team_evals = TeamEvaluation.objects.filter(team=team_to_promote, round_number=selected_round)
+                evaluators_count = team_evals.values('evaluator').distinct().count()
+                
+                is_qualified = evaluators_count > 0
+                for param in params:
+                    scores = [ev.score for ev in team_evals if ev.parameter_id == param.id]
+                    avg = sum(scores, Decimal('0')) / len(scores) if scores else Decimal('0')
+                    if avg < param.cutoff_score:
+                        is_qualified = False
+                        break
+                
+                if not is_qualified:
+                    messages.error(request, f"Team '{team_to_promote.team_name}' is not qualified for promotion based on cutoff scores.")
+                else:
+                    old_round = team_to_promote.current_round
+                    team_to_promote.current_round += 1
+                    team_to_promote.save(update_fields=['current_round'])
+                    
+                    TeamStatusLog.objects.create(
+                        team=team_to_promote,
+                        old_status=team_to_promote.status,
+                        new_status=team_to_promote.status,
+                        changed_by=request.user,
+                        note=f"Promoted from Round {old_round} to Round {team_to_promote.current_round} after qualifying evaluation."
+                    )
+                    messages.success(request, f"Successfully promoted team '{team_to_promote.team_name}' to Round {team_to_promote.current_round}!")
+                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+
+            elif action == 'promote_qualified':
+                promoted_count = 0
+                suspended_count = 0
+                for team in teams:
+                    team_evals = TeamEvaluation.objects.filter(team=team, round_number=selected_round)
+                    evaluators_count = team_evals.values('evaluator').distinct().count()
+                    
+                    is_qualified = evaluators_count > 0
+                    for param in params:
+                        scores = [ev.score for ev in team_evals if ev.parameter_id == param.id]
+                        avg = sum(scores, Decimal('0')) / len(scores) if scores else Decimal('0')
+                        if avg < param.cutoff_score:
+                            is_qualified = False
+                            break
+                    
+                    if is_qualified:
+                        old_round = team.current_round
+                        team.current_round += 1
+                        team.save(update_fields=['current_round'])
+                        
+                        TeamStatusLog.objects.create(
+                            team=team,
+                            old_status=team.status,
+                            new_status=team.status,
+                            changed_by=request.user,
+                            note=f"Promoted from Round {old_round} to Round {team.current_round} via bulk promotion threshold."
+                        )
+                        promoted_count += 1
+                    else:
+                        # Suspend dashboard and notify team lead
+                        old_status = team.status
+                        team.status = 'disqualified'
+                        team.save(update_fields=['status'])
+                        
+                        TeamStatusLog.objects.create(
+                            team=team,
+                            old_status=old_status,
+                            new_status='disqualified',
+                            changed_by=request.user,
+                            note=f"Suspended: Did not meet cutoff score in Round {selected_round}."
+                        )
+                        _notify_team_not_qualified(team, selected_round)
+                        suspended_count += 1
+                
+                if promoted_count > 0 or suspended_count > 0:
+                    messages.success(
+                        request, 
+                        f"Successfully promoted {promoted_count} qualified teams to Round {selected_round + 1}, "
+                        f"and suspended {suspended_count} unqualified teams."
+                    )
+                else:
+                    messages.warning(request, "No teams were found to promote or suspend.")
+                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+
+        # Query all evaluations for these teams in the current round
+        all_evals = TeamEvaluation.objects.filter(
+            team__in=teams,
+            round_number=selected_round
+        ).select_related('evaluator', 'parameter')
+
+        # Build detailed team data
+        for team in teams:
+            team_evals = [e for e in all_evals if e.team_id == team.id]
+            
+            # Group scores by evaluator user
+            evaluations_by_evaluator = {}
+            for ev in team_evals:
+                if ev.evaluator not in evaluations_by_evaluator:
+                    evaluations_by_evaluator[ev.evaluator] = {
+                        'user': ev.evaluator,
+                        'scores': {},
+                        'remarks': ev.remarks or ""
+                    }
+                evaluations_by_evaluator[ev.evaluator]['scores'][ev.parameter_id] = ev.score
+            
+            # Calculate parameter averages
+            parameter_averages = {}
+            is_qualified = len(evaluations_by_evaluator) > 0
+            
+            for param in params:
+                param_scores = [ev.score for ev in team_evals if ev.parameter_id == param.id]
+                avg = sum(param_scores, Decimal('0')) / len(param_scores) if param_scores else Decimal('0')
+                parameter_averages[param.id] = avg
+                
+                if avg < param.cutoff_score:
+                    is_qualified = False
+            
+            overall_score = sum(parameter_averages.values(), Decimal('0')) / len(params) if params else Decimal('0')
+            
+            item = {
+                'team': team,
+                'evaluations_by_evaluator': list(evaluations_by_evaluator.values()),
+                'parameter_averages': parameter_averages,
+                'is_qualified': is_qualified,
+                'overall_score': overall_score,
+                'evaluators_count': len(evaluations_by_evaluator),
+            }
+            
+            if not show_qualified or is_qualified:
+                teams_data.append(item)
+
+    total_rounds_range = range(1, (active_hackathon.number_of_rounds if active_hackathon else 5) + 1)
 
     context = _feature_context(
         request,
         tab='results_ops',
-        focus=focus,
         hackathons=hackathons,
         hackathon_filter=hackathon_filter,
         active_hackathon=active_hackathon,
-        teams=teams,
-        award_candidates=award_candidates[:20],
-        report=report,
+        selected_round=selected_round,
+        total_rounds_range=total_rounds_range,
+        params=params,
+        teams_data=teams_data,
+        show_qualified=show_qualified,
     )
     return render(request, 'features/results_reporting.html', context)
 

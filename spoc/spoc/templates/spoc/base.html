@@ -115,8 +115,56 @@
         .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);background:#fff}
         .two-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
         ::-webkit-scrollbar{width:8px;height:8px}
-        ::-webkit-scrollbar-track{background:var(--bg)}
         ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+        
+        /* ACTIVE EVENT BANNER styles */
+        .active-event-banner {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            background: rgba(255,255,255,.92); border: 1px solid var(--border); border-left: 5px solid var(--spoc);
+            border-radius: 18px; padding: 16px 20px; margin-bottom: 24px;
+            box-shadow: 0 14px 32px rgba(124,58,237,0.05);
+        }
+        .active-event-title { font-size: 14px; font-weight: 900; color: var(--text); }
+        .active-event-meta { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+        .round-status-pill { background: rgba(5,150,105,0.08); color: #059669; border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 900; white-space: nowrap; border: 1px solid rgba(5,150,105,0.15); }
+        .round-status-pill.off { background: rgba(100,116,139,0.08); color: #475569; border: 1px solid rgba(100,116,139,0.15); }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.08);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.18);
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            vertical-align: middle;
+            margin-left: 10px;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.04);
+        }
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #ef4444;
+            animation: livePulse 1.2s infinite alternate;
+        }
+        @keyframes livePulse {
+            from {
+                transform: scale(0.95);
+                opacity: 0.7;
+            }
+            to {
+                transform: scale(1.2);
+                opacity: 1;
+                box-shadow: 0 0 10px #ef4444;
+            }
+        }
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @media(max-width:900px){.two-grid{grid-template-columns:1fr}.main-content{padding:20px}}
         @media(max-width:600px){.sidebar{display:none}.main-content{padding:16px}}
@@ -162,14 +210,15 @@
         <div class="nav-section">
             <div class="nav-section-label">Communication</div>
             <a href="{% url 'spoc_messages' %}" class="nav-item {% if active_nav == 'messages' %}active{% endif %}">
-                <span class="nav-icon">💬</span> Messages
+                <span class="nav-icon">💬</span> Communication
                 {% if unread_msg_count %}<span class="nav-badge">{{ unread_msg_count }}</span>{% endif %}
             </a>
             <a href="{% url 'spoc_announcements' %}" class="nav-item {% if active_nav == 'announcements' %}active{% endif %}">
                 <span class="nav-icon">📢</span> Announcements
             </a>
-            <a href="{% url 'spoc_activity_log' %}" class="nav-item {% if active_nav == 'activity' %}active{% endif %}">
-                <span class="nav-icon">📊</span> Activity Log
+            <a href="{% url 'spoc_notifications' %}" class="nav-item {% if active_nav == 'notifications' %}active{% endif %}">
+                <span class="nav-icon">🔔</span> Notifications
+                {% if unread_notifications_count %}<span class="nav-badge">{{ unread_notifications_count }}</span>{% endif %}
             </a>
         </div>
 
@@ -190,6 +239,36 @@
     <!-- MAIN -->
     <main class="main-content">
         {% include 'includes/breadcrumbs.html' %}
+        {% if request.user.is_authenticated %}
+        <div class="active-event-banner">
+            <div>
+                <div class="active-event-title" style="display: flex; align-items: center;">
+                    {% if global_active_hackathon %}
+                        Active Event: {{ global_active_hackathon.name }}
+                        <span class="live-badge">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </span>
+                    {% else %}
+                        Active Event: No live event
+                    {% endif %}
+                </div>
+                <div class="active-event-meta">
+                    {% if global_active_hackathon %}
+                        Registration: {{ global_active_hackathon.registration_open|default:"TBD" }} to {{ global_active_hackathon.registration_close|default:"TBD" }}
+                    {% else %}
+                        Publish an event to make it visible across dashboards.
+                    {% endif %}
+                </div>
+            </div>
+            {% if global_active_round %}
+                <div class="round-status-pill">{{ global_active_round.name }}: {{ global_active_round.start_date }} to {{ global_active_round.end_date }}</div>
+            {% else %}
+                <div class="round-status-pill off">No active round today</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
         {% for message in messages %}
         <div style="padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:16px;
             {% if message.tags == 'error' %}background:#fef2f2;border:1px solid #fecaca;color:#dc2626

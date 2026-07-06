@@ -121,6 +121,22 @@
                     </select>
                 </div>
             </div>
+            <div class="form-row" style="margin-top: 12px;">
+                <div class="fg" style="flex: 1 1 100%;">
+                    <label>Institution Name *</label>
+                    <input type="text" name="institution_name" placeholder="e.g. Biju Patnaik University of Technology" required>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 12px; margin-bottom: 16px;">
+                <div class="fg">
+                    <label>City *</label>
+                    <input type="text" name="city" placeholder="e.g. Rourkela" required>
+                </div>
+                <div class="fg">
+                    <label>State *</label>
+                    <input type="text" name="state" placeholder="e.g. Odisha" required>
+                </div>
+            </div>
             <div style="display:flex;gap:12px;">
                 <button type="submit" class="btn"><ion-icon name="send-outline"></ion-icon> Send Invitation</button>
                 <button type="button" class="btn-outline" onclick="document.getElementById('inviteForm').classList.remove('open')">Cancel</button>
@@ -147,7 +163,7 @@
             </form>
             <div class="upload-note">
                 <strong>CSV format</strong>
-                Use a column like <code>email</code>, <code>spoc_email</code>, or keep one email per row.
+                Use columns like <code>email</code> (or <code>spoc_email</code>), <code>institution_name</code>, <code>city</code>, and <code>state</code>.
                 Duplicate, already invited, already approved, or invalid emails will be skipped and shown in the status message.
             </div>
         </div>
@@ -176,7 +192,12 @@
             {% for inv in invitations %}
             <tr>
                 <td><strong>{{ inv.email }}</strong></td>
-                <td>{{ inv.institution_name|default:"—" }}</td>
+                <td>
+                    {{ inv.institution_name|default:"—" }}
+                    {% if inv.city or inv.state %}
+                    <br><small style="color:#64748b; font-size: 11px;">{{ inv.city }}{% if inv.city and inv.state %}, {% endif %}{{ inv.state }}</small>
+                    {% endif %}
+                </td>
                 <td><span class="badge {% if inv.status == 'invited' %}b-invited{% elif inv.status == 'pending' %}b-pending{% elif inv.status == 'approved' %}b-approved{% elif inv.status == 'suspended' %}b-suspended{% else %}b-rejected{% endif %}">{{ inv.get_status_display }}</span></td>
                 <td>
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">

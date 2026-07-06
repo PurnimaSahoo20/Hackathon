@@ -12,6 +12,8 @@
         .header-actions{display:flex;gap:12px}
         .btn-outline{padding:9px 20px;border:1.5px solid #2563eb;border-radius:10px;color:#2563eb;font-size:13px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;background:none;cursor:pointer;transition:all 0.2s}
         .btn-outline:hover{background:#2563eb;color:#fff}
+        .btn-home{padding:9px 20px;border:1.5px solid #e5e7eb;border-radius:10px;color:#374151;font-size:13px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;background:rgba(255,255,255,0.8);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+        .btn-home:hover{border-color:#2563eb;color:#2563eb;background:#fff}
         .btn-solid{padding:9px 20px;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s}
         .btn-solid:hover{background:#1d4ed8}
         .hero{max-width:900px;margin:0 auto;padding:80px 24px 60px;text-align:center}
@@ -42,10 +44,17 @@
 </head>
 <body>
 <header>
-    <div class="brand">Hack<span>Nexus</span></div>
+    <div class="brand">
+        {% if reg_check.hackathon %}
+            {{ reg_check.hackathon.name }}
+        {% else %}
+            Hack<span>Nexus</span>
+        {% endif %}
+    </div>
     <div class="header-actions">
+        <a href="{% url 'landing_page' %}" class="btn-home">🏠 Home</a>
         <a href="{% url 'team_login' %}" class="btn-outline">Sign In</a>
-        <a href="{% url 'team_register' %}" class="btn-solid" {% if not hackathons %}onclick="alert('Registration for {{ latest_hackathon.name|default:"the hackathon"|escapejs }} is closed.'); return false;"{% endif %}>Register Your Team →</a>
+        <a href="{% url 'team_register' %}" class="btn-solid" {% if not reg_check.allowed %}onclick="alert('{{ reg_check.message|escapejs }}'); return false;"{% endif %}>Register Your Team →</a>
     </div>
 </header>
 
@@ -59,7 +68,7 @@
     <h1>Register Your Team</h1>
     <p>Build innovative solutions, get mentored by industry experts, and compete with the best teams across institutions.</p>
     <div class="cta-row">
-        <a href="{% url 'team_register' %}" class="cta-primary" {% if not hackathons %}onclick="alert('Registration for {{ latest_hackathon.name|default:"the hackathon"|escapejs }} is closed.'); return false;"{% endif %}>🚀 Register Your Team</a>
+        <a href="{% url 'team_register' %}" class="cta-primary" {% if not reg_check.allowed %}onclick="alert('{{ reg_check.message|escapejs }}'); return false;"{% endif %}>🚀 Register Your Team</a>
         <a href="{% url 'team_login' %}" class="cta-secondary">Already registered? Login →</a>
     </div>
 </div>

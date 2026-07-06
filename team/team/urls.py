@@ -20,8 +20,12 @@ urlpatterns = [
     path('memories/',     views.team_memories,       name='team_memories'),
     path('media/',        views.team_media,          name='team_media'),
     path('details/add-member/', views.team_add_member, name='team_add_member'),
+    path('details/edit-member/<int:member_index>/', views.team_edit_member, name='team_edit_member'),
     path('mentor/',       views.team_invite_mentor,  name='team_invite_mentor'),
     path('submission/',   views.team_submission,     name='team_submission'),
     path('notifications/', views.team_notifications, name='team_notifications'),
     path('profile/',      views.team_profile,        name='team_profile'),
+    path('resubmit/', views.team_resubmit_registration, name='team_resubmit_registration'),
+    path('details/request-modification/', views.team_request_modification, name='team_request_modification'),
+    path('details/complete-modification/', views.team_complete_modification, name='team_complete_modification'),
 ]

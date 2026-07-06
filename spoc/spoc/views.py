@@ -164,8 +164,8 @@ def spoc_dashboard(request):
         return redirect('spoc_login')
 
     spoc = _get_spoc(request)
-    from features.models import TeamRegistration
-    from .models import SpocDashboardActivity
+    from features.models import TeamRegistration, Documentation
+    from events.models import Hackathon
 
     institution = None
     institution = _get_spoc_institution(spoc)
@@ -184,7 +184,6 @@ def spoc_dashboard(request):
     from .models import SpocNotification
     notifs = SpocNotification.objects.filter(spoc=spoc, is_read=False)[:5]
     notif_count = SpocNotification.objects.filter(spoc=spoc, is_read=False).count()
-    recent_activities = SpocDashboardActivity.objects.filter(spoc=spoc)[:8]
     account_steps = [
         'Invitation Received',
         'Registered & Login',
@@ -194,6 +193,59 @@ def spoc_dashboard(request):
         'Complete',
     ]
 
+    # Live Hackathon & News & Rounds
+    live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+    news_items = []
+    if live_hackathon:
+        news_prefixes = (
+            ('[News]', 'news'),
+            ('[Announcement]', 'announcement'),
+        )
+        documentation_links = Documentation.objects.filter(
+            hackathon=live_hackathon,
+            is_published=True,
+        ).order_by('-created_at')
+        for item in documentation_links:
+            landing_sections = []
+            if item.landing_sections:
+                if isinstance(item.landing_sections, str):
+                    landing_sections = [item.landing_sections]
+                else:
+                    landing_sections = list(item.landing_sections)
+            
+            raw_title = (item.title or '').strip()
+            is_match = 'latest-news' in landing_sections or any(raw_title.startswith(prefix) for prefix in ('[News]', '[Announcement]'))
+            if not is_match:
+                continue
+
+            news_type = None
+            title = raw_title
+            for prefix, mapped_type in news_prefixes:
+                if raw_title.startswith(prefix):
+                    news_type = mapped_type
+                    title = raw_title[len(prefix):].strip(" |:-")
+                    break
+            if not news_type:
+                news_type = 'news'
+            
+            summary = (item.description or '').strip()
+            news_items.append({
+                'item': item,
+                'title': title or raw_title or item.title,
+                'summary': summary,
+                'link': item.external_url or (item.file.url if item.file else '#'),
+                'type': news_type,
+                'type_label': news_type.title(),
+                'search_text': ' '.join([
+                    raw_title,
+                    summary,
+                    news_type,
+                    item.created_at.strftime('%d %b %Y %I:%M %p') if item.created_at else '',
+                ]).lower(),
+            })
+
+    rounds = live_hackathon.get_rounds() if live_hackathon else []
+
     context = {
         'spoc': spoc,
         'institution': institution,
@@ -202,8 +254,11 @@ def spoc_dashboard(request):
         'approved_teams': approved_teams,
         'notif_count': notif_count,
         'notifications': notifs,
-        'recent_activities': recent_activities,
         'account_steps': account_steps,
+        'live_hackathon': live_hackathon,
+        'news_items': news_items,
+        'rounds': rounds,
+        'active_nav': 'dashboard',
     }
     return render(request, 'spoc/dashboard.html', context)
 
@@ -269,6 +324,10 @@ def spoc_team_detail(request, reg_id):
     mentor_invite = reg.mentor_invitations.exclude(
         status__in=['invited']
     ).order_by('-accepted_at', '-invited_at').first()
+    # Fetch existing approval record if any
+    from .models import SpocTeamApproval
+    approval = SpocTeamApproval.objects.filter(spoc=spoc, registration=reg).first()
+
     context = {
         'spoc': spoc,
         'reg': reg,
@@ -276,7 +335,8 @@ def spoc_team_detail(request, reg_id):
         'leader_details': reg.leader_details or {},
         'mentor_invite': mentor_invite,
         'registration_deadline_passed': _registration_deadline_passed(reg),
-        'can_approve_team': not reg.hackathon.registration_close or _registration_deadline_passed(reg),
+        'can_approve_team': True,  # SPOC can approve at any time
+        'approval': approval,
     }
     return render(request, 'spoc/team_detail.html', context)
 
@@ -294,10 +354,6 @@ def spoc_approve_team(request, reg_id):
     if reg.status != 'pending':
         messages.warning(request, f"Registration is already '{reg.status}'.")
         return redirect('spoc_teams')
-
-    if reg.hackathon.registration_close and not _registration_deadline_passed(reg):
-        messages.error(request, 'This team can be approved only after the registration deadline has passed and the final data is locked.')
-        return redirect('spoc_team_detail', reg_id=reg_id)
 
     auth_letter = request.FILES.get('auth_letter')
     if not auth_letter:
@@ -326,8 +382,7 @@ def spoc_approve_team(request, reg_id):
         text=f"<strong>{reg.team_name}</strong> approved — Team Dashboard activated"
     )
 
-    # Email team leader
-    _send_team_status_email(reg, 'approved')
+    # Email team leader is handled by the post_save signal in accounts/signals.py
     messages.success(request, f"Team '{reg.team_name}' approved and letter uploaded.")
     return redirect('spoc_teams')
 
@@ -368,6 +423,13 @@ def spoc_reject_team(request, reg_id):
 def _send_team_status_email(reg, status, reason=''):
     leader = reg.team_leader
     try:
+        # Collect all member emails to send the rejection notification
+        to_emails = [leader.email]
+        if status == 'rejected':
+            for m in (reg.members_data or []):
+                if m.get('email'):
+                    to_emails.append(m['email'])
+
         if status == 'approved':
             subject = f"🎉 Your Team '{reg.team_name}' is Approved — HackNexus"
             html = f"""
@@ -395,12 +457,12 @@ def _send_team_status_email(reg, status, reason=''):
                 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;">
                     <strong>Reason:</strong> {reason or 'Please contact your SPOC for details.'}
                 </div>
-                <p>You may re-register after addressing the issues mentioned above.</p>
+                <p>You may review and update details or resubmit via your dashboard.</p>
             </div>"""
         msg = EmailMultiAlternatives(
             subject=subject, body='See HTML version.',
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[leader.email],
+            to=to_emails,
         )
         msg.attach_alternative(html, "text/html")
         msg.send(fail_silently=True)
@@ -414,6 +476,195 @@ def _send_team_status_email(reg, status, reason=''):
 
 @login_required(login_url='/spoc/login/')
 @never_cache
+
+@login_required(login_url='/spoc/login/')
+@never_cache
+def spoc_download_approval_template(request, reg_id):
+    """Generate and serve an HTML-based approval letter template as a downloadable file."""
+    if not _spoc_required(request):
+        return redirect('spoc_login')
+
+    from features.models import TeamRegistration
+    spoc = _get_spoc(request)
+    institution = _get_spoc_institution(spoc)
+    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+
+    leader = reg.team_leader
+    members = reg.members_data or []
+    event_name = reg.hackathon.name if reg.hackathon else "HackNexus"
+    institution_name = institution.name if institution else "Institution"
+    spoc_name = request.user.get_full_name() or request.user.username
+
+    members_rows = ""
+    for i, m in enumerate(members, 1):
+        members_rows += f"""
+        <tr>
+            <td style="border:1px solid #999;padding:8px;text-align:center;">{i + 1}</td>
+            <td style="border:1px solid #999;padding:8px;">{m.get('name', m.get('email', '-'))}</td>
+            <td style="border:1px solid #999;padding:8px;">{m.get('email', '-')}</td>
+            <td style="border:1px solid #999;padding:8px;">{m.get('phone_number', '-')}</td>
+            <td style="border:1px solid #999;padding:8px;">{m.get('role_in_team', m.get('role', 'Member'))}</td>
+        </tr>"""
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Approval Letter — {reg.team_name}</title>
+    <style>
+        @page {{ margin: 2cm; }}
+        body {{ font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.7; color: #111; margin: 40px; }}
+        .header {{ text-align: center; margin-bottom: 30px; border-bottom: 3px double #333; padding-bottom: 20px; }}
+        .header h1 {{ font-size: 22px; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 2px; }}
+        .header h2 {{ font-size: 16px; margin: 0; font-weight: normal; color: #555; }}
+        .ref-line {{ display: flex; justify-content: space-between; margin: 20px 0; font-size: 13px; color: #666; }}
+        .subject {{ text-align: center; font-weight: bold; text-decoration: underline; margin: 25px 0; font-size: 15px; }}
+        table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
+        th {{ border: 1px solid #999; padding: 8px; background: #f0f0f0; text-align: left; font-size: 13px; }}
+        td {{ font-size: 13px; }}
+        .signature-block {{ margin-top: 60px; display: flex; justify-content: space-between; }}
+        .sig-box {{ text-align: center; min-width: 200px; }}
+        .sig-line {{ border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; }}
+        .stamp-area {{ border: 2px dashed #999; padding: 30px; text-align: center; color: #999; margin-top: 20px; min-height: 80px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{institution_name}</h1>
+        <h2>Authorization Letter for Hackathon Participation</h2>
+    </div>
+
+    <div class="ref-line">
+        <span>Ref No: _______________</span>
+        <span>Date: _______________</span>
+    </div>
+
+    <p><strong>To,</strong><br>
+    The Organizing Committee,<br>
+    <strong>{event_name}</strong></p>
+
+    <p class="subject">Subject: Authorization Letter for Team Participation in {event_name}</p>
+
+    <p>Dear Sir/Madam,</p>
+
+    <p>This is to certify that the following team from <strong>{institution_name}</strong> is hereby authorized to participate in <strong>{event_name}</strong>. The details of the team are as follows:</p>
+
+    <table>
+        <tr>
+            <th style="width: 180px;">Team Name</th>
+            <td style="border:1px solid #999;padding:8px;"><strong>{reg.team_name}</strong></td>
+        </tr>
+        <tr>
+            <th>Team Leader</th>
+            <td style="border:1px solid #999;padding:8px;">{leader.get_full_name() or leader.username}</td>
+        </tr>
+        <tr>
+            <th>Team Leader Email</th>
+            <td style="border:1px solid #999;padding:8px;">{leader.email}</td>
+        </tr>
+        <tr>
+            <th>Team Leader Phone</th>
+            <td style="border:1px solid #999;padding:8px;">{leader.phone_number or '-'}</td>
+        </tr>
+        <tr>
+            <th>SPOC Name</th>
+            <td style="border:1px solid #999;padding:8px;">{spoc_name}</td>
+        </tr>
+        <tr>
+            <th>Problem Statement</th>
+            <td style="border:1px solid #999;padding:8px;">{reg.problem_statement.title if reg.problem_statement else 'Not selected'}</td>
+        </tr>
+    </table>
+
+    <h3 style="margin-top: 25px;">Team Members</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:50px;text-align:center;">S.No</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border:1px solid #999;padding:8px;text-align:center;">1</td>
+                <td style="border:1px solid #999;padding:8px;">{leader.get_full_name() or leader.username}</td>
+                <td style="border:1px solid #999;padding:8px;">{leader.email}</td>
+                <td style="border:1px solid #999;padding:8px;">{leader.phone_number or '-'}</td>
+                <td style="border:1px solid #999;padding:8px;">Team Leader</td>
+            </tr>
+            {members_rows}
+        </tbody>
+    </table>
+
+    <p style="margin-top: 25px;">I hereby confirm that the above-mentioned students are bonafide students of <strong>{institution_name}</strong> and are authorized to represent our institution in this event. All the details provided are true and correct to the best of our knowledge.</p>
+
+    <p>We request you to kindly process their registration accordingly.</p>
+
+    <div class="signature-block">
+        <div class="sig-box">
+            <div class="sig-line">SPOC Signature</div>
+            <div style="margin-top:5px;font-size:12px;color:#666">{spoc_name}</div>
+        </div>
+        <div class="sig-box">
+            <div class="sig-line">HOD / Principal Signature</div>
+            <div style="margin-top:5px;font-size:12px;color:#666">Name & Designation</div>
+        </div>
+    </div>
+
+    <div class="stamp-area">
+        <p style="margin:0;font-size:13px;">Official Institutional Stamp / Seal</p>
+    </div>
+</body>
+</html>"""
+
+    from django.http import HttpResponse
+    response = HttpResponse(html_content, content_type='text/html')
+    response['Content-Disposition'] = f'attachment; filename="Approval_Letter_{reg.team_name.replace(" ", "_")}.html"'
+    return response
+
+
+@login_required(login_url='/spoc/login/')
+@require_POST
+def spoc_submit_final_letter(request, reg_id):
+    """SPOC submits a final approval letter (after team data changes)."""
+    if not _spoc_required(request):
+        return redirect('spoc_login')
+
+    from features.models import TeamRegistration
+    from .models import SpocTeamApproval
+    spoc = _get_spoc(request)
+    institution = _get_spoc_institution(spoc)
+    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+
+    if reg.status != 'approved':
+        messages.error(request, 'Final letter can only be submitted for approved teams.')
+        return redirect('spoc_team_detail', reg_id=reg_id)
+
+    final_letter = request.FILES.get('final_auth_letter')
+    if not final_letter:
+        messages.error(request, 'Please upload the final authorization letter.')
+        return redirect('spoc_team_detail', reg_id=reg_id)
+
+    approval, _ = SpocTeamApproval.objects.get_or_create(spoc=spoc, registration=reg)
+    approval.final_auth_letter = final_letter
+    approval.final_submitted_at = timezone.now()
+    approval.save()
+
+    # Activity notification
+    from .models import SpocDashboardActivity
+    SpocDashboardActivity.objects.create(
+        spoc=spoc,
+        icon='📄', color='#2563eb',
+        text=f"Final approval letter submitted for <strong>{reg.team_name}</strong>"
+    )
+
+    messages.success(request, f"Final approval letter uploaded for '{reg.team_name}'.")
+    return redirect('spoc_team_detail', reg_id=reg_id)
+
+
 def spoc_modifications(request):
     if not _spoc_required(request):
         return redirect('spoc_login')
@@ -488,8 +739,18 @@ def spoc_results(request):
 
 
 # ────────────────────────────────────────────────────────────
-#  MESSAGES
+#  MESSAGES / COMMUNICATION
 # ────────────────────────────────────────────────────────────
+
+def _get_contact_role_label(user):
+    if hasattr(user, 'superadmin_profile'):
+        return 'Super Admin'
+    if hasattr(user, 'admin_profile'):
+        return 'Admin'
+    if hasattr(user, 'executive_profile'):
+        return 'Executive'
+    return user.role.name if user.role else 'Contact'
+
 
 @login_required(login_url='/spoc/login/')
 @never_cache
@@ -501,18 +762,111 @@ def spoc_messages(request):
     from .models import SpocMessage
     from accounts.models import User
 
-    # Get all unique conversations
-    sent = SpocMessage.objects.filter(sender=request.user).values_list('recipient_id', flat=True)
-    received = SpocMessage.objects.filter(recipient=request.user).values_list('sender_id', flat=True)
-    conv_user_ids = set(list(sent) + list(received))
-    conv_users = User.objects.filter(id__in=conv_user_ids)
+    # Allowed contact types
+    available_contact_types = [
+        {'value': 'super_admin', 'label': 'Super Admin'},
+        {'value': 'admin', 'label': 'Admin'},
+        {'value': 'executive', 'label': 'Executive'},
+    ]
 
-    unread_count = SpocMessage.objects.filter(recipient=request.user, is_read=False).count()
+    # Get all potential admins/superadmins/execs
+    admin_users = User.objects.filter(
+        Q(is_superuser=True) |
+        Q(superadmin_profile__isnull=False) |
+        Q(admin_profile__isnull=False) |
+        Q(executive_profile__isnull=False)
+    ).exclude(id=request.user.id).distinct()
+
+    available_contacts = []
+    for admin_user in admin_users:
+        contact_type = 'super_admin' if hasattr(admin_user, 'superadmin_profile') else (
+            'admin' if hasattr(admin_user, 'admin_profile') else 'executive'
+        )
+        available_contacts.append({
+            'user': admin_user,
+            'contact_type': contact_type,
+            'role_label': _get_contact_role_label(admin_user),
+        })
+
+    # Get active conversations (those with messages)
+    conversations = []
+    for contact in available_contacts:
+        admin_user = contact['user']
+        last_message = SpocMessage.objects.filter(
+            Q(sender=request.user, recipient=admin_user) | Q(sender=admin_user, recipient=request.user)
+        ).order_by('-sent_at').first()
+        unread_count = SpocMessage.objects.filter(
+            sender=admin_user,
+            recipient=request.user,
+            is_read=False,
+        ).count()
+        
+        if last_message:
+            conversations.append({
+                'user': admin_user,
+                'contact_type': contact['contact_type'],
+                'role_label': contact['role_label'],
+                'last_message': last_message,
+                'unread_count': unread_count,
+            })
+
+    conversations.sort(
+        key=lambda item: item['last_message'].sent_at if item['last_message'] else request.user.date_joined,
+        reverse=True
+    )
+
+    # Handle sending new message from the form
+    selected_contact_user_id = request.GET.get('contact')
+    selected_contact_type = request.GET.get('contact_type')
+    
+    selected_contact = None
+    selected_thread = []
+    
+    if selected_contact_user_id:
+        try:
+            c_user = User.objects.get(id=selected_contact_user_id)
+            selected_contact = {
+                'user': c_user,
+                'role_label': _get_contact_role_label(c_user),
+            }
+            selected_thread = SpocMessage.objects.filter(
+                sender__in=[request.user, c_user],
+                recipient__in=[request.user, c_user],
+            ).order_by('sent_at')
+            
+            # Mark unread as read
+            SpocMessage.objects.filter(sender=c_user, recipient=request.user, is_read=False).update(is_read=True)
+        except User.DoesNotExist:
+            pass
+
+    if request.method == 'POST':
+        contact_user_id = request.POST.get('contact_user_id')
+        body = request.POST.get('body', '').strip()
+        if contact_user_id and body:
+            try:
+                recipient = User.objects.get(id=contact_user_id)
+                SpocMessage.objects.create(sender=request.user, recipient=recipient, body=body)
+                messages.success(request, 'Message sent successfully.')
+                
+                # Redirect to the thread
+                contact_type = 'super_admin' if hasattr(recipient, 'superadmin_profile') else (
+                    'admin' if hasattr(recipient, 'admin_profile') else 'executive'
+                )
+                return redirect(f"{request.path}?contact={recipient.id}&contact_type={contact_type}")
+            except User.DoesNotExist:
+                messages.error(request, 'Recipient not found.')
 
     context = {
         'spoc': spoc,
-        'conv_users': conv_users,
-        'unread_count': unread_count,
+        'dashboard_title': 'SPOC Communication',
+        'available_contact_types': available_contact_types,
+        'available_contacts': available_contacts,
+        'conversations': conversations,
+        'selected_contact_user_id': selected_contact_user_id,
+        'selected_contact_type': selected_contact_type,
+        'selected_contact': selected_contact,
+        'selected_thread': selected_thread,
+        'active_nav': 'messages',
     }
     return render(request, 'spoc/messages.html', context)
 
@@ -521,27 +875,12 @@ def spoc_messages(request):
 def spoc_conversation(request, user_id):
     if not _spoc_required(request):
         return redirect('spoc_login')
-
-    from .models import SpocMessage
     from accounts.models import User
-
-    other_user = get_object_or_404(User, id=user_id)
-    thread = SpocMessage.objects.filter(
-        sender__in=[request.user, other_user],
-        recipient__in=[request.user, other_user],
-    ).order_by('sent_at')
-
-    # Mark received as read
-    SpocMessage.objects.filter(sender=other_user, recipient=request.user, is_read=False).update(is_read=True)
-
-    if request.method == 'POST':
-        body = request.POST.get('body', '').strip()
-        if body:
-            SpocMessage.objects.create(sender=request.user, recipient=other_user, body=body)
-        return redirect('spoc_conversation', user_id=user_id)
-
-    context = {'spoc': _get_spoc(request), 'other_user': other_user, 'thread': thread}
-    return render(request, 'spoc/conversation.html', context)
+    recipient = get_object_or_404(User, id=user_id)
+    contact_type = 'super_admin' if hasattr(recipient, 'superadmin_profile') else (
+        'admin' if hasattr(recipient, 'admin_profile') else 'executive'
+    )
+    return redirect(f"/spoc/messages/?contact={user_id}&contact_type={contact_type}")
 
 
 @login_required(login_url='/spoc/login/')
@@ -579,9 +918,67 @@ def spoc_announcements(request):
 
     spoc = _get_spoc(request)
     from events.models import Hackathon
-    # Fetch hackathons visible to this SPOC
-    hackathons = Hackathon.objects.filter(status='Live').order_by('-created_at')
-    context = {'spoc': spoc, 'hackathons': hackathons}
+    from features.models import Documentation
+
+    live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+    news_items = []
+    if live_hackathon:
+        news_prefixes = (
+            ('[News]', 'news'),
+            ('[Announcement]', 'announcement'),
+        )
+        documentation_links = Documentation.objects.filter(
+            hackathon=live_hackathon,
+            is_published=True,
+        ).order_by('-created_at')
+        for item in documentation_links:
+            landing_sections = []
+            if item.landing_sections:
+                if isinstance(item.landing_sections, str):
+                    landing_sections = [item.landing_sections]
+                else:
+                    landing_sections = list(item.landing_sections)
+            
+            raw_title = (item.title or '').strip()
+            is_match = 'latest-news' in landing_sections or any(raw_title.startswith(prefix) for prefix in ('[News]', '[Announcement]'))
+            if not is_match:
+                continue
+
+            news_type = None
+            title = raw_title
+            for prefix, mapped_type in news_prefixes:
+                if raw_title.startswith(prefix):
+                    news_type = mapped_type
+                    title = raw_title[len(prefix):].strip(" |:-")
+                    break
+            if not news_type:
+                news_type = 'news'
+            
+            summary = (item.description or '').strip()
+            news_items.append({
+                'item': item,
+                'title': title or raw_title or item.title,
+                'summary': summary,
+                'link': item.external_url or (item.file.url if item.file else '#'),
+                'type': news_type,
+                'type_label': news_type.title(),
+                'search_text': ' '.join([
+                    raw_title,
+                    summary,
+                    news_type,
+                    item.created_at.strftime('%d %b %Y %I:%M %p') if item.created_at else '',
+                ]).lower(),
+            })
+
+    rounds = live_hackathon.get_rounds() if live_hackathon else []
+
+    context = {
+        'spoc': spoc,
+        'live_hackathon': live_hackathon,
+        'news_items': news_items,
+        'rounds': rounds,
+        'active_nav': 'announcements',
+    }
     return render(request, 'spoc/announcements.html', context)
 
 
@@ -782,3 +1179,27 @@ def _notify_team_mentor_rejected(invite):
         msg.send(fail_silently=True)
     except Exception as exc:
         logger.error(f"Notify team mentor rejected: {exc}")
+
+
+@login_required(login_url='/spoc/login/')
+@never_cache
+def spoc_notifications(request):
+    """List all notifications for the logged-in SPOC."""
+    if not _spoc_required(request):
+        return redirect('spoc_login')
+
+    spoc = _get_spoc(request)
+    from .models import SpocNotification
+
+    # Get notifications
+    notifications = SpocNotification.objects.filter(spoc=spoc).order_by('-created_at')
+
+    # Mark them all as read when they view this page
+    SpocNotification.objects.filter(spoc=spoc, is_read=False).update(is_read=True)
+
+    context = {
+        'spoc': spoc,
+        'notifications': notifications,
+        'active_nav': 'notifications',
+    }
+    return render(request, 'spoc/notifications.html', context)

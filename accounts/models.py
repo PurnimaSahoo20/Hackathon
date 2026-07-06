@@ -231,6 +231,8 @@ class SpocInvitation(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
 
     institution_name    = models.CharField(max_length=255, blank=True)
+    city                = models.CharField(max_length=100, blank=True)
+    state               = models.CharField(max_length=100, blank=True)
     institution_email   = models.EmailField(blank=True)
     institution_address = models.TextField(blank=True)
     institution_head_name   = models.CharField(max_length=255, blank=True)

@@ -34,6 +34,11 @@ def spoc_context(request):
             recipient=request.user, is_read=False
         ).count()
 
+        from .models import SpocNotification
+        ctx['unread_notifications_count'] = SpocNotification.objects.filter(
+            spoc=spoc, is_read=False
+        ).count()
+
         ctx['recent_activities'] = SpocDashboardActivity.objects.filter(spoc=spoc)[:5]
 
     except Exception:

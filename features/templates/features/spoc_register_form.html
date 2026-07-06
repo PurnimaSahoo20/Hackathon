@@ -10,11 +10,22 @@
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: #fffbf7; margin: 0; padding: 32px 16px; }
-        .container { max-width: 720px; margin: 0 auto; }
-        .brand { text-align: center; margin-bottom: 32px; }
-        .brand h1 { font-size: 28px; font-weight: 900; color: #ea580c; margin: 0 0 4px; }
-        .brand p  { color: #6b7280; font-size: 14px; margin: 0; }
+        body { font-family: 'Outfit', sans-serif; background: #fffbf7; margin: 0; padding: 0; }
+        .page-header {
+            display: flex; align-items: center; justify-content: center;
+            padding: 18px 28px; background: linear-gradient(135deg, #fff8f0, #fffbf7);
+            border-bottom: 1px solid #fed7aa; position: relative;
+        }
+        .page-header .brand-name {
+            position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+            font-size: 16px; font-weight: 900; color: #ea580c; letter-spacing: -0.01em;
+        }
+        .page-header .event-title {
+            font-size: 20px; font-weight: 900; color: #1e293b; text-align: center;
+        }
+        .page-header .event-title span { color: #ea580c; }
+        .form-subtitle { text-align: center; font-size: 13px; color: #6b7280; margin: 0; padding: 6px 0 0; }
+        .container { max-width: 720px; margin: 0 auto; padding: 24px 16px 32px; }
         .card { background: #fff; border-radius: 20px; border: 1px solid #f3f4f6; padding: 36px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
         .section-title { font-size: 15px; font-weight: 800; color: #ea580c; border-left: 4px solid #ea580c; padding-left: 12px; margin: 28px 0 16px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -34,15 +45,24 @@
         .info-box p { margin: 0; font-size: 13px; color: #1e40af; font-weight: 600; }
         .warning-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
         .warning-box p { margin: 0; font-size: 13px; color: #991b1b; font-weight: 600; }
-        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; gap: 6px; padding: 14px 16px; }
+            .page-header .brand-name { position: static; transform: none; }
+            .page-header .event-title { font-size: 17px; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="brand">
-        <h1>HackNexus</h1>
-        <p>SPOC Registration Form</p>
+<div class="page-header">
+    <div class="brand-name">HackNexus</div>
+    <div class="event-title">
+        {% if invitation.hackathon %}<span>{{ invitation.hackathon.name }}</span>{% else %}SPOC Registration{% endif %}
     </div>
+</div>
+<p class="form-subtitle">SPOC Registration Form</p>
+
+<div class="container">
 
     {% if messages %}
     {% for m in messages %}
@@ -103,7 +123,7 @@
             </div>
             <div class="fg"><label>Institution Address *</label><textarea name="institution_address" rows="2" required placeholder="Full address...">{{ invitation.institution_address }}</textarea></div>
             <div class="form-row">
-                <div class="fg"><label>Location / City *</label><input type="text" name="institution_location" required placeholder="e.g. Bhubaneswar, Odisha" value="{{ invitation.institution_location }}"></div>
+                <div class="fg"><label>Location / City *</label><input type="text" name="institution_location" required placeholder="e.g. Bhubaneswar, Odisha" value="{% if invitation.institution_location %}{{ invitation.institution_location }}{% elif invitation.city or invitation.state %}{{ invitation.city }}{% if invitation.city and invitation.state %}, {% endif %}{{ invitation.state }}{% endif %}"></div>
                 <div class="fg"><label>Contact Number</label><input type="tel" name="institution_contact" placeholder="Office contact" value="{{ invitation.institution_contact }}"></div>
             </div>
 

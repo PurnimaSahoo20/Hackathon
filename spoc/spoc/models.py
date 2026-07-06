@@ -48,6 +48,8 @@ class SpocTeamApproval(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     auth_letter = models.FileField(upload_to='spoc/auth_letters/', max_length=255, null=True, blank=True)
+    final_auth_letter = models.FileField(upload_to='spoc/final_auth_letters/', max_length=255, null=True, blank=True)
+    final_submitted_at = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
     decided_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
