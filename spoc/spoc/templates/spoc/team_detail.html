@@ -200,11 +200,11 @@
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Upload the signed authorization letter from your HOD/Principal to approve this team. You can download a pre-filled template below.</p>
         
         <!-- Download Template Button -->
-        <a href="{% url 'spoc_download_approval_template' reg.id %}" class="section-btn" style="display:flex;align-items:center;gap:8px;justify-content:center;padding:10px 16px;font-size:13px;margin-bottom:16px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.18);color:#2563eb">
+        <a href="{% url 'spoc_download_approval_template' reg.registration_token %}" class="section-btn" style="display:flex;align-items:center;gap:8px;justify-content:center;padding:10px 16px;font-size:13px;margin-bottom:16px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.18);color:#2563eb">
             📄 Download Approval Letter Template
         </a>
         
-        <form method="POST" action="{% url 'spoc_approve_team' reg.id %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'spoc_approve_team' reg.registration_token %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="field">
                 <label>Signed Authorization Letter (PDF, required)</label>
@@ -220,7 +220,7 @@
     <div class="table-wrap" style="padding:24px">
         <div style="font-size:15px;font-weight:800;color:#dc2626;margin-bottom:6px">❌ Reject Team</div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Reject this registration. A rejection email with your reason will be sent to the team leader.</p>
-        <form method="POST" action="{% url 'spoc_reject_team' reg.id %}">
+        <form method="POST" action="{% url 'spoc_reject_team' reg.registration_token %}">
             {% csrf_token %}
             <div class="field">
                 <label>Rejection Reason (required)</label>
@@ -250,20 +250,22 @@
         {% if approval and approval.auth_letter %}
         <div style="display:flex;align-items:center;gap:10px;padding:12px;background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);border-radius:10px;margin-bottom:12px">
             <span style="font-size:20px">✅</span>
-            <div>
+            <div style="flex:1">
                 <div style="font-size:13px;font-weight:700;color:#059669">Initial Approval Letter Uploaded</div>
                 <div style="font-size:11px;color:var(--muted)">Submitted on {{ approval.decided_at|date:"M j, Y h:i A" }}</div>
             </div>
+            <a href="{{ approval.auth_letter.url }}" target="_blank" class="section-btn" style="margin:0;padding:6px 12px;font-size:11px;background:#059669;color:#fff;border:none;text-decoration:none;">View Letter</a>
         </div>
         {% endif %}
 
         {% if approval and approval.final_auth_letter %}
         <div style="display:flex;align-items:center;gap:10px;padding:12px;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.18);border-radius:10px;margin-bottom:12px">
             <span style="font-size:20px">📋</span>
-            <div>
+            <div style="flex:1">
                 <div style="font-size:13px;font-weight:700;color:#2563eb">Final Approval Letter Uploaded</div>
                 <div style="font-size:11px;color:var(--muted)">Submitted on {{ approval.final_submitted_at|date:"M j, Y h:i A" }}</div>
             </div>
+            <a href="{{ approval.final_auth_letter.url }}" target="_blank" class="section-btn" style="margin:0;padding:6px 12px;font-size:11px;background:#2563eb;color:#fff;border:none;text-decoration:none;">View Letter</a>
         </div>
         {% endif %}
 
@@ -274,7 +276,7 @@
         {% endif %}
 
         <!-- Download Template -->
-        <a href="{% url 'spoc_download_approval_template' reg.id %}" class="section-btn" style="display:flex;align-items:center;gap:8px;justify-content:center;padding:10px 16px;font-size:13px;margin-bottom:16px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.18);color:#2563eb">
+        <a href="{% url 'spoc_download_approval_template' reg.registration_token %}" class="section-btn" style="display:flex;align-items:center;gap:8px;justify-content:center;padding:10px 16px;font-size:13px;margin-bottom:16px;background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.18);color:#2563eb">
             📄 Download Updated Approval Letter Template
         </a>
     </div>
@@ -282,7 +284,7 @@
     <div class="table-wrap" style="padding:24px">
         <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">📤 Submit Final Approval Letter</div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">If team member details were updated after your initial approval, upload a new signed authorization letter here to finalize.</p>
-        <form method="POST" action="{% url 'spoc_submit_final_letter' reg.id %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'spoc_submit_final_letter' reg.registration_token %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="field">
                 <label>Final Authorization Letter (PDF, required)</label>

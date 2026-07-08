@@ -527,7 +527,7 @@ def _send_team_admin_approval_email(team, mentor_invite=None):
             <p>Hello <strong>{leader.get_full_name() or leader.username}</strong>,</p>
             <p>Your team <strong>{team.team_name}</strong> for <strong>{team.hackathon.name}</strong> has now been approved by the admin.</p>
             <p>{mentor_name} has been finalized as your mentor, and login credentials have been sent to the mentor email.</p>
-            <a href="http://127.0.0.1:8000/team/dashboard/"
+            <a href="https://hackathon.okcl.org/team/dashboard/"
                style="background:#2563eb;color:white;padding:12px 24px;border-radius:8px;
                       text-decoration:none;font-weight:700;display:inline-block;margin-top:12px;">
                 Open Team Dashboard
@@ -846,6 +846,14 @@ def _create_and_send_spoc_invitation(request, email, hackathon=None, institution
     except ValidationError as exc:
         raise ValueError("Invalid email address.") from exc
 
+    if institution_name:
+        inst_name_clean = institution_name.strip()
+        from accounts.models import Institution
+        existing_inst_inv = SpocInvitation.objects.filter(institution_name__iexact=inst_name_clean).exclude(status='rejected').first()
+        existing_inst = Institution.objects.filter(name__iexact=inst_name_clean).first()
+        if existing_inst_inv or existing_inst:
+            raise ValueError(f"University '{inst_name_clean}' has already been invited or registered.")
+
     existing = SpocInvitation.objects.filter(email=email).first()
     if existing:
         if existing.status == 'approved':
@@ -867,7 +875,7 @@ def _create_and_send_spoc_invitation(request, email, hackathon=None, institution
             city=city,
             state=state,
         )
-        form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[token]))
+        form_link = f"https://hackathon.okcl.org{reverse('spoc_register_form', args=[token])}"
         _send_spoc_invite_email(invite, form_link)
 
 
@@ -956,7 +964,7 @@ def _send_spoc_invite_email(invite, form_link):
     
     support_email = "support@hacknexus.com"
     support_number = "+91 99999 99999"
-    website = "http://127.0.0.1:8000/"
+    website = "https://hackathon.okcl.org/"
 
     subject = f"Invitation to Participate in {event_name} – Nomination of Institutional SPOC and Registration of Institution"
     
@@ -1137,6 +1145,14 @@ def spoc_register_form(request, token):
 
     if request.method == 'POST':
         try:
+            inst_name = request.POST.get('institution_name', '').strip()
+            if inst_name:
+                from accounts.models import Institution
+                existing_inst_inv = SpocInvitation.objects.filter(institution_name__iexact=inst_name).exclude(id=invitation.id).exclude(status='rejected').first()
+                existing_inst = Institution.objects.filter(name__iexact=inst_name).first()
+                if existing_inst_inv or existing_inst:
+                    raise ValueError(f"University/Institution '{inst_name}' has already been invited or registered.")
+
             for f in ['first_name', 'last_name', 'phone_number', 'gender', 'institution_name',
                       'institution_email', 'institution_address', 'institution_head_name',
                       'institution_head_email', 'institution_contact', 'institution_location']:
@@ -1316,7 +1332,7 @@ def reject_spoc_invitation(request, invite_id):
         invite.status = 'rejected'
         invite.rejection_reason = reason
         invite.save(update_fields=['status', 'rejection_reason'])
-        form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[invite.token]))
+        form_link = f"https://hackathon.okcl.org{reverse('spoc_register_form', args=[invite.token])}"
         _send_rejection_correction_email(invite.email, form_link, 'SPOC', reason, invite.hackathon)
         messages.success(request, f'Invitation for {invite.email} rejected.')
     except SpocInvitation.DoesNotExist:
@@ -2994,9 +3010,7 @@ def send_evaluator_invite(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = request.build_absolute_uri(
-                    reverse('expert_register_form', args=[token])
-                )
+                form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
                 _send_expert_invite_email(email, form_link, hackathon)
                 messages.success(request, f'Expert invitation sent to {email}.')
             else:
@@ -3007,9 +3021,7 @@ def send_evaluator_invite(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = request.build_absolute_uri(
-                    reverse('jury_register_form', args=[token])
-                )
+                form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
                 _send_jury_invite_email(email, form_link, hackathon)
                 messages.success(request, f'Jury invitation sent to {email}.')
     except Exception as exc:
@@ -3072,7 +3084,7 @@ def send_bulk_evaluator_invites(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = request.build_absolute_uri(reverse('expert_register_form', args=[token]))
+                form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
                 _send_expert_invite_email(email, form_link, hackathon)
             else:
                 if JuryInvitation.objects.filter(email__iexact=email).exists():
@@ -3082,7 +3094,7 @@ def send_bulk_evaluator_invites(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = request.build_absolute_uri(reverse('jury_register_form', args=[token]))
+                form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
                 _send_jury_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3141,9 +3153,7 @@ def send_jury_invite(request):
                 token=token,
                 status='invited',
             )
-            form_link = request.build_absolute_uri(
-                reverse('jury_register_form', args=[token])
-            )
+            form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
             _send_jury_invite_email(email, form_link, hackathon)
         messages.success(request, f'Jury invitation sent to {email}.')
     except Exception as exc:
@@ -3202,9 +3212,7 @@ def send_bulk_jury_invites(request):
                 invited_by=request.user, email=email,
                 hackathon=hackathon, token=token, status='invited',
             )
-            form_link = request.build_absolute_uri(
-                reverse('jury_register_form', args=[token])
-            )
+            form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
             _send_jury_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3386,7 +3394,7 @@ def reject_jury_invitation(request, invite_id):
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
-    form_link = request.build_absolute_uri(reverse('jury_register_form', args=[invite.token]))
+    form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[invite.token])}"
     _send_rejection_correction_email(invite.email, form_link, 'Jury', reason, invite.hackathon)
     messages.success(request, f"Jury application for '{invite.email}' rejected.")
     return render_route(request, '/features/jury/?sub=invitations')
@@ -3560,9 +3568,7 @@ def send_expert_invite(request):
                 token=token,
                 status='invited',
             )
-            form_link = request.build_absolute_uri(
-                reverse('expert_register_form', args=[token])
-            )
+            form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
             _send_expert_invite_email(email, form_link, hackathon)
         messages.success(request, f'Expert invitation sent to {email}.')
     except Exception as exc:
@@ -3621,9 +3627,7 @@ def send_bulk_expert_invites(request):
                 invited_by=request.user, email=email,
                 hackathon=hackathon, token=token, status='invited',
             )
-            form_link = request.build_absolute_uri(
-                reverse('expert_register_form', args=[token])
-            )
+            form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
             _send_expert_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3805,7 +3809,7 @@ def reject_expert_invitation(request, invite_id):
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
-    form_link = request.build_absolute_uri(reverse('expert_register_form', args=[invite.token]))
+    form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[invite.token])}"
     _send_rejection_correction_email(invite.email, form_link, 'Expert', reason, invite.hackathon)
     messages.success(request, f"Expert application for '{invite.email}' rejected.")
     return render_route(request, '/features/jury/?sub=invitations')

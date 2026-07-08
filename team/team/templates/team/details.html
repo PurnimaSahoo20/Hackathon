@@ -194,17 +194,31 @@
     <div class="section-header">
         <div class="section-title">Current Members ({{ members|length|add:1 }} total)</div>
         {% if can_edit_registration %}
-        <button type="button" class="section-btn primary" onclick="document.getElementById('add-member-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
-            <ion-icon name="add-outline" style="font-size:16px;"></ion-icon> Add Member
-        </button>
+            {% if not max_size_reached %}
+            <button type="button" class="section-btn primary" onclick="document.getElementById('add-member-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
+                <ion-icon name="add-outline" style="font-size:16px;"></ion-icon> Add Member
+            </button>
+            {% else %}
+            <span style="font-size: 12px; color: #dc2626; font-weight: bold; background: rgba(220, 38, 38, 0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.15); display: flex; align-items: center; gap: 4px;">
+                <ion-icon name="warning-outline" style="font-size:15px;"></ion-icon> Max team size reached ({{ reg.hackathon.max_team_size|default:4 }} members)
+            </span>
+            {% endif %}
         {% endif %}
     </div>
     
+    {% if has_submitted_mod %}
+    <div class="info-box" style="background:rgba(37, 99, 235, 0.07);border-color:rgba(37, 99, 235, 0.2);margin-bottom:18px">
+        <strong style="color:#2563eb">📝 Modifications Submitted!</strong> Your edits have been locked and submitted. Pending final review and approval by the SPOC.
+    </div>
+    {% endif %}
+
     {% if not can_edit_registration %}
         {% if reg.status == 'approved' %}
+        {% if not has_submitted_mod %}
         <div class="info-box" style="background:rgba(124, 58, 237, 0.07);border-color:rgba(124, 58, 237, 0.2);margin-bottom:18px">
             <strong style="color:var(--spoc)">🔒 Registration Locked.</strong> Your team has been approved by the SPOC. To make any changes, please submit a modification request below.
         </div>
+        {% endif %}
         {% else %}
         <div class="info-box" style="background:rgba(220,38,38,0.07);border-color:rgba(220,38,38,0.2);margin-bottom:18px">
             <strong style="color:#dc2626">Registration deadline passed.</strong> These details are now final for SPOC review.
@@ -519,71 +533,71 @@
         <div class="fields-grid-3">
             <div class="field">
                 <label>First Name</label>
-                <input type="text" name="first_name" placeholder="First name" required>
+                <input type="text" name="first_name" value="{{ add_member_form_data.first_name|default:'' }}" placeholder="First name" required>
             </div>
             <div class="field">
                 <label>Middle Name</label>
-                <input type="text" name="middle_name" placeholder="Middle name">
+                <input type="text" name="middle_name" value="{{ add_member_form_data.middle_name|default:'' }}" placeholder="Middle name">
             </div>
             <div class="field">
                 <label>Last Name</label>
-                <input type="text" name="last_name" placeholder="Last name" required>
+                <input type="text" name="last_name" value="{{ add_member_form_data.last_name|default:'' }}" placeholder="Last name" required>
             </div>
         </div>
 
         <div class="fields-grid-2">
             <div class="field">
                 <label>Email Address *</label>
-                <input type="email" name="email" required placeholder="member@email.com">
+                <input type="email" name="email" value="{{ add_member_form_data.email|default:'' }}" required placeholder="member@email.com">
                 <div class="field-tip">Must be a unique valid email address.</div>
             </div>
             <div class="field">
                 <label>Phone Number</label>
-                <input type="text" name="phone_number" placeholder="Phone number" required>
+                <input type="text" name="phone_number" value="{{ add_member_form_data.phone_number|default:'' }}" placeholder="Phone number" required>
                 <div class="field-tip">Must be a 10-digit mobile number.</div>
             </div>
             <div class="field">
                 <label>Role in Team</label>
                 <select name="role">
-                    <option>Member</option>
-                    <option>Co-Lead</option>
-                    <option>Developer</option>
-                    <option>Designer</option>
-                    <option>Researcher</option>
+                    <option {% if add_member_form_data.role == 'Member' %}selected{% endif %}>Member</option>
+                    <option {% if add_member_form_data.role == 'Co-Lead' %}selected{% endif %}>Co-Lead</option>
+                    <option {% if add_member_form_data.role == 'Developer' %}selected{% endif %}>Developer</option>
+                    <option {% if add_member_form_data.role == 'Designer' %}selected{% endif %}>Designer</option>
+                    <option {% if add_member_form_data.role == 'Researcher' %}selected{% endif %}>Researcher</option>
                 </select>
             </div>
             <div class="field">
                 <label>Date of Birth</label>
-                <input type="date" name="date_of_birth" required>
+                <input type="date" name="date_of_birth" value="{{ add_member_form_data.date_of_birth|default:'' }}" required>
             </div>
             <div class="field">
                 <label>Gender</label>
                 <select name="gender" required>
                     <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+                    <option value="Male" {% if add_member_form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if add_member_form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if add_member_form_data.gender == 'Other' %}selected{% endif %}>Other</option>
                 </select>
             </div>
             <div class="field">
                 <label>Cast Category</label>
                 <select name="cast" required>
                     <option value="">Select Cast</option>
-                    <option value="General">General</option>
-                    <option value="OBC">OBC</option>
-                    <option value="SC">SC</option>
-                    <option value="ST">ST</option>
+                    <option value="General" {% if add_member_form_data.cast == 'General' %}selected{% endif %}>General</option>
+                    <option value="OBC" {% if add_member_form_data.cast == 'OBC' %}selected{% endif %}>OBC</option>
+                    <option value="SC" {% if add_member_form_data.cast == 'SC' %}selected{% endif %}>SC</option>
+                    <option value="ST" {% if add_member_form_data.cast == 'ST' %}selected{% endif %}>ST</option>
                 </select>
             </div>
             <div class="field">
                 <label>T-Shirt Size</label>
                 <select name="tshirt_size" required>
                     <option value="">Select Size</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
+                    <option value="S" {% if add_member_form_data.tshirt_size == 'S' %}selected{% endif %}>S</option>
+                    <option value="M" {% if add_member_form_data.tshirt_size == 'M' %}selected{% endif %}>M</option>
+                    <option value="L" {% if add_member_form_data.tshirt_size == 'L' %}selected{% endif %}>L</option>
+                    <option value="XL" {% if add_member_form_data.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
+                    <option value="XXL" {% if add_member_form_data.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
                 </select>
             </div>
         </div>
@@ -593,7 +607,7 @@
         <div class="fields-grid-2">
             <div class="field">
                 <label>Aadhaar Card Number</label>
-                <input type="text" name="aadhaar_number" placeholder="XXXX-XXXX-XXXX" required>
+                <input type="text" name="aadhaar_number" value="{{ add_member_form_data.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX" required>
                 <div class="field-tip">Must be exactly 12 digits.</div>
             </div>
             <div class="field">
@@ -610,15 +624,15 @@
         <div class="fields-grid-2">
             <div class="field">
                 <label>Bank Account Number</label>
-                <input type="text" name="bank_account" placeholder="Account Number" required>
+                <input type="text" name="bank_account" value="{{ add_member_form_data.bank_account|default:'' }}" placeholder="Account Number" required>
             </div>
             <div class="field">
                 <label>IFSC Code</label>
-                <input type="text" name="ifsc" placeholder="SBIN0001234" required>
+                <input type="text" name="ifsc" value="{{ add_member_form_data.ifsc|default:'' }}" placeholder="SBIN0001234" required>
             </div>
             <div class="field">
                 <label>Bank Name</label>
-                <input type="text" name="bank_name" placeholder="Bank Name" required>
+                <input type="text" name="bank_name" value="{{ add_member_form_data.bank_name|default:'' }}" placeholder="Bank Name" required>
             </div>
             <div class="field">
                 <label>Bank Passbook Front Page</label>
@@ -816,7 +830,7 @@
 {% endfor %}
 {% endif %}
 
-{% if reg.status == 'approved' and not has_approved_mod %}
+{% if reg.status == 'approved' and not has_approved_mod and not has_submitted_mod %}
 <!-- Toggle Button for Request Modification -->
 <button type="button" id="btn-show-mod-form" class="section-btn" onclick="document.getElementById('request-modification-form-wrap').style.display='block'; this.style.display='none';" style="display:flex; align-items:center; gap:6px; margin-top:16px;">
     <ion-icon name="create-outline" style="font-size:16px;"></ion-icon> Request Registration Modification

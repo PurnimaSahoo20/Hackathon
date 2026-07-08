@@ -32,7 +32,7 @@
                     <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.registered_at|date:"M j, Y" }}</td>
                     <td><span class="badge badge-amber">Pending</span></td>
                     <td>
-                        <a href="{% url 'spoc_team_detail' reg.id %}" class="act-btn act-view">View</a>
+                        <a href="{% url 'spoc_team_detail' reg.registration_token %}" class="act-btn act-view">View</a>
                     </td>
                 </tr>
                 {% empty %}
@@ -63,7 +63,7 @@
                     <td>{{ reg.hackathon.name|truncatechars:20 }}</td>
                     <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ reg.reviewed_at|date:"M j, Y"|default:"—" }}</td>
                     <td><span class="badge badge-green">Active</span></td>
-                    <td><a href="{% url 'spoc_team_detail' reg.id %}" class="act-btn act-view">View</a></td>
+                    <td><a href="{% url 'spoc_team_detail' reg.registration_token %}" class="act-btn act-view">View</a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No approved teams yet</td></tr>

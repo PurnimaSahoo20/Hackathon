@@ -313,14 +313,14 @@ def spoc_teams(request):
 
 @login_required(login_url='/spoc/login/')
 @never_cache
-def spoc_team_detail(request, reg_id):
+def spoc_team_detail(request, token):
     if not _spoc_required(request):
         return redirect('spoc_login')
 
     from features.models import TeamRegistration
     spoc = _get_spoc(request)
     institution = _get_spoc_institution(spoc)
-    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+    reg = get_object_or_404(TeamRegistration, registration_token=token, institution=institution)
     mentor_invite = reg.mentor_invitations.exclude(
         status__in=['invited']
     ).order_by('-accepted_at', '-invited_at').first()
@@ -343,14 +343,14 @@ def spoc_team_detail(request, reg_id):
 
 @login_required(login_url='/spoc/login/')
 @require_POST
-def spoc_approve_team(request, reg_id):
+def spoc_approve_team(request, token):
     if not _spoc_required(request):
         return redirect('spoc_login')
 
     from features.models import TeamRegistration
     spoc = _get_spoc(request)
     institution = _get_spoc_institution(spoc)
-    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+    reg = get_object_or_404(TeamRegistration, registration_token=token, institution=institution)
     if reg.status != 'pending':
         messages.warning(request, f"Registration is already '{reg.status}'.")
         return redirect('spoc_teams')
@@ -358,7 +358,13 @@ def spoc_approve_team(request, reg_id):
     auth_letter = request.FILES.get('auth_letter')
     if not auth_letter:
         messages.error(request, 'Please upload the authorization letter to approve.')
-        return redirect('spoc_team_detail', reg_id=reg_id)
+        return redirect('spoc_team_detail', token=token)
+
+    # Rename file to maintain slug
+    import os
+    from django.utils.text import slugify
+    ext = os.path.splitext(auth_letter.name)[1].lower()
+    auth_letter.name = f"approval_letter_{slugify(reg.team_name)}{ext}"
 
     # Save auth letter
     from .models import SpocTeamApproval
@@ -389,18 +395,18 @@ def spoc_approve_team(request, reg_id):
 
 @login_required(login_url='/spoc/login/')
 @require_POST
-def spoc_reject_team(request, reg_id):
+def spoc_reject_team(request, token):
     if not _spoc_required(request):
         return redirect('spoc_login')
 
     from features.models import TeamRegistration
     spoc = _get_spoc(request)
     institution = _get_spoc_institution(spoc)
-    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+    reg = get_object_or_404(TeamRegistration, registration_token=token, institution=institution)
     reason = request.POST.get('rejection_reason', '').strip()
     if not reason:
         messages.error(request, 'Rejection reason is required.')
-        return redirect('spoc_team_detail', reg_id=reg_id)
+        return redirect('spoc_team_detail', token=token)
 
     reg.status = 'rejected'
     reg.rejection_note = reason
@@ -440,7 +446,7 @@ def _send_team_status_email(reg, status, reason=''):
                 <p>Your team <strong>"{reg.team_name}"</strong> has been approved by the SPOC for
                    <strong>{reg.hackathon.name}</strong>.</p>
                 <p>Your Team Dashboard is now fully active. You can log in and start working!</p>
-                <a href="http://127.0.0.1:8000/team/login/"
+                <a href="https://hackathon.okcl.org/team/login/"
                    style="background:#059669;color:white;padding:12px 24px;border-radius:8px;
                           text-decoration:none;font-weight:700;display:inline-block;margin-top:12px;">
                     Go to Team Dashboard →
@@ -479,7 +485,7 @@ def _send_team_status_email(reg, status, reason=''):
 
 @login_required(login_url='/spoc/login/')
 @never_cache
-def spoc_download_approval_template(request, reg_id):
+def spoc_download_approval_template(request, token):
     """Generate and serve an HTML-based approval letter template as a downloadable file."""
     if not _spoc_required(request):
         return redirect('spoc_login')
@@ -487,7 +493,7 @@ def spoc_download_approval_template(request, reg_id):
     from features.models import TeamRegistration
     spoc = _get_spoc(request)
     institution = _get_spoc_institution(spoc)
-    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+    reg = get_object_or_404(TeamRegistration, registration_token=token, institution=institution)
 
     leader = reg.team_leader
     members = reg.members_data or []
@@ -496,10 +502,10 @@ def spoc_download_approval_template(request, reg_id):
     spoc_name = request.user.get_full_name() or request.user.username
 
     members_rows = ""
-    for i, m in enumerate(members, 1):
+    for i, m in enumerate(members, 2):
         members_rows += f"""
         <tr>
-            <td style="border:1px solid #999;padding:8px;text-align:center;">{i + 1}</td>
+            <td style="border:1px solid #999;padding:8px;text-align:center;">{i}</td>
             <td style="border:1px solid #999;padding:8px;">{m.get('name', m.get('email', '-'))}</td>
             <td style="border:1px solid #999;padding:8px;">{m.get('email', '-')}</td>
             <td style="border:1px solid #999;padding:8px;">{m.get('phone_number', '-')}</td>
@@ -622,13 +628,14 @@ def spoc_download_approval_template(request, reg_id):
 
     from django.http import HttpResponse
     response = HttpResponse(html_content, content_type='text/html')
-    response['Content-Disposition'] = f'attachment; filename="Approval_Letter_{reg.team_name.replace(" ", "_")}.html"'
+    from django.utils.text import slugify
+    response['Content-Disposition'] = f'attachment; filename="approval_letter_{slugify(reg.team_name)}.html"'
     return response
 
 
 @login_required(login_url='/spoc/login/')
 @require_POST
-def spoc_submit_final_letter(request, reg_id):
+def spoc_submit_final_letter(request, token):
     """SPOC submits a final approval letter (after team data changes)."""
     if not _spoc_required(request):
         return redirect('spoc_login')
@@ -637,16 +644,22 @@ def spoc_submit_final_letter(request, reg_id):
     from .models import SpocTeamApproval
     spoc = _get_spoc(request)
     institution = _get_spoc_institution(spoc)
-    reg = get_object_or_404(TeamRegistration, id=reg_id, institution=institution)
+    reg = get_object_or_404(TeamRegistration, registration_token=token, institution=institution)
 
     if reg.status != 'approved':
         messages.error(request, 'Final letter can only be submitted for approved teams.')
-        return redirect('spoc_team_detail', reg_id=reg_id)
+        return redirect('spoc_team_detail', token=token)
 
     final_letter = request.FILES.get('final_auth_letter')
     if not final_letter:
         messages.error(request, 'Please upload the final authorization letter.')
-        return redirect('spoc_team_detail', reg_id=reg_id)
+        return redirect('spoc_team_detail', token=token)
+
+    # Rename file to maintain slug
+    import os
+    from django.utils.text import slugify
+    ext = os.path.splitext(final_letter.name)[1].lower()
+    final_letter.name = f"final_approval_letter_{slugify(reg.team_name)}{ext}"
 
     approval, _ = SpocTeamApproval.objects.get_or_create(spoc=spoc, registration=reg)
     approval.final_auth_letter = final_letter
@@ -662,7 +675,7 @@ def spoc_submit_final_letter(request, reg_id):
     )
 
     messages.success(request, f"Final approval letter uploaded for '{reg.team_name}'.")
-    return redirect('spoc_team_detail', reg_id=reg_id)
+    return redirect('spoc_team_detail', token=token)
 
 
 def spoc_modifications(request):
@@ -670,10 +683,24 @@ def spoc_modifications(request):
         return redirect('spoc_login')
 
     spoc = _get_spoc(request)
+    institution = _get_spoc_institution(spoc)
     from .models import SpocModificationDecision
+    from features.models import TeamRegistration
+
     pending = SpocModificationDecision.objects.filter(spoc=spoc, status='pending')
-    resolved = SpocModificationDecision.objects.filter(spoc=spoc).exclude(status='pending')[:10]
-    context = {'spoc': spoc, 'pending': pending, 'resolved': resolved}
+    submitted = SpocModificationDecision.objects.filter(spoc=spoc, status='submitted')
+    resolved = SpocModificationDecision.objects.filter(spoc=spoc, status__in=['resolved', 'rejected'])[:10]
+
+    for q in [pending, submitted, resolved]:
+        for mod in q:
+            mod.registration = TeamRegistration.objects.filter(team_name=mod.team_name, institution=institution).first()
+
+    context = {
+        'spoc': spoc,
+        'pending': pending,
+        'submitted': submitted,
+        'resolved': resolved,
+    }
     return render(request, 'spoc/modifications.html', context)
 
 
@@ -683,17 +710,68 @@ def spoc_approve_modification(request, mod_id):
     if not _spoc_required(request):
         return redirect('spoc_login')
 
-    from .models import SpocModificationDecision
-    mod = get_object_or_404(SpocModificationDecision, id=mod_id)
+    from .models import SpocModificationDecision, SpocDashboardActivity
+    from features.models import TeamRegistration
+    from team.team.models import TeamNotification
+
+    spoc = _get_spoc(request)
+    institution = _get_spoc_institution(spoc)
+    mod = get_object_or_404(SpocModificationDecision, id=mod_id, spoc=spoc)
+    reg = TeamRegistration.objects.filter(team_name=mod.team_name, institution=institution).first()
+
+    old_status = mod.status
     auth_letter = request.FILES.get('auth_letter')
 
-    mod.status = 'approved'
-    mod.decided_at = timezone.now()
-    if auth_letter:
-        mod.auth_letter = auth_letter
-    mod.save()
+    if old_status == 'submitted':
+        mod.status = 'resolved'
+        mod.decided_at = timezone.now()
+        mod.save()
 
-    messages.success(request, f"Modification for '{mod.team_name}' approved.")
+        SpocDashboardActivity.objects.create(
+            spoc=spoc,
+            icon='✅', color='#059669',
+            text=f"Approved final modifications for <strong>{mod.team_name}</strong>"
+        )
+
+        if reg:
+            TeamNotification.objects.create(
+                team_leader=reg.team_leader,
+                registration=reg,
+                notif_type='system',
+                title='Modifications Approved by SPOC',
+                body='Your final team modifications have been approved by the SPOC and details are now locked.',
+            )
+
+        messages.success(request, f"Final modifications for '{mod.team_name}' approved successfully.")
+    else:
+        mod.status = 'approved'
+        mod.decided_at = timezone.now()
+        if auth_letter:
+            # Rename file to maintain slug
+            import os
+            from django.utils.text import slugify
+            ext = os.path.splitext(auth_letter.name)[1].lower()
+            auth_letter.name = f"modification_approval_letter_{slugify(mod.team_name)}{ext}"
+            mod.auth_letter = auth_letter
+        mod.save()
+
+        SpocDashboardActivity.objects.create(
+            spoc=spoc,
+            icon='🔓', color='#7c3aed',
+            text=f"Unlocked registration for <strong>{mod.team_name}</strong>"
+        )
+
+        if reg:
+            TeamNotification.objects.create(
+                team_leader=reg.team_leader,
+                registration=reg,
+                notif_type='system',
+                title='Modification Request Approved',
+                body='Your request to modify team details has been approved. Your team details are now unlocked for editing.',
+            )
+
+        messages.success(request, f"Modification request for '{mod.team_name}' approved. Team is now unlocked.")
+
     return redirect('spoc_modifications')
 
 
@@ -703,13 +781,36 @@ def spoc_reject_modification(request, mod_id):
     if not _spoc_required(request):
         return redirect('spoc_login')
 
-    from .models import SpocModificationDecision
-    mod = get_object_or_404(SpocModificationDecision, id=mod_id)
+    from .models import SpocModificationDecision, SpocDashboardActivity
+    from features.models import TeamRegistration
+    from team.team.models import TeamNotification
+
+    spoc = _get_spoc(request)
+    institution = _get_spoc_institution(spoc)
+    mod = get_object_or_404(SpocModificationDecision, id=mod_id, spoc=spoc)
+    reg = TeamRegistration.objects.filter(team_name=mod.team_name, institution=institution).first()
+
     reason = request.POST.get('rejection_reason', '').strip()
     mod.status = 'rejected'
     mod.rejection_reason = reason
     mod.decided_at = timezone.now()
     mod.save()
+
+    SpocDashboardActivity.objects.create(
+        spoc=spoc,
+        icon='❌', color='#dc2626',
+        text=f"Rejected modifications for <strong>{mod.team_name}</strong>"
+    )
+
+    if reg:
+        TeamNotification.objects.create(
+            team_leader=reg.team_leader,
+            registration=reg,
+            notif_type='system',
+            title='Modifications Rejected by SPOC',
+            body=f"Your team modifications/request was rejected by the SPOC. Reason: {reason}",
+        )
+
     messages.success(request, f"Modification for '{mod.team_name}' rejected.")
     return redirect('spoc_modifications')
 
@@ -1143,7 +1244,7 @@ def _notify_admin_mentor_spoc_approved(invite, request):
                 <p>SPOC has verified <strong>{invite.mentor_name}</strong> for team
                    <strong>{invite.registration.team_name if invite.registration else '—'}</strong>.</p>
                 <p>Please log in to the Admin panel to approve or reject this mentor.</p>
-                <a href="http://127.0.0.1:8000/accounts/dashboard/"
+                <a href="https://hackathon.okcl.org/accounts/dashboard/"
                    style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;
                           text-decoration:none;font-weight:700;display:inline-block;margin-top:12px;">
                     Open Admin Panel →

@@ -893,6 +893,8 @@ def team_details(request):
     from spoc.spoc.models import SpocModificationDecision
     mod_requests = SpocModificationDecision.objects.filter(team_name=reg.team_name).order_by('-requested_at')
     has_approved_mod = mod_requests.filter(status='approved').exists()
+    has_submitted_mod = mod_requests.filter(status='submitted').exists()
+    max_size_reached = (len(reg.members_data or []) + 1) >= (reg.hackathon.max_team_size or 4)
 
     context = {
         'reg': reg,
@@ -904,8 +906,11 @@ def team_details(request):
         'registration_deadline': reg.hackathon.registration_close,
         'mod_requests': mod_requests,
         'has_approved_mod': has_approved_mod,
+        'has_submitted_mod': has_submitted_mod,
+        'max_size_reached': max_size_reached,
         **_team_nav_context(request, 'details', reg),
     }
+    context['add_member_form_data'] = request.session.pop('add_member_form_data', None)
     return render(request, 'team/details.html', context)
 
 
@@ -926,6 +931,19 @@ def team_add_member(request):
     if not _can_edit_registration(reg):
         messages.error(request, 'Members can no longer be added because the registration deadline has passed.')
         return redirect(reverse('team_details') + '?show_add_member=1')
+
+    # Enforce maximum team size validation
+    max_size = reg.hackathon.max_team_size or 4
+    if reg.get_member_count() >= max_size:
+        messages.error(request, f'You cannot add more members. The maximum team size for this hackathon is {max_size}.')
+        return redirect('team_details')
+
+    if request.method == 'POST':
+        form_data = {}
+        for key in request.POST:
+            if key != 'csrfmiddlewaretoken':
+                form_data[key] = request.POST.get(key, '')
+        request.session['add_member_form_data'] = form_data
 
     middle_name = request.POST.get('middle_name', '').strip()
     first_name = request.POST.get('first_name', '').strip()
@@ -1179,14 +1197,15 @@ def team_add_member(request):
                 body=f"Team '{reg.team_name}' has updated their composition and resubmitted their registration.",
                 link=f"/spoc/teams/{reg.id}/",
             )
+        request.session.pop('add_member_form_data', None)
         messages.success(request, f"Member '{name or email}' added, invite sent and registration resubmitted.")
         return redirect('team_dashboard')
 
     elif action_submit_mod:
         from spoc.spoc.models import SpocModificationDecision
-        mods = SpocModificationDecision.objects.filter(team_name=reg.team_name, status__in=['pending', 'approved'])
+        mods = SpocModificationDecision.objects.filter(team_name=reg.team_name, status='approved')
         if mods.exists():
-            mods.update(status='resolved')
+            mods.update(status='submitted')
 
             # Notify SPOC
             from accounts.models import SpocInstitutionMap
@@ -1196,13 +1215,15 @@ def team_add_member(request):
                 SpocNotification.objects.create(
                     spoc=mapping.spoc,
                     notif_type='mod_req',
-                    title='Team Modifications Completed',
-                    body=f"Team '{reg.team_name}' has completed their composition updates. Ready for final approval and letter upload.",
-                    link=f"/spoc/teams/{reg.id}/",
+                    title='Modifications Submitted for Approval',
+                    body=f"Team '{reg.team_name}' has updated their composition and submitted modifications for your final review and approval.",
+                    link="/spoc/modifications/",
                 )
+        request.session.pop('add_member_form_data', None)
         messages.success(request, f"Member '{name or email}' added, invite sent and modifications submitted.")
         return redirect('team_details')
 
+    request.session.pop('add_member_form_data', None)
     messages.success(request, f'Member {name or email} added and invite sent.')
     return redirect('team_details')
 
@@ -1474,9 +1495,9 @@ def team_edit_member(request, member_index):
 
     elif action_submit_mod:
         from spoc.spoc.models import SpocModificationDecision
-        mods = SpocModificationDecision.objects.filter(team_name=reg.team_name, status__in=['pending', 'approved'])
+        mods = SpocModificationDecision.objects.filter(team_name=reg.team_name, status='approved')
         if mods.exists():
-            mods.update(status='resolved')
+            mods.update(status='submitted')
 
             # Notify SPOC
             from accounts.models import SpocInstitutionMap
@@ -1486,9 +1507,9 @@ def team_edit_member(request, member_index):
                 SpocNotification.objects.create(
                     spoc=mapping.spoc,
                     notif_type='mod_req',
-                    title='Team Modifications Completed',
-                    body=f"Team '{reg.team_name}' has completed their composition updates. Ready for final approval and letter upload.",
-                    link=f"/spoc/teams/{reg.id}/",
+                    title='Modifications Submitted for Approval',
+                    body=f"Team '{reg.team_name}' has updated their composition and submitted modifications for your final review and approval.",
+                    link="/spoc/modifications/",
                 )
         messages.success(request, f"Member '{name or email}' updated and modifications submitted.")
         return redirect('team_details')
@@ -1501,8 +1522,8 @@ def _send_team_lead_welcome_email(user, reg):
     """Send a branded welcome email to the team lead after registration."""
     try:
         event_name = reg.hackathon.name if reg.hackathon else "HackNexus"
-        dashboard_url = "http://127.0.0.1:8000/team/dashboard/"
-        details_url = "http://127.0.0.1:8000/team/details/"
+        dashboard_url = "https://hackathon.okcl.org/team/dashboard/"
+        details_url = "https://hackathon.okcl.org/team/details/"
         full_name = user.get_full_name() or user.username
 
         subject = f"Welcome to {event_name} — Complete Your Team Registration"
@@ -1673,7 +1694,7 @@ def team_invite_mentor(request):
 
 def _send_mentor_invite_email(invite, reg, request):
     try:
-        accept_url = request.build_absolute_uri(f'/mentor/invite/{invite.token}/')
+        accept_url = f"https://hackathon.okcl.org/mentor/invite/{invite.token}/"
         subject = f"Mentor Invitation — Team '{reg.team_name}' on HackNexus"
         html = f"""
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
@@ -2232,10 +2253,10 @@ def team_request_modification(request):
         messages.error(request, 'No SPOC profile mapped to your college. Please contact support.')
         return redirect('team_details')
 
-    # Check for existing pending request
-    existing = SpocModificationDecision.objects.filter(team_name=reg.team_name, status='pending').exists()
+    # Check for existing pending or submitted request
+    existing = SpocModificationDecision.objects.filter(team_name=reg.team_name, status__in=['pending', 'submitted']).exists()
     if existing:
-        messages.warning(request, 'You already have a pending modification request.')
+        messages.warning(request, 'You already have a pending or submitted modification request.')
         return redirect('team_details')
 
     # Create modification request
@@ -2275,11 +2296,23 @@ def team_complete_modification(request):
     if not reg:
         return redirect('team_dashboard')
 
-    # Resolve any approved modification requests
     mods = SpocModificationDecision.objects.filter(team_name=reg.team_name, status='approved')
     if mods.exists():
-        mods.update(status='resolved')
-        messages.success(request, 'Modifications marked as completed. Your details are locked. SPOC will verify the updates.')
+        mods.update(status='submitted')
+        
+        # Notify SPOC
+        from accounts.models import SpocInstitutionMap
+        from spoc.spoc.models import SpocNotification
+        mapping = SpocInstitutionMap.objects.filter(institution=reg.institution).select_related('spoc').first()
+        if mapping and mapping.spoc:
+            SpocNotification.objects.create(
+                spoc=mapping.spoc,
+                notif_type='mod_req',
+                title='Modifications Submitted for Approval',
+                body=f"Team '{reg.team_name}' has locked their edits and submitted modifications for your final review and approval.",
+                link="/spoc/modifications/",
+            )
+        messages.success(request, 'Modifications submitted successfully. Your team details are locked pending SPOC final approval.')
     else:
         messages.error(request, 'No active approved modification request found.')
 

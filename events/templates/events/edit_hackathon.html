@@ -117,19 +117,21 @@
                 <div
                     style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-bottom:14px;">
                     {% for banner in existing_banners %}
-                    <div
+                    <div id="banner-card-{{ banner.id }}"
                         style="position:relative; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#fafafa;">
                         <img src="{{ banner.image.url }}" alt="Banner {{ forloop.counter }}"
                             style="width:100%; height:110px; object-fit:cover; display:block;">
-                        <label
-                            style="display:flex; align-items:center; gap:6px; padding:8px 10px; font-size:12px; font-weight:700; color:#dc2626; cursor:pointer;">
-                            <input type="checkbox" name="delete_banner" value="{{ banner.id }}"
-                                style="width:14px; height:14px; accent-color:#dc2626;">
-                            Remove
-                        </label>
+                        <button type="button" onclick="markBannerForDeletion('{{ banner.id }}')"
+                            style="position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%; background:rgba(239,68,68,0.85); color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.15); transition:all 0.2s;"
+                            onmouseover="this.style.background='rgba(239,68,68,1)';this.style.transform='scale(1.1)';"
+                            onmouseout="this.style.background='rgba(239,68,68,0.85)';this.style.transform='';"
+                            title="Remove Banner">
+                            <ion-icon name="close-outline"></ion-icon>
+                        </button>
                     </div>
                     {% endfor %}
                 </div>
+                <div id="bannersDeleteContainer"></div>
                 {% endif %}
 
                 <div id="heroBannerUploads">
@@ -173,14 +175,7 @@
                 <label>Approval Letter (PDF)</label>
                 <input type="file" name="approval_letter" accept=".pdf">
             </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status" id="status-select">
-                    <option value="Draft">Draft</option>
-                    <option value="Live">Live</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
+            <input type="hidden" name="status" value="{{ hackathon.status }}">
         </div>
 
         <div class="form-grid">
@@ -198,7 +193,6 @@
         <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px;">
             <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="{{ hackathon.min_team_size|default:1 }}" min="1"></div>
             <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="{{ hackathon.max_team_size|default:4 }}" min="1"></div>
-            <div class="form-group"><label>Total Members</label><input type="number" name="total_team_members" value="{{ hackathon.total_team_members|default:4 }}" min="1"></div>
             <div class="form-group"><label>Mentors / Team</label><input type="number" name="number_of_mentors" value="{{ hackathon.number_of_mentors|default:0 }}" min="0"></div>
         </div>
 
@@ -250,12 +244,17 @@
                         </label>
                     </div>
                     <div id="round_1_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        style="display:grid; grid-template-columns:1fr; gap:10px;">
                         {% for p in round_params.1.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_1_param_{{ forloop.counter }}_name" value="{{ p.name }}"
-                                required>
+                        <div class="form-group" style="margin-bottom:10px; display:grid; grid-template-columns:1fr 120px; gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Parameter {{ forloop.counter }} Name</label>
+                                <input type="text" name="round_1_param_{{ forloop.counter }}_name" value="{{ p.name }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Cutoff Marks</label>
+                                <input type="number" name="round_1_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.cutoff_score|default:'0.00' }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -301,12 +300,17 @@
                         </label>
                     </div>
                     <div id="round_2_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        style="display:grid; grid-template-columns:1fr; gap:10px;">
                         {% for p in round_params.2.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_2_param_{{ forloop.counter }}_name" value="{{ p.name }}"
-                                required>
+                        <div class="form-group" style="margin-bottom:10px; display:grid; grid-template-columns:1fr 120px; gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Parameter {{ forloop.counter }} Name</label>
+                                <input type="text" name="round_2_param_{{ forloop.counter }}_name" value="{{ p.name }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Cutoff Marks</label>
+                                <input type="number" name="round_2_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.cutoff_score|default:'0.00' }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -352,12 +356,17 @@
                         </label>
                     </div>
                     <div id="round_3_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        style="display:grid; grid-template-columns:1fr; gap:10px;">
                         {% for p in round_params.3.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_3_param_{{ forloop.counter }}_name" value="{{ p.name }}"
-                                required>
+                        <div class="form-group" style="margin-bottom:10px; display:grid; grid-template-columns:1fr 120px; gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Parameter {{ forloop.counter }} Name</label>
+                                <input type="text" name="round_3_param_{{ forloop.counter }}_name" value="{{ p.name }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Cutoff Marks</label>
+                                <input type="number" name="round_3_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.cutoff_score|default:'0.00' }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -403,12 +412,17 @@
                         </label>
                     </div>
                     <div id="round_4_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        style="display:grid; grid-template-columns:1fr; gap:10px;">
                         {% for p in round_params.4.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_4_param_{{ forloop.counter }}_name" value="{{ p.name }}"
-                                required>
+                        <div class="form-group" style="margin-bottom:10px; display:grid; grid-template-columns:1fr 120px; gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Parameter {{ forloop.counter }} Name</label>
+                                <input type="text" name="round_4_param_{{ forloop.counter }}_name" value="{{ p.name }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Cutoff Marks</label>
+                                <input type="number" name="round_4_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.cutoff_score|default:'0.00' }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -454,12 +468,17 @@
                         </label>
                     </div>
                     <div id="round_5_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                        style="display:grid; grid-template-columns:1fr; gap:10px;">
                         {% for p in round_params.5.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_5_param_{{ forloop.counter }}_name" value="{{ p.name }}"
-                                required>
+                        <div class="form-group" style="margin-bottom:10px; display:grid; grid-template-columns:1fr 120px; gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Parameter {{ forloop.counter }} Name</label>
+                                <input type="text" name="round_5_param_{{ forloop.counter }}_name" value="{{ p.name }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Cutoff Marks</label>
+                                <input type="number" name="round_5_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.cutoff_score|default:'0.00' }}" required style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -504,17 +523,34 @@
         const container = document.getElementById(`round_${roundNum}_params_container`);
         if (!container) return;
 
-        const existingInputs = container.querySelectorAll('input[type="text"]');
-        const values = Array.from(existingInputs).map(input => input.value);
+        const existingNames = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_name"]`);
+        const existingCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]`);
+        
+        const nameValues = Array.from(existingNames).map(input => input.value);
+        const cutoffValues = Array.from(existingCutoffs).map(input => input.value);
 
         container.innerHTML = '';
         for (let j = 1; j <= count; j++) {
             const div = document.createElement('div');
             div.className = 'form-group';
-            div.style.marginBottom = '0';
-            const val = values[j - 1] ? `value="${values[j - 1]}"` : '';
-            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
-                             <input type="text" name="round_${roundNum}_param_${j}_name" required ${val} placeholder="e.g. Innovation">`;
+            div.style.marginBottom = '10px';
+            div.style.display = 'grid';
+            div.style.gridTemplateColumns = '1fr 120px';
+            div.style.gap = '8px';
+            
+            const nameVal = nameValues[j - 1] ? `value="${nameValues[j - 1]}"` : '';
+            const cutoffVal = cutoffValues[j - 1] ? `value="${cutoffValues[j - 1]}"` : 'value="0.00"';
+            
+            div.innerHTML = `
+                <div>
+                    <label style="font-size:11px;">Parameter ${j} Name</label>
+                    <input type="text" name="round_${roundNum}_param_${j}_name" required ${nameVal} placeholder="e.g. Innovation" style="width:100%; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;">Cutoff Marks</label>
+                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" ${cutoffVal} required style="width:100%; box-sizing:border-box;">
+                </div>
+            `;
             container.appendChild(div);
         }
     }
@@ -576,6 +612,44 @@
             if (prev) el.min = prev;
             if (el.value) prev = el.value;
         });
+    }
+
+    function addBannerInput() {
+        const container = document.getElementById('heroBannerUploads');
+        if (!container) return;
+        
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        div.style.marginBottom = '8px';
+        div.style.display = 'flex';
+        div.style.gap = '8px';
+        div.style.alignItems = 'center';
+        
+        div.innerHTML = `
+            <input type="file" name="hero_banners" accept="image/*" style="flex:1;">
+            <button type="button" onclick="this.parentElement.remove()" 
+                style="background:#ef4444; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; display:flex; align-items:center; justify-content:center;"
+                title="Remove input">
+                <ion-icon name="trash-outline" style="font-size:16px;"></ion-icon>
+            </button>
+        `;
+        container.appendChild(div);
+    }
+
+    function markBannerForDeletion(bannerId) {
+        const card = document.getElementById(`banner-card-${bannerId}`);
+        if (card) {
+            card.remove();
+        }
+        
+        const container = document.getElementById('bannersDeleteContainer');
+        if (container) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'delete_banner';
+            input.value = bannerId;
+            container.appendChild(input);
+        }
     }
 
     // Init venue toggles and date chaining on page load

@@ -152,12 +152,19 @@ class TeamRegistration(models.Model):
         'Team', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='from_registration'
     )
+    registration_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'accounts_teamregistration'
         ordering = ['-registered_at']
+
+    def save(self, *args, **kwargs):
+        if not self.registration_token:
+            import uuid
+            self.registration_token = uuid.uuid4().hex[:24]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.team_name} — {self.hackathon.name} [{self.status}]"

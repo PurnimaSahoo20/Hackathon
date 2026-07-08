@@ -15,6 +15,7 @@ urlpatterns = [
     path('delete-hackathon/<int:hackathon_id>/', views.delete_hackathon, name='delete_hackathon'),
     path('hackathon/<int:hackathon_id>/round/<int:round_number>/toggle/', views.toggle_round_status, name='toggle_round_status'),
     path('launch-event/<int:hackathon_id>/', views.launch_event, name='launch_event'),
+    path('draft-event/<int:hackathon_id>/', views.draft_event, name='draft_event'),
 
     # Problem Statements
     path('create-problem-statement/', views.create_problem_statement, name='create_problem_statement'),

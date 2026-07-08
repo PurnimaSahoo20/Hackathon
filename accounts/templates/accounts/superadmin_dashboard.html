@@ -493,8 +493,8 @@
                 users in 30 days</div>
             <div class="analytics-chip"><ion-icon name="git-network-outline"></ion-icon> {{ total_registrations }} total
                 registrations</div>
-            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate
-                }}% evaluation assignment coverage</div>
+            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate}} 
+                evaluation assignment coverage</div>
         </div>
     </div>
     <div class="analytics-mini-stack">
@@ -834,14 +834,7 @@
                 <div class="form-group"><label>Approval Date</label><input type="date" name="approval_date"></div>
                 <div class="form-group"><label>Approval Letter (PDF)</label><input type="file" name="approval_letter"
                         accept=".pdf"></div>
-                <div class="form-group">
-                    <label>Event Status</label>
-                    <select name="status" id="eventStatusSelect">
-                        <option value="Draft">Draft (Private)</option>
-                        <option value="Live">Live (Public)</option>
-                        <option value="Completed">Completed</option>
-                    </select>
-                </div>
+                <input type="hidden" name="status" value="Draft">
             </div>
             <div class="form-section-title">Key Timeline</div>
             <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">
@@ -855,7 +848,6 @@
             <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px;">
                 <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1" min="1"></div>
                 <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4" min="1"></div>
-                <div class="form-group"><label>Total Members</label><input type="number" name="total_team_members" value="4" min="1"></div>
                 <div class="form-group"><label>Mentors / Team</label><input type="number" name="number_of_mentors" value="1" min="0"></div>
             </div>
 
@@ -1020,8 +1012,11 @@
                     style="border-bottom:1px solid #eee; {% if h.status == 'Suspended' %}opacity:0.6; background:#f1f5f9;{% endif %}">
                     <td style="padding:14px;"><strong>{{ h.name }}</strong><br><small style="color:#6b7280;">{% if h.round_1_start_date %}{{ h.round_1_start_date|date:"d M Y" }}{% else %}TBD{% endif %}</small></td>
                     <td style="padding:14px;">{{ h.organization_name }}</td>
-                    <td style="padding:14px;"><span
-                            class="badge {% if h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">{{ h.status }}</span></td>
+                    <td style="padding:14px;">
+                        <span class="badge {% if h.status == 'Live' %}badge-live{% elif h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">
+                            {{ h.status }}
+                        </span>
+                    </td>
                     <td style="padding:14px;">
                         {% if h.active_round %}
                         <strong>{{ h.active_round.name }}</strong><br><small style="color:#059669;">{{ h.active_round.start_date|date:"d M Y" }} to {{ h.active_round.end_date|date:"d M Y" }}</small>
@@ -1050,13 +1045,22 @@
                                 style="color:#059669; font-size:20px;"><ion-icon name="eye-outline"></ion-icon></a>
                             <a href="{% url 'edit_hackathon' h.id %}" title="Edit"
                                 style="color:#2563eb; font-size:20px;"><ion-icon name="create-outline"></ion-icon></a>
-                            {% if h.status != 'Suspended' %}
+                            {% if h.status != 'Live' and h.status != 'Suspended' %}
                             <button type="button" title="Launch Event" onclick="openLaunchModal('{{ h.id }}', '{{ h.name|escapejs }}')"
                                 style="background:linear-gradient(135deg,#f97316,#ea580c); color:#fff; border:none; cursor:pointer; padding:5px 10px; border-radius:8px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(249,115,22,0.3); transition:all .2s;"
                                 onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(249,115,22,0.4)';"
                                 onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(249,115,22,0.3)';">
                                 <ion-icon name="rocket-outline" style="font-size:15px;"></ion-icon> Live
                             </button>
+                            {% elif h.status == 'Live' %}
+                            <button type="button" title="Set to Draft" onclick="setEventToDraft('{{ h.id }}', '{{ h.name|escapejs }}')"
+                                style="background:linear-gradient(135deg,#64748b,#475569); color:#fff; border:none; cursor:pointer; padding:5px 10px; border-radius:8px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(100,116,139,0.3); transition:all .2s;"
+                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(100,116,139,0.4)';"
+                                onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(100,116,139,0.3)';">
+                                <ion-icon name="document-text-outline" style="font-size:15px;"></ion-icon> Draft
+                            </button>
+                            {% endif %}
+                            {% if h.status != 'Suspended' %}
                             <form action="{% url 'delete_hackathon' h.id %}" method="POST" style="display:inline;"
                                 onsubmit="return confirm('Suspend this event?')">
                                 {% csrf_token %}
@@ -2046,9 +2050,20 @@
         for (let j = 1; j <= count; j++) {
             const div = document.createElement('div');
             div.className = 'form-group';
-            div.style.marginBottom = '0';
-            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
-                             <input type="text" name="round_${roundNum}_param_${j}_name" required placeholder="e.g. Innovation">`;
+            div.style.marginBottom = '10px';
+            div.style.display = 'grid';
+            div.style.gridTemplateColumns = '1fr 120px';
+            div.style.gap = '8px';
+            div.innerHTML = `
+                <div>
+                    <label style="font-size:11px;">Parameter ${j} Name</label>
+                    <input type="text" name="round_${roundNum}_param_${j}_name" required placeholder="e.g. Innovation" style="width:100%; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;">Cutoff Marks</label>
+                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" value="0.00" required style="width:100%; box-sizing:border-box;">
+                </div>
+            `;
             container.appendChild(div);
         }
     }
@@ -2256,6 +2271,32 @@
         document.body.style.overflow = '';
         // Remove confetti
         document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+        window.location.reload();
+    }
+
+    function setEventToDraft(hackathonId, name) {
+        if (!confirm('Are you sure you want to revert "' + name + '" to Draft status?')) {
+            return;
+        }
+        fetch('/events/draft-event/' + hackathonId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            }
+        }).then(function(response) {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to set event to Draft.'));
+                }).catch(() => {
+                    alert('Failed to set event to Draft. Status code ' + response.status);
+                });
+            }
+        }).catch(function(err) {
+            alert('Network error: ' + err.message);
+        });
     }
 
     function executeEventLaunch() {
@@ -2274,16 +2315,11 @@
 
         // Change background to launch colors after delay
         setTimeout(function() {
-            document.getElementById('ceremonyBg').style.background = 'linear-gradient(135deg,#0a0a2e 0%,#1a0530 30%,#2d1050 50%,#1a0530 70%,#0a0a2e 100%)';
+            const ceremonyBg = document.getElementById('ceremonyBg');
+            if (ceremonyBg) {
+                ceremonyBg.style.background = 'linear-gradient(135deg,#0a0a2e 0%,#1a0530 30%,#2d1050 50%,#1a0530 70%,#0a0a2e 100%)';
+            }
         }, 600);
-
-        // Show success + confetti after rocket launches
-        setTimeout(function() {
-            rocketContainer.style.display = 'none';
-            document.getElementById('launchBtnContainer').style.display = 'none';
-            document.getElementById('launchSuccess').style.display = 'block';
-            spawnConfetti();
-        }, 1400);
 
         // Make the AJAX call to change status to Live
         fetch('/events/launch-event/' + hackathonId + '/', {
@@ -2297,11 +2333,33 @@
                 launched_by: document.getElementById('launchPerson').value.trim(),
             })
         }).then(function(response) {
-            if (!response.ok) {
-                console.log('Launch API returned non-OK, but ceremony continues.');
+            if (response.ok) {
+                // Show success + confetti after rocket launches (minimum delay of 1.4s for animation to complete)
+                setTimeout(function() {
+                    rocketContainer.style.display = 'none';
+                    document.getElementById('launchBtnContainer').style.display = 'none';
+                    document.getElementById('launchSuccess').style.display = 'block';
+                    spawnConfetti();
+                }, 1000);
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to launch event. Please try again.'));
+                }).catch(() => {
+                    alert('Failed to launch event. Server returned status code ' + response.status);
+                });
+                // Reset animation & button
+                rocketEmoji.style.animation = '';
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor = '';
             }
         }).catch(function(err) {
-            console.log('Launch API error:', err);
+            alert('Network error: ' + err.message);
+            // Reset animation & button
+            rocketEmoji.style.animation = '';
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.cursor = '';
         });
     }
 

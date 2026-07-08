@@ -132,17 +132,63 @@ def _build_public_problem_statement_context(active_hackathon):
 
     if dynamic_domains:
         # Build track_specs from dynamic HackathonDomain entries
+        domain_mappings = {
+            'agriculture': {
+                'badge': 'SDG - 12',
+                'image': '/media/creatives/hero2.jpg',
+            },
+            'healthcare': {
+                'badge': 'SDG - 3',
+                'image': '/media/creatives/hero1-bg.jpg',
+            },
+            'animal': {
+                'badge': 'SDG - 12',
+                'image': '/media/creatives/hero4.jpg',
+            },
+            'vet': {
+                'badge': 'SDG - 12',
+                'image': '/media/creatives/hero4.jpg',
+            },
+            'education': {
+                'badge': 'SDG - 4',
+                'image': '/media/creatives/hero3.jpg',
+            },
+            'learn': {
+                'badge': 'SDG - 4',
+                'image': '/media/creatives/hero3.jpg',
+            },
+        }
+        _default_images = [
+            '/media/creatives/hero2.jpg',
+            '/media/creatives/hero1-bg.jpg',
+            '/media/creatives/hero4.jpg',
+            '/media/creatives/hero3.jpg'
+        ]
+        _default_badges = ['SDG - 12', 'SDG - 3', 'SDG - 12', 'SDG - 4']
+
         track_specs = []
         for idx, domain in enumerate(dynamic_domains):
+            name_lower = domain.name.lower()
+            matched_badge = None
+            matched_image = None
+            for key, val in domain_mappings.items():
+                if key in name_lower:
+                    matched_badge = val['badge']
+                    matched_image = val['image']
+                    break
+            
+            badge_val = getattr(domain, 'badge', None) or matched_badge or _default_badges[idx % len(_default_badges)]
+            image_val = getattr(domain, 'image', None) or matched_image or _default_images[idx % len(_default_images)]
+
             track_specs.append({
-                'slug': domain.slug or domain.name.lower().replace(' ', '-'),
+                'slug': domain.slug or name_lower.replace(' ', '-'),
                 'title': domain.name,
-                'badge': getattr(domain, 'badge', None) or domain.name,
+                'badge': badge_val,
                 'icon': domain.icon or _default_icons[idx % len(_default_icons)],
                 'color': domain.color or _default_colors[idx % len(_default_colors)],
                 'subtitle': domain.subtitle or f'Problem statements in {domain.name}',
-                'image': '/media/creatives/hero2.jpg',
-                'keywords': [domain.name.lower()],
+                'image': image_val,
+                'keywords': [name_lower],
             })
     else:
         # Fallback: hardcoded track specs
@@ -303,7 +349,7 @@ def create_hackathon(request):
         min_team_size = request.POST.get('min_team_size', 1)
         max_team_size = request.POST.get('max_team_size', 4)
         number_of_mentors = request.POST.get('number_of_mentors', 0)
-        total_team_members = request.POST.get('total_team_members', 4)
+        total_team_members = request.POST.get('total_team_members') or max_team_size
         number_of_rounds = request.POST.get('number_of_rounds', 1)
         registration_open = request.POST.get('registration_open') or None
         registration_close = request.POST.get('registration_close') or None
@@ -378,9 +424,10 @@ def create_hackathon(request):
                     num_params = 0
                 for j in range(1, num_params + 1):
                     param_name = request.POST.get(f'round_{i}_param_{j}_name')
+                    cutoff_val = request.POST.get(f'round_{i}_param_{j}_cutoff') or 0.00
                     if param_name:
                         RoundMarkingParameter.objects.create(
-                            hackathon=hackathon, round_number=i, name=param_name
+                            hackathon=hackathon, round_number=i, name=param_name, cutoff_score=cutoff_val
                         )
                 if request.POST.get(f'round_{i}_has_others') == 'on':
                     RoundMarkingParameter.objects.create(
@@ -414,7 +461,7 @@ def create_hackathon(request):
         except Exception as e:
             messages.error(request, f'Error creating hackathon: {e}')
 
-    return render_route(request, '/accounts/dashboard/?tab=events')
+    return redirect('/accounts/dashboard/?tab=events')
 
 
 def edit_hackathon(request, hackathon_id):
@@ -422,7 +469,7 @@ def edit_hackathon(request, hackathon_id):
         hackathon = Hackathon.objects.get(id=hackathon_id)
     except Hackathon.DoesNotExist:
         messages.error(request, 'Hackathon not found.')
-        return render_route(request, '/accounts/dashboard/?tab=events')
+        return redirect('/accounts/dashboard/?tab=events')
 
     if request.method == 'POST':
         hackathon.name = request.POST.get('name', hackathon.name)
@@ -438,7 +485,8 @@ def edit_hackathon(request, hackathon_id):
         hackathon.min_team_size = request.POST.get('min_team_size', hackathon.min_team_size)
         hackathon.max_team_size = request.POST.get('max_team_size', hackathon.max_team_size)
         hackathon.number_of_mentors = request.POST.get('number_of_mentors', hackathon.number_of_mentors)
-        hackathon.total_team_members = request.POST.get('total_team_members', hackathon.total_team_members)
+        total_val = request.POST.get('total_team_members')
+        hackathon.total_team_members = total_val if total_val else hackathon.max_team_size
         hackathon.number_of_rounds = request.POST.get('number_of_rounds', hackathon.number_of_rounds)
 
         for field in ['approval_date', 'poster_launching_date', 'website_launching_date',
@@ -478,9 +526,10 @@ def edit_hackathon(request, hackathon_id):
                     num_params = 0
                 for j in range(1, num_params + 1):
                     param_name = request.POST.get(f'round_{i}_param_{j}_name')
+                    cutoff_val = request.POST.get(f'round_{i}_param_{j}_cutoff') or 0.00
                     if param_name:
                         RoundMarkingParameter.objects.create(
-                            hackathon=hackathon, round_number=i, name=param_name
+                            hackathon=hackathon, round_number=i, name=param_name, cutoff_score=cutoff_val
                         )
                 if request.POST.get(f'round_{i}_has_others') == 'on':
                     RoundMarkingParameter.objects.create(
@@ -519,7 +568,7 @@ def edit_hackathon(request, hackathon_id):
                     )
                     
             messages.success(request, f'Hackathon {hackathon.name} updated successfully.')
-            return render_route(request, '/accounts/dashboard/?tab=events')
+            return redirect('/accounts/dashboard/?tab=events')
         except Exception as e:
             messages.error(request, f'Error updating hackathon: {e}')
 
@@ -548,13 +597,13 @@ def edit_hackathon(request, hackathon_id):
 
 def toggle_round_status(request, hackathon_id, round_number):
     if request.method != 'POST':
-        return render_route(request, '/accounts/dashboard/?tab=events')
+        return redirect('/accounts/dashboard/?tab=events')
     if not _can_manage_events(request):
         messages.error(request, "Access denied.")
-        return render_route(request, '/accounts/dashboard/')
+        return redirect('/accounts/dashboard/')
     if round_number < 1 or round_number > 5:
         messages.error(request, "Invalid round.")
-        return render_route(request, '/accounts/dashboard/?tab=events')
+        return redirect('/accounts/dashboard/?tab=events')
 
     try:
         hackathon = Hackathon.objects.get(id=hackathon_id)
@@ -567,7 +616,7 @@ def toggle_round_status(request, hackathon_id, round_number):
     except Hackathon.DoesNotExist:
         messages.error(request, 'Hackathon not found.')
 
-    return render_route(request, request.META.get('HTTP_REFERER', '/accounts/dashboard/?tab=events'))
+    return redirect(request.META.get('HTTP_REFERER', '/accounts/dashboard/?tab=events'))
 
 
 def delete_hackathon(request, hackathon_id):
@@ -581,7 +630,7 @@ def delete_hackathon(request, hackathon_id):
             messages.error(request, 'Hackathon not found.')
         except Exception as e:
             messages.error(request, f'Error: {e}')
-    return render_route(request, '/accounts/dashboard/?tab=events')
+    return redirect('/accounts/dashboard/?tab=events')
 
 
 def view_hackathon(request, hackathon_id):
@@ -593,7 +642,7 @@ def view_hackathon(request, hackathon_id):
         })
     except Hackathon.DoesNotExist:
         messages.error(request, 'Hackathon not found.')
-        return render_route(request, '/accounts/dashboard/?tab=events')
+        return redirect('/accounts/dashboard/?tab=events')
 
 
 def create_problem_statement(request):
@@ -638,7 +687,7 @@ def create_problem_statement(request):
         except Exception as e:
             messages.error(request, f'Error: {e}')
 
-    return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+    return redirect('/accounts/dashboard/?tab=problem_statements')
 
 
 def edit_problem_statement(request, ps_id):
@@ -646,7 +695,7 @@ def edit_problem_statement(request, ps_id):
         ps = ProblemStatement.objects.get(id=ps_id)
         if ps.is_published:
             messages.warning(request, 'Published problem statements cannot be edited.')
-            return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+            return redirect('/accounts/dashboard/?tab=problem_statements')
 
         if request.method == 'POST':
             ps.title = request.POST.get('title')
@@ -657,7 +706,7 @@ def edit_problem_statement(request, ps_id):
                 ps.pdf_file = request.FILES['pdf_file']
             ps.save()
             messages.success(request, 'Problem statement updated.')
-            return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+            return redirect('/accounts/dashboard/?tab=problem_statements')
 
         hackathons = Hackathon.objects.filter(status='Live').order_by('-created_at')
         return render(request, 'events/edit_problem_statement.html', {
@@ -665,7 +714,7 @@ def edit_problem_statement(request, ps_id):
         })
     except ProblemStatement.DoesNotExist:
         messages.error(request, 'Problem statement not found.')
-        return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+        return redirect('/accounts/dashboard/?tab=problem_statements')
 
 
 def delete_problem_statement(request, ps_id):
@@ -680,7 +729,7 @@ def delete_problem_statement(request, ps_id):
                 messages.success(request, 'Problem statement suspended.')
         except ProblemStatement.DoesNotExist:
             messages.error(request, 'Problem statement not found.')
-    return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+    return redirect('/accounts/dashboard/?tab=problem_statements')
 
 
 def publish_problem_statement(request, ps_id):
@@ -692,7 +741,7 @@ def publish_problem_statement(request, ps_id):
             messages.success(request, f'Problem statement "{ps.title}" published.')
         except ProblemStatement.DoesNotExist:
             messages.error(request, 'Problem statement not found.')
-    return render_route(request, '/accounts/dashboard/?tab=problem_statements')
+    return redirect('/accounts/dashboard/?tab=problem_statements')
 
 
 def create_creative_material(request):
@@ -727,7 +776,7 @@ def create_creative_material(request):
         except Exception as e:
             messages.error(request, f'Error: {e}')
 
-    return render_route(request, '/accounts/dashboard/?tab=creatives')
+    return redirect('/accounts/dashboard/?tab=creatives')
 
 
 def delete_creative_material(request, creative_id):
@@ -752,7 +801,7 @@ def suspend_creative_material(request, creative_id):
             messages.success(request, f'Creative material "{creative.title}" {status}.')
         except Exception as e:
             messages.error(request, f'Error: {e}')
-    return render_route(request, '/accounts/dashboard/?tab=creatives')
+    return redirect('/accounts/dashboard/?tab=creatives')
 
 
 # ─────────────────────────── PUBLIC LANDING PAGE ───────────────────────────
@@ -1569,6 +1618,27 @@ def launch_event(request, hackathon_id):
     return JsonResponse({
         'success': True,
         'message': f'{hackathon.name} has been launched successfully!',
+        'hackathon_id': hackathon.id,
+        'status': hackathon.status,
+    })
+
+
+@login_required(login_url="/accounts/")
+def draft_event(request, hackathon_id):
+    """Revert an event to Draft status."""
+    from django.http import JsonResponse
+    if not _can_manage_events(request):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+    hackathon.status = 'Draft'
+    hackathon.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': f'{hackathon.name} has been reverted to Draft successfully!',
         'hackathon_id': hackathon.id,
         'status': hackathon.status,
     })

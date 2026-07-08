@@ -312,8 +312,8 @@ def _send_spoc_welcome_email(user, plain_password, invitation):
         spoc_name = user.get_full_name() or user.username
         spoc_email = user.email
         
-        dashboard_url = "http://127.0.0.1:8000/accounts/"
-        website = "http://127.0.0.1:8000/"
+        dashboard_url = "https://hackathon.okcl.org/accounts/"
+        website = "https://hackathon.okcl.org/"
         support_email = "support@hacknexus.com"
         support_number = "+91 99999 99999"
         
@@ -826,7 +826,7 @@ def _send_team_approval_email(registration, team):
                 You can now log into HackNexus and access your team dashboard to:
                 add/remove members, select your problem statement, and submit your work.
             </p>
-            <a href="http://127.0.0.1:8000/accounts/"
+            <a href="https://hackathon.okcl.org/accounts/"
                style="background:#059669;color:white;padding:12px 24px;border-radius:8px;
                       text-decoration:none;font-weight:700;display:inline-block;margin-top:8px;">
                 Go to Dashboard →

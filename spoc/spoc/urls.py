@@ -14,11 +14,11 @@ urlpatterns = [
 
     # Teams
     path('teams/',                          views.spoc_teams,           name='spoc_teams'),
-    path('teams/<int:reg_id>/',             views.spoc_team_detail,     name='spoc_team_detail'),
-    path('teams/<int:reg_id>/approve/',     views.spoc_approve_team,    name='spoc_approve_team'),
-    path('teams/<int:reg_id>/reject/',      views.spoc_reject_team,     name='spoc_reject_team'),
-    path('teams/<int:reg_id>/download-template/', views.spoc_download_approval_template, name='spoc_download_approval_template'),
-    path('teams/<int:reg_id>/final-letter/', views.spoc_submit_final_letter, name='spoc_submit_final_letter'),
+    path('teams/<str:token>/',              views.spoc_team_detail,     name='spoc_team_detail'),
+    path('teams/<str:token>/approve/',      views.spoc_approve_team,    name='spoc_approve_team'),
+    path('teams/<str:token>/reject/',       views.spoc_reject_team,     name='spoc_reject_team'),
+    path('teams/<str:token>/download-template/', views.spoc_download_approval_template, name='spoc_download_approval_template'),
+    path('teams/<str:token>/final-letter/', views.spoc_submit_final_letter, name='spoc_submit_final_letter'),
 
     # Modifications
     path('modifications/',                          views.spoc_modifications,           name='spoc_modifications'),
