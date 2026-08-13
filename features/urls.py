@@ -89,15 +89,33 @@ urlpatterns = [
     path('expert/invitation/<int:invite_id>/approve/', feature_views.approve_expert_invitation, name='approve_expert_invitation'),
     path('expert/invitation/<int:invite_id>/reject/', feature_views.reject_expert_invitation, name='reject_expert_invitation'),
     path('expert/invitation/<int:invite_id>/suspend/', feature_views.suspend_expert_invitation, name='suspend_expert_invitation'),
+    
+# ── Expert Onboarding (invitation flow) ──
+# ── Expert Onboarding (invitation flow) ──
+    path('expert/invite/', feature_views.send_expert_invite, name='send_expert_invite'),
+    path('expert/invite/bulk/', feature_views.send_bulk_expert_invites, name='send_bulk_expert_invites'),
+    path('expert/register/<str:token>/', feature_views.expert_register_form, name='expert_register_form'),
+    path('expert/invitation/<int:invite_id>/', feature_views.view_expert_invitation, name='view_expert_invitation'),
+    path('expert/invitation/<int:invite_id>/edit/', feature_views.edit_expert_invitation, name='edit_expert_invitation'),
+    path('expert/invitation/<int:invite_id>/approve/', feature_views.approve_expert_invitation, name='approve_expert_invitation'),
+    path('expert/invitation/<int:invite_id>/reject/', feature_views.reject_expert_invitation, name='reject_expert_invitation'),
+    path('expert/invitation/<int:invite_id>/suspend/', feature_views.suspend_expert_invitation, name='suspend_expert_invitation'),
     # ── Expert Member Profile management ──
     path('expert/member/<int:expert_id>/', feature_views.view_expert_member, name='view_expert_member'),
     path('expert/member/<int:expert_id>/edit/', feature_views.edit_expert_member, name='edit_expert_member'),
     path('expert/member/<int:expert_id>/send-testimonial/', feature_views.send_expert_testimonial_to_media, name='send_expert_testimonial_to_media'),
     path('expert/member/<int:expert_id>/toggle-status/', feature_views.toggle_expert_member_status, name='toggle_expert_member_status'),
     
-# ── Evaluation parameters ──
+# ── Evaluation parameters & Jury Panel Assignment ──
     path('jury/save-parameter/', feature_views.save_marking_parameter, name='save_marking_parameter'),
     path('jury/parameters/<int:param_id>/delete/', feature_views.delete_marking_parameter, name='delete_marking_parameter'),
+    path('jury/add-panel/', feature_views.add_jury_panel, name='add_jury_panel'),
+    path('jury/delete-panel/<int:panel_id>/', feature_views.delete_jury_panel, name='delete_jury_panel'),
+    path('jury/save-panel-assignment/', feature_views.save_jury_team_assignment, name='save_jury_team_assignment'),
+    path('jury/save-all-panels/', feature_views.save_all_jury_panels, name='save_all_jury_panels'),
+    path('jury/lock-round/', feature_views.lock_round_assignments, name='lock_round_assignments'),
+    path('jury/alter-round/', feature_views.alter_round_assignments, name='alter_round_assignments'),
+    path('jury/assign-round-teams/', feature_views.assign_round_teams, name='assign_round_teams'),
     path('jury/assign-evaluation/', feature_views.save_team_evaluation_assignment, name='save_team_evaluation_assignment'),
     path('media-comms/', feature_views.media_communications_management, name='media_communications_management'),
     path('media-comms/creatives/save/', feature_views.save_creative_asset, name='save_creative_asset'),
@@ -105,7 +123,11 @@ urlpatterns = [
     path('media-comms/feeds/save/', feature_views.save_social_feed_item, name='save_social_feed_item'),
     path('media-comms/creatives/<int:creative_id>/toggle-status/', feature_views.toggle_creative_asset_status, name='toggle_creative_asset_status'),
     path('media-comms/creatives/<int:creative_id>/delete/', feature_views.delete_creative_asset, name='delete_creative_asset'),
+    path('media-comms/faq/save/', feature_views.save_faq_item, name='save_faq_item'),
+    path('media-comms/faq/<int:faq_id>/toggle-status/', feature_views.toggle_faq_status, name='toggle_faq_status'),
+    path('media-comms/faq/<int:faq_id>/delete/', feature_views.delete_faq_item, name='delete_faq_item'),
     path('results-reporting/', feature_views.results_reporting_management, name='results_reporting_management'),
+    path('results-reporting/reset/', feature_views.reset_evaluation_data, name='reset_evaluation_data'),
 
     # ── MENTOR ADMIN (Super Admin approves mentor invitations) ──
     path('mentors/', feature_views.mentor_invitations_admin, name='mentor_invitations_admin'),

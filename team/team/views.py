@@ -13,10 +13,12 @@ Team portal views:
 import os, random, secrets, string, logging
 from uuid import uuid4
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import FileResponse, Http404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
@@ -69,12 +71,23 @@ def _can_edit_registration(reg):
     return True
 
 
+def _is_final_round(user):
+    from features.models import Team
+    if not user or not user.is_authenticated:
+        return False
+    team_obj = Team.objects.filter(team_leader=user).first()
+    if team_obj and team_obj.status != 'disqualified' and team_obj.hackathon:
+        return team_obj.current_round == team_obj.hackathon.number_of_rounds
+    return False
+
+
 def _team_nav_context(request, active_nav, reg=None):
     from .models import TeamNotification
 
     return {
         'active_nav': active_nav,
         'is_approved': bool(reg and reg.status == 'approved'),
+        'is_final_round': _is_final_round(getattr(request, 'user', None)),
         'notif_count': TeamNotification.objects.filter(team_leader=request.user, is_read=False).count()
         if getattr(request, 'user', None) and request.user.is_authenticated else 0,
     }
@@ -713,6 +726,11 @@ def team_details(request):
                 if dob_val >= timezone.localdate():
                     messages.error(request, 'Team Lead Date of Birth cannot be in the future.')
                     return _rerender_with_errors()
+                today = timezone.localdate()
+                age = today.year - dob_val.year - ((today.month, today.day) < (dob_val.month, dob_val.day))
+                if age < 18:
+                    messages.error(request, 'Team Lead must be at least 18 years old.')
+                    return _rerender_with_errors()
             except ValueError:
                 messages.error(request, 'Invalid Team Lead Date of Birth format.')
                 return _rerender_with_errors()
@@ -1038,7 +1056,12 @@ def team_add_member(request):
             dob_val = datetime.datetime.strptime(dob_str, '%Y-%m-%d').date()
             if dob_val >= timezone.localdate():
                 messages.error(request, 'Member Date of Birth cannot be in the future.')
-                return redirect('team_details')
+                return redirect(reverse('team_details') + '?show_add_member=1')
+            today = timezone.localdate()
+            age = today.year - dob_val.year - ((today.month, today.day) < (dob_val.month, dob_val.day))
+            if age < 18:
+                messages.error(request, 'Member must be at least 18 years old.')
+                return redirect(reverse('team_details') + '?show_add_member=1')
         except ValueError:
             messages.error(request, 'Invalid Member Date of Birth format.')
             return redirect(reverse('team_details') + '?show_add_member=1')
@@ -1369,6 +1392,11 @@ def team_edit_member(request, member_index):
             if dob_val >= timezone.localdate():
                 messages.error(request, 'Member Date of Birth cannot be in the future.')
                 return redirect(redir_url)
+            today = timezone.localdate()
+            age = today.year - dob_val.year - ((today.month, today.day) < (dob_val.month, dob_val.day))
+            if age < 18:
+                messages.error(request, 'Member must be at least 18 years old.')
+                return redirect(redir_url)
         except ValueError:
             messages.error(request, 'Invalid Member Date of Birth format.')
             return redirect(redir_url)
@@ -1515,6 +1543,45 @@ def team_edit_member(request, member_index):
         return redirect('team_details')
 
     messages.success(request, f'Member {name or email} updated successfully.')
+    return redirect('team_details')
+
+
+@login_required(login_url='/team/login/')
+@require_POST
+def team_remove_member(request, member_index):
+    """Remove an existing team member from the registration."""
+    if not _team_required(request):
+        return redirect('team_login')
+
+    from features.models import TeamRegistration
+    from .models import TeamMemberInvite
+
+    reg = TeamRegistration.objects.filter(team_leader=request.user).order_by('-registered_at').first()
+    if not reg:
+        messages.error(request, 'No registration found.')
+        return redirect('team_details')
+
+    if not _can_edit_registration(reg):
+        messages.error(request, 'Members can no longer be removed because the registration deadline has passed or editing is locked.')
+        return redirect('team_details')
+
+    members = list(reg.members_data or [])
+    if member_index < 0 or member_index >= len(members):
+        messages.error(request, 'Invalid member.')
+        return redirect('team_details')
+
+    removed = members.pop(member_index)
+    email = removed.get('email', '').strip().lower()
+    name = removed.get('name', '').strip()
+
+    # Delete matching invite if exists
+    if email:
+        TeamMemberInvite.objects.filter(registration=reg, email__iexact=email).delete()
+
+    reg.members_data = members
+    reg.save(update_fields=['members_data'])
+
+    messages.success(request, f"Member '{name or email}' has been removed successfully.")
     return redirect('team_details')
 
 
@@ -1694,7 +1761,8 @@ def team_invite_mentor(request):
 
 def _send_mentor_invite_email(invite, reg, request):
     try:
-        accept_url = f"https://hackathon.okcl.org/mentor/invite/{invite.token}/"
+        from django.urls import reverse
+        accept_url = request.build_absolute_uri(reverse('mentor_accept_invite', args=[invite.token]))
         subject = f"Mentor Invitation — Team '{reg.team_name}' on HackNexus"
         html = f"""
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
@@ -1819,6 +1887,10 @@ def team_add_travel(request):
     if not _team_required(request):
         return redirect('team_login')
 
+    if not _is_final_round(request.user):
+        messages.error(request, 'Travel details are only active after qualifying to the final round.')
+        return redirect('team_dashboard')
+
     from features.models import TeamRegistration
     from .models import TeamTravelDetail
 
@@ -1839,6 +1911,16 @@ def team_add_travel(request):
     ticket_amount_str = request.POST.get('ticket_amount', '').strip()
     ticket_amount = float(ticket_amount_str) if ticket_amount_str else None
 
+    ticket_type = request.POST.get('ticket_type', 'group')
+    if ticket_type == 'individual':
+        travelers = request.POST.getlist('travelers')
+        if not travelers:
+            messages.error(request, 'Please select at least one traveler for the individual ticket.')
+            return redirect('team_travel')
+        traveler_name = ", ".join(travelers)
+    else:
+        traveler_name = "Group / Whole Team"
+
     TeamTravelDetail.objects.create(
         registration=reg,
         submitted_by=request.user,
@@ -1846,7 +1928,7 @@ def team_add_travel(request):
         destination=destination,
         journey_date=journey_date,
         travel_mode=travel_mode,
-        traveler_name=request.POST.get('traveler_name', '').strip(),
+        traveler_name=traveler_name,
         ticket_number=request.POST.get('ticket_number', '').strip(),
         ticket_amount=ticket_amount,
         notes=request.POST.get('notes', '').strip(),
@@ -1857,6 +1939,8 @@ def team_add_travel(request):
 
 
 @login_required(login_url='/team/login/')
+@csrf_exempt
+@never_cache
 @require_POST
 def team_send_support_message(request):
     if not _team_required(request):
@@ -1872,19 +1956,58 @@ def team_send_support_message(request):
 
     subject = request.POST.get('subject', '').strip()
     message_text = request.POST.get('message', '').strip()
+    category = request.POST.get('category', 'general').strip() or 'general'
     if not subject or not message_text:
         messages.error(request, 'Subject and message are required.')
         return redirect('team_dashboard')
 
-    TeamSupportMessage.objects.create(
+    msg = TeamSupportMessage.objects.create(
         registration=reg,
         sender=request.user,
-        category=request.POST.get('category', 'general').strip() or 'general',
+        category=category,
         subject=subject,
         message=message_text,
         attachment=request.FILES.get('attachment'),
     )
-    messages.success(request, 'Your message has been logged for admin review.')
+
+    # Notify SPOC if institution mapping exists
+    try:
+        if reg.institution:
+            from accounts.models import SpocInstitutionMap
+            from spoc.spoc.models import SpocNotification
+            mapping = SpocInstitutionMap.objects.filter(institution=reg.institution).select_related('spoc').first()
+            if mapping and mapping.spoc:
+                SpocNotification.objects.create(
+                    spoc=mapping.spoc,
+                    notif_type='admin_msg',
+                    title=f"New Message from Team '{reg.team_name}'",
+                    body=f"[{category.upper()}] {subject}: {message_text[:100]}",
+                    link="/spoc/messages/?tab=teams",
+                )
+    except Exception as e:
+        logger.error(f"Failed to notify SPOC of team message: {e}")
+
+    # Notify Mentor if assigned
+    try:
+        mentor = getattr(reg, 'mentor', None)
+        if not mentor:
+            from features.models import TeamMentor
+            tm = TeamMentor.objects.filter(team=reg).select_related('mentor').first()
+            if tm:
+                mentor = tm.mentor
+        if mentor:
+            from mentor.mentor.models import MentorNotification
+            MentorNotification.objects.create(
+                mentor=mentor,
+                notif_type='team_msg',
+                title=f"New Message from Team '{reg.team_name}'",
+                body=f"[{category.upper()}] {subject}: {message_text[:100]}",
+                link="/mentor/messages/?tab=teams",
+            )
+    except Exception as e:
+        logger.error(f"Failed to notify Mentor of team message: {e}")
+
+    messages.success(request, 'Your message has been sent successfully.')
     return redirect('team_communication')
 
 
@@ -1904,26 +2027,29 @@ def team_communication(request):
         'support_messages': data['support_messages'],
         **_team_nav_context(request, 'communication', reg),
     })
-
-
 @login_required(login_url='/team/login/')
 @never_cache
 def team_travel(request):
     if not _team_required(request):
         return redirect('team_login')
 
+    if not _is_final_round(request.user):
+        messages.error(request, 'Travel details are only active after qualifying to the final round.')
+        return redirect('team_dashboard')
+
     reg = _get_team_registration(request)
     if not reg:
         return redirect('team_dashboard')
 
     data = _get_dashboard_data(reg)
+    leader_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
     return render(request, 'team/travel.html', {
         'reg': reg,
         'travel_details': data['travel_details'],
+        'leader_name': leader_name,
+        'members': data['members'],
         **_team_nav_context(request, 'travel', reg),
     })
-
-
 @login_required(login_url='/team/login/')
 @never_cache
 def team_content(request):
@@ -2052,7 +2178,47 @@ def team_memories(request):
     if not reg:
         return redirect('team_dashboard')
 
+    from features.models import Team
     from events.models import CreativeMaterial
+
+    team_obj = Team.objects.filter(team_leader=request.user).first()
+    can_upload_memories = False
+    if team_obj and team_obj.status != 'disqualified' and team_obj.hackathon:
+        can_upload_memories = team_obj.current_round > team_obj.hackathon.number_of_rounds
+
+    if request.method == 'POST':
+        if not can_upload_memories:
+            messages.error(request, "You are not authorized to upload memories yet.")
+            return redirect('team_memories')
+        
+        title = request.POST.get('title', '').strip()
+        uploaded_file = request.FILES.get('file')
+        
+        if not uploaded_file:
+            messages.error(request, "Please select a photo or video to upload.")
+            return redirect('team_memories')
+            
+        name_lower = uploaded_file.name.lower()
+        valid_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.webm', '.ogg', '.mov', '.m4v')
+        if not name_lower.endswith(valid_extensions):
+            messages.error(request, "Invalid file format. Please upload an image or video.")
+            return redirect('team_memories')
+
+        if not title:
+            title = f"Memory - {team_obj.team_name}"
+
+        CreativeMaterial.objects.create(
+            hackathon=reg.hackathon,
+            title=title,
+            file=uploaded_file,
+            material_type='creative',
+            is_published=True,
+            is_suspended=False,
+            landing_sections=['gallery']
+        )
+        messages.success(request, "Memory uploaded successfully!")
+        return redirect('team_memories')
+
     creative_queryset = CreativeMaterial.objects.filter(
         hackathon=reg.hackathon,
         is_published=True,
@@ -2075,6 +2241,7 @@ def team_memories(request):
     return render(request, 'team/memories.html', {
         'reg': reg,
         'creatives': gallery_items[:12],
+        'can_upload_memories': can_upload_memories,
         **_team_nav_context(request, 'memories', reg),
     })
 
@@ -2317,3 +2484,14 @@ def team_complete_modification(request):
         messages.error(request, 'No active approved modification request found.')
 
     return redirect('team_details')
+
+
+def tshirt_size_guideline_pdf(request):
+    pdf_path = os.path.join(settings.MEDIA_ROOT, 'tshirt_size_guidelines.pdf')
+    if not os.path.exists(pdf_path):
+        pdf_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'tshirt_size_guidelines.pdf')
+    if os.path.exists(pdf_path):
+        response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="tshirt_size_guidelines.pdf"'
+        return response
+    raise Http404("T-Shirt size guideline PDF not found.")

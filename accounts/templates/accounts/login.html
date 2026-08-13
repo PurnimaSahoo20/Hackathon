@@ -350,6 +350,20 @@
           setTimeout(() => element.remove(), 400);
         });
       }, 5000);
+
+      // Prevent double-submission on form submit
+      document.addEventListener('submit', (e) => {
+        const form = e.target;
+        setTimeout(() => {
+          if (e.defaultPrevented) return;
+          const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+          submitBtns.forEach((btn) => {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+          });
+        }, 10);
+      });
     </script>
   </body>
 </html>

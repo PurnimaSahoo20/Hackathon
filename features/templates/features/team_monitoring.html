@@ -991,6 +991,11 @@
         </button>
     </div>
     <div id="createTeamForm" class="slide-form">
+      <div class="modal-box" style="max-width:750px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3 style="margin:0;color:#ea580c;font-weight:800;">Create Team</h3>
+            <button type="button" onclick="toggleCreateTeamForm()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+        </div>
         <form method="POST" action="{% url 'create_team' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="section-hdr">Team Details</div>
@@ -1229,8 +1234,10 @@
                 <button type="submit" class="btn">
                     <ion-icon name="save-outline"></ion-icon> Create Team
                 </button>
+                <button type="button" class="btn-outline" onclick="toggleCreateTeamForm()">Cancel</button>
             </div>
         </form>
+      </div>
     </div>
 </div>
 

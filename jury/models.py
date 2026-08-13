@@ -46,6 +46,38 @@ class TeamEvaluation(models.Model):
         )
 
 
+class TeamSubParameterEvaluation(models.Model):
+    """
+    Stores the score given by an evaluator for an individual sub-parameter.
+    """
+    team = models.ForeignKey(
+        'features.Team',
+        on_delete=models.CASCADE,
+        related_name='sub_evaluations'
+    )
+    round_number = models.IntegerField(default=1)
+    evaluator = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='submitted_sub_evaluations'
+    )
+    sub_parameter = models.ForeignKey(
+        'events.MarkingSubParameter',
+        on_delete=models.CASCADE,
+        related_name='evaluations'
+    )
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    submitted_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'jury_teamsubparameterevaluation'
+        unique_together = ('team', 'round_number', 'evaluator', 'sub_parameter')
+        ordering = ['team', 'round_number', 'sub_parameter']
+
+    def __str__(self):
+        return f"{self.evaluator.username} -> {self.team.team_name} [{self.sub_parameter.name}]: {self.score}"
+
+
 class EvaluatorProfile(models.Model):
     """Extra profile data used by jury and expert dashboards."""
     user = models.OneToOneField(

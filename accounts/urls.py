@@ -73,4 +73,5 @@ urlpatterns = [
 
     # Public Registration (Standalone)
     path('spoc-register/<str:token>/', feature_views.spoc_register_form, name='spoc_register_form'),
+    path('spoc_register/<str:token>/', feature_views.spoc_register_form),
 ]

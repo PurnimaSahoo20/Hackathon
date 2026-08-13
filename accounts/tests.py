@@ -73,3 +73,71 @@ class DuplicateEmailLoginTests(TestCase):
 
         self.assertEqual(resolved_a.id, self.user_a.id)
         self.assertEqual(resolved_b.id, self.user_b.id)
+
+
+class InvitationValidationTests(TestCase):
+    def test_clean_indian_phone_number_valid(self):
+        from features.views import _clean_indian_phone_number
+        self.assertEqual(_clean_indian_phone_number("9876543210"), "+91 9876543210")
+        self.assertEqual(_clean_indian_phone_number("+91 9876543210"), "+91 9876543210")
+        self.assertEqual(_clean_indian_phone_number("919876543210"), "+91 9876543210")
+        self.assertEqual(_clean_indian_phone_number(" 91 98765-43210 "), "+91 9876543210")
+        self.assertEqual(_clean_indian_phone_number("7008123456"), "+91 7008123456")
+        
+    def test_clean_indian_phone_number_invalid(self):
+        from features.views import _clean_indian_phone_number
+        with self.assertRaises(ValueError):
+            _clean_indian_phone_number("1234567890")
+        with self.assertRaises(ValueError):
+            _clean_indian_phone_number("987654321")
+        with self.assertRaises(ValueError):
+            _clean_indian_phone_number("98765432100")
+        with self.assertRaises(ValueError):
+            _clean_indian_phone_number("abc9876543210")
+
+    def test_clean_indian_contact_number_valid(self):
+        from features.views import _clean_indian_contact_number
+        self.assertEqual(_clean_indian_contact_number("0674250000"), "+91 0674250000")
+        self.assertEqual(_clean_indian_contact_number("+91 0674250000"), "+91 0674250000")
+        self.assertEqual(_clean_indian_contact_number("910674250000"), "+91 0674250000")
+        
+    def test_clean_indian_contact_number_invalid(self):
+        from features.views import _clean_indian_contact_number
+        with self.assertRaises(ValueError):
+            _clean_indian_contact_number("12345")
+
+
+class InvitationRegistrationViewTests(TestCase):
+    def setUp(self):
+        from accounts.models import JuryInvitation, SpocInvitation
+        self.jury_invite = JuryInvitation.objects.create(
+            email='testjury@example.com',
+            token='testjurytoken123',
+            status='invited'
+        )
+        self.spoc_invite = SpocInvitation.objects.create(
+            email='testspoc@example.com',
+            token='testspoctoken123',
+            status='invited'
+        )
+
+    def test_jury_register_form_get(self):
+        response = self.client.get(reverse('jury_register_form', args=[self.jury_invite.token]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_jury_register_form_post_invalid_phone(self):
+        post_data = {
+            'first_name': 'JuryFirst',
+            'last_name': 'JuryLast',
+            'phone_number': '1234567890', # Invalid: starts with 1
+            'gender': 'Male',
+            'organization': 'JuryOrg',
+            'designation': 'Judge',
+            'domain': 'AI/ML',
+        }
+        response = self.client.post(reverse('jury_register_form', args=[self.jury_invite.token]), post_data)
+        self.assertEqual(response.status_code, 200)
+        self.jury_invite.refresh_from_db()
+        self.assertEqual(self.jury_invite.status, 'invited')
+
+

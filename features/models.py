@@ -191,6 +191,9 @@ class TeamEvaluationAssignment(models.Model):
     expert_1 = models.ForeignKey('accounts.ExpertProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments_as_expert1')
     expert_2 = models.ForeignKey('accounts.ExpertProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments_as_expert2')
     
+    assigned_panel = models.ForeignKey(
+        'events.JuryTeam', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_team_evaluations'
+    )
     status = models.CharField(max_length=50, default='Pending') # Pending or Assigned
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -376,6 +379,7 @@ class Podcast(models.Model):
         choices=[('podcast', 'Podcast'), ('expert_talk', 'Expert Talk')],
         default='podcast'
     )
+    duration = models.CharField(max_length=100, blank=True, default='Featured')
     created_by = models.ForeignKey(
         'accounts.User', on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -457,6 +461,30 @@ class SocialFeedEntry(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_platform_display()})"
+
+
+class FAQItem(models.Model):
+    """Dynamic FAQ entries managed per hackathon."""
+    hackathon = models.ForeignKey(
+        'events.Hackathon', on_delete=models.CASCADE, related_name='faq_items'
+    )
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    display_order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
+    is_published = models.BooleanField(default=True)
+    is_suspended = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'features_faqitem'
+        ordering = ['display_order', '-created_at']
+
+    def __str__(self):
+        return self.question[:80]
 
 
 # ─────────────────────────────────────────────────────────────

@@ -957,8 +957,18 @@ def spoc_messages(request):
             except User.DoesNotExist:
                 messages.error(request, 'Recipient not found.')
 
+    # Team support messages for SPOC's institution
+    institution = _get_spoc_institution(spoc)
+    from team.team.models import TeamSupportMessage
+    team_support_messages = TeamSupportMessage.objects.filter(
+        registration__institution=institution
+    ).select_related('registration', 'registration__team_leader', 'sender').order_by('-created_at') if institution else TeamSupportMessage.objects.none()
+
+    active_tab = request.GET.get('tab', 'teams')
+
     context = {
         'spoc': spoc,
+        'institution': institution,
         'dashboard_title': 'SPOC Communication',
         'available_contact_types': available_contact_types,
         'available_contacts': available_contacts,
@@ -967,9 +977,48 @@ def spoc_messages(request):
         'selected_contact_type': selected_contact_type,
         'selected_contact': selected_contact,
         'selected_thread': selected_thread,
+        'team_support_messages': team_support_messages,
+        'active_tab': active_tab,
         'active_nav': 'messages',
     }
     return render(request, 'spoc/messages.html', context)
+
+
+@login_required(login_url='/spoc/login/')
+@require_POST
+def spoc_reply_team_message(request, message_id):
+    if not _spoc_required(request):
+        return redirect('spoc_login')
+
+    spoc = _get_spoc(request)
+    from team.team.models import TeamSupportMessage, TeamNotification
+    msg = get_object_or_404(TeamSupportMessage, id=message_id)
+
+    reply_text = request.POST.get('reply', '').strip()
+    status = request.POST.get('status', 'reviewed').strip()
+    if reply_text:
+        spoc_name = request.user.get_full_name() or request.user.username
+        msg.admin_reply = f"[SPOC ({spoc_name})]: {reply_text}"
+        msg.status = status
+        msg.save(update_fields=['admin_reply', 'status', 'updated_at'])
+
+        if msg.registration and msg.registration.team_leader:
+            try:
+                TeamNotification.objects.create(
+                    team_leader=msg.registration.team_leader,
+                    registration=msg.registration,
+                    notif_type='system',
+                    title=f"Reply from SPOC on '{msg.subject}'",
+                    body=f"SPOC Response: {reply_text}",
+                )
+            except Exception as e:
+                logger.error(f"Failed to create TeamNotification: {e}")
+        messages.success(request, 'Reply sent to team successfully.')
+    else:
+        msg.status = status
+        msg.save(update_fields=['status', 'updated_at'])
+        messages.success(request, 'Message status updated.')
+    return redirect(f"{reverse('spoc_messages')}?tab=teams")
 
 
 @login_required(login_url='/spoc/login/')

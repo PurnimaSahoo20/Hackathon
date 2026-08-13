@@ -96,6 +96,7 @@
 <!-- INVITATIONS TAB CONTENT -->
 {% if not readonly_mode %}
 <div id="inviteForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;">Send SPOC Invitation</h3>
         <button type="button" onclick="document.getElementById('inviteForm').classList.remove('open')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
@@ -168,6 +169,7 @@
             </div>
         </div>
     </div>
+  </div>
 </div>
 {% endif %}
 
@@ -216,7 +218,15 @@
                         <form method="POST" action="{% url 'approve_spoc_invitation' inv.id %}" style="display:inline;">{% csrf_token %}<button class="btn-sm btn-approve">Approve</button></form>
                         <button class="btn-sm btn-reject" onclick="openRejectModal({{ inv.id }},'{{ inv.email }}')">Reject</button>
                         {% elif inv.status == 'approved' and inv.created_user and inv.created_user.spoc_profile %}
-                        <a href="{% url 'view_spoc' inv.created_user.spoc_profile.id %}" class="btn-sm btn-approve">Profile</a>
+                            {% if not readonly_mode %}
+                            <form method="POST" action="{% url 'suspend_spoc' inv.created_user.spoc_profile.id %}?sub=invitations" style="display:inline;"
+                                  onsubmit="return confirm('{% if inv.created_user.is_active %}Suspend{% else %}Reactivate{% endif %} {{ inv.created_user.email }}?')">
+                                {% csrf_token %}
+                                <button class="btn-icon danger" title="{% if inv.created_user.is_active %}Suspend SPOC{% else %}Reactivate SPOC{% endif %}" type="submit">
+                                    <ion-icon name="{% if inv.created_user.is_active %}ban-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+                                </button>
+                            </form>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </td>

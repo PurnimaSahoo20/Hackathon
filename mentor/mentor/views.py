@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 
 from accounts.passwords import PORTAL_PASSWORD_HELP_TEXT, validate_portal_password
 
@@ -333,22 +334,74 @@ def mentor_messages(request):
     if not _mentor_required(request):
         return redirect("mentor_login")
 
+    mentor = _get_mentor(request)
     from .models import MentorMessage
     from accounts.models import User
+    from features.models import TeamMentor, TeamRegistration
+    from team.team.models import TeamSupportMessage
+
+    # Assigned team messages
+    assigned = TeamMentor.objects.filter(mentor=mentor).values_list("team_id", flat=True)
+    reg_teams = TeamRegistration.objects.filter(mentor=mentor).values_list("id", flat=True)
+    all_team_ids = set(list(assigned) + list(reg_teams))
+
+    team_support_messages = TeamSupportMessage.objects.filter(
+        registration_id__in=all_team_ids
+    ).select_related("registration", "registration__team_leader", "sender").order_by("-created_at")
 
     sent = MentorMessage.objects.filter(sender=request.user).values_list("recipient_id", flat=True)
     received = MentorMessage.objects.filter(recipient=request.user).values_list("sender_id", flat=True)
     conv_user_ids = set(list(sent) + list(received))
     conv_users = User.objects.filter(id__in=conv_user_ids)
 
+    active_tab = request.GET.get('tab', 'teams')
+
     context = {
-        "mentor": _get_mentor(request),
+        "mentor": mentor,
         "conv_users": conv_users,
+        "team_support_messages": team_support_messages,
+        "active_tab": active_tab,
         "active_nav": "messages",
         "sidebar_team": _get_sidebar_team(request),
         "team_nav_active": "",
     }
     return render(request, "mentor/messages.html", context)
+
+
+@login_required(login_url="/mentor/login/")
+@require_POST
+def mentor_reply_team_message(request, message_id):
+    if not _mentor_required(request):
+        return redirect("mentor_login")
+
+    from team.team.models import TeamSupportMessage, TeamNotification
+    msg = get_object_or_404(TeamSupportMessage, id=message_id)
+
+    reply_text = request.POST.get("reply", "").strip()
+    status = request.POST.get("status", "reviewed").strip()
+    if reply_text:
+        mentor_name = request.user.get_full_name() or request.user.username
+        msg.admin_reply = f"[Mentor ({mentor_name})]: {reply_text}"
+        msg.status = status
+        msg.save(update_fields=["admin_reply", "status", "updated_at"])
+
+        if msg.registration and msg.registration.team_leader:
+            try:
+                TeamNotification.objects.create(
+                    team_leader=msg.registration.team_leader,
+                    registration=msg.registration,
+                    notif_type="mentor_accepted",
+                    title=f"Reply from Mentor on '{msg.subject}'",
+                    body=f"Mentor Response: {reply_text}",
+                )
+            except Exception as e:
+                logger.error(f"Failed to create TeamNotification: {e}")
+        messages.success(request, "Reply sent to team successfully.")
+    else:
+        msg.status = status
+        msg.save(update_fields=["status", "updated_at"])
+        messages.success(request, "Message status updated.")
+    return redirect(f"{reverse('mentor_messages')}?tab=teams")
 
 
 @login_required(login_url="/mentor/login/")

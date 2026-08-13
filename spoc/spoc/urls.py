@@ -32,6 +32,7 @@ urlpatterns = [
     path('messages/',                       views.spoc_messages,        name='spoc_messages'),
     path('messages/<int:user_id>/',         views.spoc_conversation,    name='spoc_conversation'),
     path('messages/send/',                  views.spoc_send_message,    name='spoc_send_message'),
+    path('messages/reply-team/<int:message_id>/', views.spoc_reply_team_message, name='spoc_reply_team_message'),
 
     # Announcements & Activity
     path('announcements/',  views.spoc_announcements, name='spoc_announcements'),

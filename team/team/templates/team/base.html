@@ -420,7 +420,12 @@
    
             <a href="{% url 'team_submission' %}" class="nav-item {% if active_nav == 'submission' %}active{% endif %} {% if not is_approved %}locked{% endif %}"><ion-icon name="cloud-upload-outline" class="nav-icon"></ion-icon> Submit Solution {% if not is_approved %}<span style="font-size:10px;color:var(--muted);margin-left:auto">LOCK</span>{% endif %}</a>
             <a href="{% url 'team_announcements' %}" class="nav-item {% if active_nav == 'announcements' %}active{% endif %}"><ion-icon name="megaphone-outline" class="nav-icon"></ion-icon> News & Announcements</a>
-            <a href="{% url 'team_travel' %}" class="nav-item {% if active_nav == 'travel' %}active{% endif %}"><ion-icon name="airplane-outline" class="nav-icon"></ion-icon> Travel Details</a>
+            <a href="{% url 'team_travel' %}" class="nav-item {% if active_nav == 'travel' %}active{% endif %} {% if not is_final_round %}locked{% endif %}">
+                <ion-icon name="airplane-outline" class="nav-icon"></ion-icon> Travel Details
+                {% if not is_final_round %}
+                <span style="font-size:10px;color:var(--muted);margin-left:auto">LOCK</span>
+                {% endif %}
+            </a>
         </div>
         <div class="nav-section">
             <div class="nav-section-label">Info</div>

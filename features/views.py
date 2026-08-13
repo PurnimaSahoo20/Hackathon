@@ -9,6 +9,48 @@ import io
 import uuid
 import logging
 import secrets
+import re
+import os
+
+def _clean_indian_phone_number(val):
+    val = (val or '').strip()
+    cleaned = re.sub(r'[\s\-()]', '', val)
+    if cleaned.startswith('+91'):
+        digits = cleaned[3:]
+    elif cleaned.startswith('91') and len(cleaned) == 12:
+        digits = cleaned[2:]
+    else:
+        digits = cleaned
+    if not re.match(r'^[6-9]\d{9}$', digits):
+        raise ValueError("Phone number must be a valid 10-digit Indian mobile number (e.g. +91 9876543210).")
+    return f"+91 {digits}"
+
+def _clean_indian_contact_number(val):
+    val = (val or '').strip()
+    cleaned = re.sub(r'[\s\-()]', '', val)
+    if cleaned.startswith('+91'):
+        digits = cleaned[3:]
+    elif cleaned.startswith('91') and len(cleaned) == 12:
+        digits = cleaned[2:]
+    else:
+        digits = cleaned
+    if not re.match(r'^\d{10}$', digits):
+        raise ValueError("Contact number must be a valid 10-digit contact number (e.g. +91 6742500000).")
+    return f"+91 {digits}"
+
+def _validate_image_file(uploaded_file, field_label, max_size_mb=2):
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png', '.gif']:
+        raise ValueError(f"{field_label} must be a valid image file (JPG, JPEG, PNG, or GIF).")
+    if uploaded_file.size > max_size_mb * 1024 * 1024:
+        raise ValueError(f"{field_label} file size cannot exceed {max_size_mb}MB.")
+
+def _validate_document_file(uploaded_file, field_label, max_size_mb=5):
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in ['.pdf', '.jpg', '.jpeg', '.png']:
+        raise ValueError(f"{field_label} must be a PDF or an image (JPG, JPEG, PNG).")
+    if uploaded_file.size > max_size_mb * 1024 * 1024:
+        raise ValueError(f"{field_label} file size cannot exceed {max_size_mb}MB.")
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
@@ -44,6 +86,7 @@ from .models import (
     Podcast, Documentation,
     LogisticsPlan, VenueAllocation, VenueFoodRefreshment, VolunteerAssignment,
     EventBudget, SponsorshipFund, FinancialTransaction,
+    FAQItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -729,7 +772,10 @@ def suspend_spoc(request, spoc_id):
         messages.error(request, "SPOC not found.")
     except Exception as exc:
         messages.error(request, f"Failed: {exc}")
-    return render_route(request, '/features/spoc/?sub=spocs')
+    sub = request.GET.get('sub', 'spocs')
+    if sub not in ['spocs', 'invitations']:
+        sub = 'spocs'
+    return render_route(request, f'/features/spoc/?sub={sub}')
 
 
 @login_required(login_url='/accounts/')
@@ -875,7 +921,7 @@ def _create_and_send_spoc_invitation(request, email, hackathon=None, institution
             city=city,
             state=state,
         )
-        form_link = f"https://hackathon.okcl.org{reverse('spoc_register_form', args=[token])}"
+        form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[token]))
         _send_spoc_invite_email(invite, form_link)
 
 
@@ -1145,25 +1191,109 @@ def spoc_register_form(request, token):
 
     if request.method == 'POST':
         try:
-            inst_name = request.POST.get('institution_name', '').strip()
-            if inst_name:
-                from accounts.models import Institution
-                existing_inst_inv = SpocInvitation.objects.filter(institution_name__iexact=inst_name).exclude(id=invitation.id).exclude(status='rejected').first()
-                existing_inst = Institution.objects.filter(name__iexact=inst_name).first()
-                if existing_inst_inv or existing_inst:
-                    raise ValueError(f"University/Institution '{inst_name}' has already been invited or registered.")
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            institution_name = request.POST.get('institution_name', '').strip()
+            institution_email = request.POST.get('institution_email', '').strip().lower()
+            institution_address = request.POST.get('institution_address', '').strip()
+            institution_head_name = request.POST.get('institution_head_name', '').strip()
+            institution_head_email = request.POST.get('institution_head_email', '').strip().lower()
+            institution_contact = request.POST.get('institution_contact', '').strip()
+            institution_location = request.POST.get('institution_location', '').strip()
 
-            for f in ['first_name', 'last_name', 'phone_number', 'gender', 'institution_name',
-                      'institution_email', 'institution_address', 'institution_head_name',
-                      'institution_head_email', 'institution_contact', 'institution_location']:
-                setattr(invitation, f, request.POST.get(f, '').strip())
-            dob = request.POST.get('date_of_birth', '')
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not institution_name or len(institution_name) < 3:
+                raise ValueError("Institution name must be at least 3 characters long.")
+            
+            from accounts.models import Institution
+            existing_inst_inv = SpocInvitation.objects.filter(institution_name__iexact=institution_name).exclude(id=invitation.id).exclude(status='rejected').first()
+            existing_inst = Institution.objects.filter(name__iexact=institution_name).first()
+            if existing_inst_inv or existing_inst:
+                raise ValueError(f"University/Institution '{institution_name}' has already been invited or registered.")
+                
+            if not institution_email:
+                raise ValueError("Institution email is required.")
+            try:
+                validate_email(institution_email)
+            except ValidationError:
+                raise ValueError("Please enter a valid institution email address.")
+                
+            if not institution_address or len(institution_address) < 10:
+                raise ValueError("Institution address must be at least 10 characters long.")
+                
+            if not institution_location or len(institution_location) < 3:
+                raise ValueError("Institution location/city must be at least 3 characters long.")
+                
+            if institution_contact and institution_contact != '+91':
+                institution_contact = _clean_indian_contact_number(institution_contact)
+            else:
+                institution_contact = ''
+                
+            if not institution_head_name or len(institution_head_name) < 2:
+                raise ValueError("Institution head/principal name must be at least 2 characters long.")
+                
+            if not institution_head_email:
+                raise ValueError("Institution head email is required.")
+            try:
+                validate_email(institution_head_email)
+            except ValidationError:
+                raise ValueError("Please enter a valid head/principal email address.")
+
+            dob = request.POST.get('date_of_birth', '').strip()
             if dob:
-                invitation.date_of_birth = dob
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("SPOC must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
+
+            if 'institution_logo' in request.FILES:
+                _validate_image_file(request.FILES['institution_logo'], "Institution logo")
+            
+            if not invitation.id_proof and 'id_proof' not in request.FILES:
+                raise ValueError("Government ID Proof is required.")
+                
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+
+            invitation.first_name = first_name
+            invitation.last_name = last_name
+            invitation.phone_number = phone_number
+            invitation.gender = gender
+            invitation.institution_name = institution_name
+            invitation.institution_email = institution_email
+            invitation.institution_address = institution_address
+            invitation.institution_head_name = institution_head_name
+            invitation.institution_head_email = institution_head_email
+            invitation.institution_contact = institution_contact
+            invitation.institution_location = institution_location
+            
+            if dob_date:
+                invitation.date_of_birth = dob_date
+            else:
+                invitation.date_of_birth = None
+            
             if 'institution_logo' in request.FILES:
                 invitation.institution_logo = request.FILES['institution_logo']
             if 'id_proof' in request.FILES:
                 invitation.id_proof = request.FILES['id_proof']
+                
             invitation.status = 'pending'
             invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
@@ -1216,26 +1346,118 @@ def edit_spoc_invitation(request, invite_id):
 
     if request.method == 'POST':
         try:
-            for field in [
-                'first_name', 'last_name', 'phone_number', 'gender',
-                'institution_name', 'institution_email', 'institution_address',
-                'institution_head_name', 'institution_head_email',
-                'institution_contact', 'institution_location',
-            ]:
-                setattr(invite, field, request.POST.get(field, '').strip())
-
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
             email = request.POST.get('email', '').strip().lower()
-            if email:
-                invite.email = email
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            institution_name = request.POST.get('institution_name', '').strip()
+            institution_email = request.POST.get('institution_email', '').strip().lower()
+            institution_address = request.POST.get('institution_address', '').strip()
+            institution_head_name = request.POST.get('institution_head_name', '').strip()
+            institution_head_email = request.POST.get('institution_head_email', '').strip().lower()
+            institution_contact = request.POST.get('institution_contact', '').strip()
+            institution_location = request.POST.get('institution_location', '').strip()
+
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            if not email:
+                raise ValueError("Email is required.")
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise ValueError("Please enter a valid email address.")
+            
+            if email != invite.email:
+                if SpocInvitation.objects.filter(email=email).exclude(id=invite.id).exists():
+                    raise ValueError(f"An invitation already exists for {email}.")
+                if User.objects.filter(email=email).exists():
+                    raise ValueError("A user with this email already exists.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not institution_name or len(institution_name) < 3:
+                raise ValueError("Institution name must be at least 3 characters long.")
+            
+            if institution_name != invite.institution_name:
+                from accounts.models import Institution
+                existing_inst_inv = SpocInvitation.objects.filter(institution_name__iexact=institution_name).exclude(id=invite.id).exclude(status='rejected').first()
+                existing_inst = Institution.objects.filter(name__iexact=institution_name).first()
+                if existing_inst_inv or existing_inst:
+                    raise ValueError(f"University/Institution '{institution_name}' has already been invited or registered.")
+                
+            if not institution_email:
+                raise ValueError("Institution email is required.")
+            try:
+                validate_email(institution_email)
+            except ValidationError:
+                raise ValueError("Please enter a valid institution email address.")
+                
+            if not institution_address or len(institution_address) < 10:
+                raise ValueError("Institution address must be at least 10 characters long.")
+                
+            if not institution_location or len(institution_location) < 3:
+                raise ValueError("Institution location/city must be at least 3 characters long.")
+                
+            if institution_contact and institution_contact != '+91':
+                institution_contact = _clean_indian_contact_number(institution_contact)
+            else:
+                institution_contact = ''
+                
+            if not institution_head_name or len(institution_head_name) < 2:
+                raise ValueError("Institution head/principal name must be at least 2 characters long.")
+                
+            if not institution_head_email:
+                raise ValueError("Institution head email is required.")
+            try:
+                validate_email(institution_head_email)
+            except ValidationError:
+                raise ValueError("Please enter a valid head/principal email address.")
 
             dob = request.POST.get('date_of_birth', '').strip()
-            invite.date_of_birth = dob or None
+            if dob:
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("SPOC must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
 
+            if 'institution_logo' in request.FILES:
+                _validate_image_file(request.FILES['institution_logo'], "Institution logo")
+            
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+
+            invite.first_name = first_name
+            invite.last_name = last_name
+            invite.email = email
+            invite.phone_number = phone_number
+            invite.gender = gender
+            invite.institution_name = institution_name
+            invite.institution_email = institution_email
+            invite.institution_address = institution_address
+            invite.institution_head_name = institution_head_name
+            invite.institution_head_email = institution_head_email
+            invite.institution_contact = institution_contact
+            invite.institution_location = institution_location
+            invite.date_of_birth = dob_date
+            
             if 'institution_logo' in request.FILES:
                 invite.institution_logo = request.FILES['institution_logo']
             if 'id_proof' in request.FILES:
                 invite.id_proof = request.FILES['id_proof']
-
+                
             invite.save()
             messages.success(request, f"SPOC application for '{invite.email}' updated.")
             return render_route(request, 'view_spoc_invitation', invite.id)
@@ -1332,7 +1554,7 @@ def reject_spoc_invitation(request, invite_id):
         invite.status = 'rejected'
         invite.rejection_reason = reason
         invite.save(update_fields=['status', 'rejection_reason'])
-        form_link = f"https://hackathon.okcl.org{reverse('spoc_register_form', args=[invite.token])}"
+        form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[invite.token]))
         _send_rejection_correction_email(invite.email, form_link, 'SPOC', reason, invite.hackathon)
         messages.success(request, f'Invitation for {invite.email} rejected.')
     except SpocInvitation.DoesNotExist:
@@ -2712,13 +2934,29 @@ def update_support_message(request, message_id):
     if denied:
         return denied
 
-    from team.team.models import TeamSupportMessage
+    from team.team.models import TeamSupportMessage, TeamNotification
 
     support_message = get_object_or_404(TeamSupportMessage, id=message_id)
     support_message.status = request.POST.get('status', support_message.status)
-    support_message.admin_reply = request.POST.get('admin_reply', '').strip()
+    reply_text = request.POST.get('admin_reply', '').strip()
+    if reply_text:
+        support_message.admin_reply = f"[Admin Response]: {reply_text}"
     support_message.save(update_fields=['status', 'admin_reply', 'updated_at'])
-    messages.success(request, f'Support message "{support_message.subject}" updated.')
+
+    # Send TeamNotification to Team Leader
+    if support_message.registration and support_message.registration.team_leader:
+        try:
+            TeamNotification.objects.create(
+                team_leader=support_message.registration.team_leader,
+                registration=support_message.registration,
+                notif_type='system',
+                title=f"Reply from Admin on '{support_message.subject}'",
+                body=f"Response: {reply_text or 'Status updated to ' + support_message.status}",
+            )
+        except Exception as e:
+            logger.error(f"Failed to create TeamNotification: {e}")
+
+    messages.success(request, f'Support message "{support_message.subject}" updated and team notified.')
     return render_route(request, '/features/support/?focus=support')
 
 
@@ -2786,6 +3024,99 @@ def _send_jury_welcome_email(user, password, hackathon=None):
     msg.send(fail_silently=True)
 
 
+def sync_automatic_team_assignments(hackathon, round_number=None):
+    """
+    Automatically maps student Teams to JuryTeams based on their Problem Statement.
+    If multiple panels (JuryTeams) exist for the same Problem Statement in a round,
+    student teams are distributed equally (round-robin) among those panels.
+    Sets TeamEvaluationAssignment for each team according to its assigned panel's evaluators.
+    """
+    if not hackathon:
+        return
+    from .models import TeamEvaluationAssignment, Team
+    from events.models import JuryTeam
+
+    rounds = [round_number] if round_number else list(range(1, (hackathon.number_of_rounds or 5) + 1))
+
+    for r in rounds:
+        student_teams = list(Team.objects.filter(
+            hackathon=hackathon,
+            current_round=r
+        ).exclude(status='disqualified').select_related('problem_statement').order_by('id'))
+
+        jury_teams_for_round = JuryTeam.objects.filter(
+            hackathon=hackathon, round_number=r
+        ).select_related('problem_statement').prefetch_related('juries', 'experts').order_by('display_order', 'id')
+
+        # Group panels by problem statement
+        ps_to_panels = {}
+        for jt in jury_teams_for_round:
+            if jt.problem_statement_id:
+                ps_to_panels.setdefault(jt.problem_statement_id, []).append(jt)
+
+        # Group teams by problem statement
+        ps_to_teams = {}
+        for team in student_teams:
+            if team.problem_statement_id:
+                ps_to_teams.setdefault(team.problem_statement_id, []).append(team)
+
+        processed_team_ids = set()
+
+        from events.models import RoundJuryConfig
+        round_config = RoundJuryConfig.objects.filter(hackathon=hackathon, round_number=r).first()
+        offset = round_config.alter_offset if round_config else 0
+        alter = round_config.alter_assignment if round_config else False
+
+        # Distribute teams equally among panels for each PS
+        for ps_id, panels in ps_to_panels.items():
+            teams_for_ps = ps_to_teams.get(ps_id, [])
+            num_panels = len(panels)
+            if num_panels > 1:
+                if offset > 0:
+                    shift = offset % num_panels
+                    panels = panels[shift:] + panels[:shift]
+                elif alter:
+                    panels = list(reversed(panels))
+            for idx, team in enumerate(teams_for_ps):
+                processed_team_ids.add(team.id)
+                jt = panels[idx % num_panels] if num_panels > 0 else None
+                assignment, _ = TeamEvaluationAssignment.objects.get_or_create(team=team, round_number=r)
+
+                if jt:
+                    j_list = list(jt.juries.all())
+                    e_list = list(jt.experts.all())
+                    assignment.assigned_panel = jt
+                    assignment.jury_1 = j_list[0] if len(j_list) > 0 else None
+                    assignment.jury_2 = j_list[1] if len(j_list) > 1 else None
+                    assignment.jury_3 = j_list[2] if len(j_list) > 2 else None
+                    assignment.expert_1 = e_list[0] if len(e_list) > 0 else None
+                    assignment.expert_2 = e_list[1] if len(e_list) > 1 else None
+                    assignment.status = 'Assigned' if (assignment.jury_1 and assignment.expert_1) else 'Pending'
+                else:
+                    assignment.assigned_panel = None
+                    assignment.jury_1 = None
+                    assignment.jury_2 = None
+                    assignment.jury_3 = None
+                    assignment.expert_1 = None
+                    assignment.expert_2 = None
+                    assignment.status = 'Pending'
+
+                assignment.save()
+
+        # Reset teams that do not have a matching panel or PS
+        unassigned_teams = [t for t in student_teams if t.id not in processed_team_ids]
+        for team in unassigned_teams:
+            assignment, _ = TeamEvaluationAssignment.objects.get_or_create(team=team, round_number=r)
+            assignment.assigned_panel = None
+            assignment.jury_1 = None
+            assignment.jury_2 = None
+            assignment.jury_3 = None
+            assignment.expert_1 = None
+            assignment.expert_2 = None
+            assignment.status = 'Pending'
+            assignment.save()
+
+
 @login_required(login_url='/accounts/')
 @never_cache
 def jury_management(request):
@@ -2849,25 +3180,180 @@ def jury_management(request):
             Q(domain__icontains=query)
         )
 
-
     # ── Evaluation sub-tab ──
     focus = request.GET.get('focus', 'parameters')
     parameters = RoundMarkingParameter.objects.none()
     teams_for_eval = Team.objects.none()
     registration_counts = {}
+    problem_statements = ProblemStatement.objects.none()
+    jury_teams_data = []
+    round_jury_config = None
+    selected_round = 1
+    panels_summary = []
+    ps_filter = request.GET.get('problem_statement', '').strip()
+    selected_ps_id = int(ps_filter) if ps_filter.isdigit() else None
+    panels_saved = request.GET.get('panels_saved') == 'true'
+    show_assignments = request.GET.get('show_assignments') == 'true'
+
+    try:
+        selected_round = int(request.GET.get('round_number', active_hackathon.active_round['number'] if (active_hackathon and active_hackathon.active_round) else 1))
+    except (ValueError, TypeError):
+        selected_round = 1
+
     if active_hackathon:
+        max_rounds = max(active_hackathon.number_of_rounds or 1, 5)
+        if selected_round > max_rounds or selected_round < 1:
+            selected_round = 1
+
+        sync_automatic_team_assignments(active_hackathon, selected_round)
+
+        problem_statements = ProblemStatement.objects.filter(hackathon=active_hackathon, is_suspended=False).order_by('title')
+        from events.models import RoundJuryConfig, JuryTeam
+        round_jury_config = RoundJuryConfig.objects.filter(hackathon=active_hackathon, round_number=selected_round).first()
+        if not round_jury_config:
+            round_jury_config = RoundJuryConfig.objects.create(
+                hackathon=active_hackathon,
+                round_number=selected_round,
+                num_jury_per_team=1,
+                num_experts_per_team=1,
+            )
+
+        all_jury_teams_in_round = list(JuryTeam.objects.filter(
+            hackathon=active_hackathon, round_number=selected_round
+        ).select_related('problem_statement').prefetch_related('juries', 'experts').order_by('display_order', 'id'))
+
+        # Filter panels displayed if PS filter is active
+        displayed_panels = all_jury_teams_in_round
+        if selected_ps_id:
+            displayed_panels = [p for p in all_jury_teams_in_round if p.problem_statement_id == selected_ps_id]
+
+        # Find all assigned juries and experts across ALL panels in this round
+        all_assigned_jury_ids = set()
+        all_assigned_expert_ids = set()
+        for jt in all_jury_teams_in_round:
+            for j in jt.juries.all():
+                all_assigned_jury_ids.add(j.id)
+            for e in jt.experts.all():
+                all_assigned_expert_ids.add(e.id)
+
+        all_juries = list(JuryProfile.objects.select_related('user').filter(user__is_active=True).order_by('user__first_name'))
+        all_experts = list(ExpertProfile.objects.select_related('user').filter(user__is_active=True).order_by('user__first_name'))
+
+        for jt in displayed_panels:
+            jt_jury_ids = set(j.id for j in jt.juries.all())
+            jt_expert_ids = set(e.id for e in jt.experts.all())
+
+            # Available juries for this panel: not assigned to OTHER panels in this round
+            available_juries = [j for j in all_juries if (j.id in jt_jury_ids or j.id not in all_assigned_jury_ids)]
+            # Available experts for this panel: not assigned to OTHER panels in this round
+            available_experts = [e for e in all_experts if (e.id in jt_expert_ids or e.id not in all_assigned_expert_ids)]
+
+            # Domain filtering based on Panel's Problem Statement
+            ps_domain = ''
+            if jt.problem_statement and jt.problem_statement.domain:
+                ps_domain = jt.problem_statement.domain.strip().lower()
+
+            # Check if any juries/experts with this domain exist in the system at all
+            # (before cross-panel exclusion — used to distinguish "none exist" vs "all taken")
+            has_domain_juries = True
+            has_domain_experts = True
+
+            if ps_domain:
+                # Strictly filter to domain-matched only (no fallback to all domains)
+                available_juries = [
+                    j for j in available_juries
+                    if (j.id in jt_jury_ids or (j.domain and any(d.strip().lower() == ps_domain for d in j.domain.split(','))))
+                ]
+                available_experts = [
+                    e for e in available_experts
+                    if (e.id in jt_expert_ids or (e.domain and any(d.strip().lower() == ps_domain for d in e.domain.split(','))))
+                ]
+
+                # Check against ALL juries/experts (ignoring panel assignments)
+                has_domain_juries = any(
+                    j.domain and any(d.strip().lower() == ps_domain for d in j.domain.split(','))
+                    for j in all_juries
+                )
+                has_domain_experts = any(
+                    e.domain and any(d.strip().lower() == ps_domain for d in e.domain.split(','))
+                    for e in all_experts
+                )
+
+            selected_juries = list(jt.juries.all())
+            selected_experts = list(jt.experts.all())
+
+            num_jury_per_team = max(round_jury_config.num_jury_per_team, len(selected_juries))
+            num_experts_per_team = max(round_jury_config.num_experts_per_team, len(selected_experts))
+
+            # Build per-slot available lists, excluding members already used in earlier slots
+            selected_jury_ids_so_far = set()
+            jury_slots = []
+            for idx in range(num_jury_per_team):
+                val = selected_juries[idx].id if idx < len(selected_juries) else ''
+                slot_available = [j for j in available_juries if j.id not in selected_jury_ids_so_far or j.id == val]
+                jury_slots.append({
+                    'slot_num': idx + 1,
+                    'selected_id': val,
+                    'available': slot_available,
+                })
+                if val:
+                    selected_jury_ids_so_far.add(val)
+
+            selected_expert_ids_so_far = set()
+            expert_slots = []
+            for idx in range(num_experts_per_team):
+                val = selected_experts[idx].id if idx < len(selected_experts) else ''
+                slot_available = [e for e in available_experts if e.id not in selected_expert_ids_so_far or e.id == val]
+                expert_slots.append({
+                    'slot_num': idx + 1,
+                    'selected_id': val,
+                    'available': slot_available,
+                })
+                if val:
+                    selected_expert_ids_so_far.add(val)
+
+            jury_teams_data.append({
+                'panel': jt,
+                'available_juries': available_juries,
+                'available_experts': available_experts,
+                'jury_slots': jury_slots,
+                'expert_slots': expert_slots,
+                'has_domain_juries': has_domain_juries,
+                'has_domain_experts': has_domain_experts,
+                'teams_count': jt.assigned_team_evaluations.filter(round_number=selected_round).count(),
+            })
+
         parameters = RoundMarkingParameter.objects.filter(
             hackathon=active_hackathon
         ).order_by('round_number', 'name')
-        teams_for_eval = Team.objects.filter(hackathon=active_hackathon).select_related(
+        teams_for_eval = Team.objects.filter(
+            hackathon=active_hackathon,
+            current_round__gte=selected_round
+        ).select_related(
             'institution', 'team_leader', 'problem_statement'
         ).order_by('-updated_at')
+        if selected_ps_id:
+            teams_for_eval = teams_for_eval.filter(problem_statement_id=selected_ps_id)
+
         registration_counts = {
             'teams':     teams_for_eval.count(),
             'approved':  teams_for_eval.filter(status='admin_approved').count(),
             'submitted': teams_for_eval.filter(status='submitted').count(),
             'evaluated': teams_for_eval.filter(status='evaluated').count(),
         }
+
+        # Build a summary for ALL panels in this round (regardless of PS filter)
+        # used by the bottom Panel vs Teams summary card
+        from .models import TeamEvaluationAssignment
+        panels_summary = []
+        for jt in all_jury_teams_in_round:
+            panels_summary.append({
+                'name': jt.name,
+                'ps_name': jt.problem_statement.title if jt.problem_statement else '—',
+                'teams_count': jt.assigned_team_evaluations.filter(round_number=selected_round).count(),
+                'juries_count': jt.juries.count(),
+                'experts_count': jt.experts.count(),
+            })
 
     # Stats
     invite_counts = {
@@ -2881,14 +3367,71 @@ def jury_management(request):
         'approved':  ExpertInvitation.objects.filter(status='approved').count(),
     }
 
-    # Prepare teams for eval with their assignments
+    # Determine lock status and current jury round for the active hackathon
+    is_round_promoted = False
     if active_hackathon:
-        for team in teams_for_eval:
-            team.eval_assignment = team.evaluation_assignments.first()
-            if not team.eval_assignment or not team.eval_assignment.is_mandatory_assigned():
+        is_round_promoted = Team.objects.filter(
+            hackathon=active_hackathon,
+            current_round__gt=selected_round
+        ).exists()
+    is_round_completed = (active_hackathon.current_jury_round > selected_round) or is_round_promoted if active_hackathon else False
+
+    is_round_locked = round_jury_config.is_locked if round_jury_config else False
+    if is_round_completed:
+        is_round_locked = True
+    current_jury_round = active_hackathon.current_jury_round if active_hackathon else 1
+
+    # Prepare teams for eval with their automatic assignments
+    teams_for_eval_list = []
+    if active_hackathon:
+        teams_for_eval_list = list(teams_for_eval[:50])
+        for team in teams_for_eval_list:
+            assignment = team.evaluation_assignments.filter(round_number=selected_round).first()
+            team.eval_assignment = assignment
+            if not assignment or not assignment.is_mandatory_assigned():
                 team.eval_status = "Pending Assignment"
             else:
                 team.eval_status = "Assigned"
+
+            # Determine qualification status for the selected round
+            if team.status == 'disqualified':
+                team.qualification_status = "Disqualified"
+            elif team.current_round > selected_round:
+                team.qualification_status = "Qualified"
+            else:
+                if is_round_completed:
+                    team.qualification_status = "Not Qualified"
+                else:
+                    team.qualification_status = "Pending"
+
+    num_rounds = max(active_hackathon.number_of_rounds if active_hackathon else 5, 5)
+
+    # Group panels by problem statement when locked
+    grouped_jury_teams_data = []
+    if is_round_locked:
+        from collections import defaultdict
+        panels_by_ps = defaultdict(list)
+        for item in jury_teams_data:
+            ps = item['panel'].problem_statement
+            if ps:
+                panels_by_ps[ps].append(item)
+            else:
+                panels_by_ps['unassigned'].append(item)
+
+        for ps in problem_statements:
+            ps_panels = panels_by_ps.get(ps, [])
+            if ps_panels:
+                grouped_jury_teams_data.append({
+                    'problem_statement': ps,
+                    'panels': ps_panels,
+                })
+        
+        unassigned_panels = panels_by_ps.get('unassigned', [])
+        if unassigned_panels:
+            grouped_jury_teams_data.append({
+                'problem_statement': None,
+                'panels': unassigned_panels,
+            })
 
     context = _feature_context(
         request,
@@ -2906,12 +3449,484 @@ def jury_management(request):
         juries=juries,
         experts=experts,
         parameters=parameters,
-        teams_for_eval=teams_for_eval[:50],
+        teams_for_eval=teams_for_eval_list,
         registration_counts=registration_counts,
         active_round=active_hackathon.active_round if active_hackathon else None,
-        round_range=[active_hackathon.active_round['number']] if (active_hackathon and active_hackathon.active_round) else range(1, (active_hackathon.number_of_rounds if active_hackathon else 5) + 1),
+        selected_round=selected_round,
+        round_range=range(1, num_rounds + 1),
+        problem_statements=problem_statements,
+        jury_teams_data=jury_teams_data,
+        grouped_jury_teams_data=grouped_jury_teams_data,
+        round_jury_config=round_jury_config,
+        ps_filter=ps_filter,
+        selected_ps_id=selected_ps_id,
+        is_round_locked=is_round_locked,
+        is_round_completed=is_round_completed,
+        current_jury_round=current_jury_round,
+        panels_summary=panels_summary,
+        panels_saved=panels_saved,
+        show_assignments=show_assignments,
     )
     return render(request, 'features/jury_management.html', context)
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def add_jury_panel(request):
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    round_number = int(request.POST.get('round_number', 1))
+    panel_name = request.POST.get('panel_name', '').strip()
+    problem_statement_id = request.POST.get('problem_statement_id')
+
+    if not hackathon_id:
+        messages.error(request, "Hackathon is required.")
+        return render_route(request, '/features/jury/?sub=evaluation')
+
+    from events.models import Hackathon, JuryTeam, ProblemStatement, RoundJuryConfig
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    # ── ROUND GATE: Only allow panel creation for the current jury round ──
+    if round_number != hackathon.current_jury_round:
+        messages.error(
+            request,
+            f"Panels can only be created for the active jury round (Round {hackathon.current_jury_round}). "
+            f"Promote teams to Round {round_number} first to unlock panel creation for that round."
+        )
+        redirect_url = f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}'
+        return redirect(redirect_url)
+
+    # ── LOCK GATE: Block if the round is locked ──
+    round_config = RoundJuryConfig.objects.filter(hackathon=hackathon, round_number=round_number).first()
+    if round_config and round_config.is_locked:
+        messages.error(
+            request,
+            f"Team assignments for Round {round_number} are locked. Unlock them first to add new panels."
+        )
+        redirect_url = f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}'
+        return redirect(redirect_url)
+
+    ps_obj = None
+    if problem_statement_id:
+        ps_obj = ProblemStatement.objects.filter(id=problem_statement_id, hackathon=hackathon).first()
+
+    existing_count = JuryTeam.objects.filter(hackathon=hackathon, round_number=round_number).count()
+    if not panel_name:
+        letter = chr(65 + existing_count) if existing_count < 26 else str(existing_count + 1)
+        panel_name = f"Panel {letter}"
+
+    JuryTeam.objects.create(
+        hackathon=hackathon,
+        round_number=round_number,
+        name=panel_name,
+        display_order=existing_count + 1,
+        problem_statement=ps_obj
+    )
+    if round_config:
+        round_config.has_assigned_teams = False
+        round_config.save()
+    messages.success(request, f"New panel '{panel_name}' added for Round {round_number}.")
+    redirect_url = f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}'
+    if problem_statement_id:
+        redirect_url += f'&problem_statement={problem_statement_id}'
+    return redirect(redirect_url)
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def delete_jury_panel(request, panel_id):
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    from events.models import JuryTeam
+    jury_team = get_object_or_404(JuryTeam, id=panel_id)
+    hackathon_id = jury_team.hackathon_id
+    round_number = jury_team.round_number
+    panel_name = jury_team.name
+
+    jury_team.delete()
+
+    from events.models import RoundJuryConfig
+    round_config = RoundJuryConfig.objects.filter(hackathon_id=hackathon_id, round_number=round_number).first()
+    if round_config:
+        round_config.has_assigned_teams = False
+        round_config.save()
+
+    # Resync team assignments after panel removal
+    from events.models import Hackathon
+    hackathon = Hackathon.objects.filter(id=hackathon_id).first()
+    if hackathon:
+        sync_automatic_team_assignments(hackathon, round_number)
+
+    messages.success(request, f"Panel '{panel_name}' removed successfully.")
+    return redirect(f'/features/jury/?sub=evaluation&hackathon={hackathon_id}&round_number={round_number}')
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def save_all_jury_panels(request):
+    """Batch-save all jury panel assignments for a given hackathon round."""
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    round_number = int(request.POST.get('round_number', 1))
+
+    if not hackathon_id:
+        messages.error(request, "Hackathon is required.")
+        return render_route(request, '/features/jury/?sub=evaluation')
+
+    from events.models import Hackathon, JuryTeam, ProblemStatement, RoundJuryConfig
+    from accounts.models import JuryProfile, ExpertProfile
+
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    # Lock gate
+    round_config = RoundJuryConfig.objects.filter(
+        hackathon=hackathon, round_number=round_number
+    ).first()
+    if round_config and round_config.is_locked:
+        messages.error(
+            request,
+            f"Team assignments for Round {round_number} are locked. "
+            "Unlock them to make changes."
+        )
+        return redirect(
+            f'/features/jury/?sub=evaluation&hackathon={hackathon_id}'
+            f'&round_number={round_number}'
+        )
+
+    panels = JuryTeam.objects.filter(
+        hackathon=hackathon, round_number=round_number
+    ).order_by('display_order', 'id')
+
+    saved_count = 0
+    for panel in panels:
+        prefix = f'panel_{panel.id}_'
+
+        # Check if this panel was actually rendered and submitted in the form
+        # (if it was hidden by a problem statement filter, skip saving to prevent data loss)
+        if f'{prefix}problem_statement_id' not in request.POST:
+            continue
+
+        # Problem statement
+        ps_id = request.POST.get(f'{prefix}problem_statement_id')
+        if ps_id:
+            ps = ProblemStatement.objects.filter(id=ps_id).first()
+            panel.problem_statement = ps
+        else:
+            panel.problem_statement = None
+
+        # Jury slots
+        jury_ids = []
+        for key in request.POST:
+            if key.startswith(f'{prefix}jury_slot_') and request.POST[key]:
+                try:
+                    jury_ids.append(int(request.POST[key]))
+                except ValueError:
+                    pass
+        juries_to_set = JuryProfile.objects.filter(id__in=jury_ids)
+        panel.juries.set(juries_to_set)
+
+        # Expert slots
+        expert_ids = []
+        for key in request.POST:
+            if key.startswith(f'{prefix}expert_slot_') and request.POST[key]:
+                try:
+                    expert_ids.append(int(request.POST[key]))
+                except ValueError:
+                    pass
+        experts_to_set = ExpertProfile.objects.filter(id__in=expert_ids)
+        panel.experts.set(experts_to_set)
+
+        panel.save()
+        saved_count += 1
+
+    # Sync automatic assignments
+    sync_automatic_team_assignments(hackathon, round_number)
+
+    from events.models import RoundJuryConfig
+    round_config, _ = RoundJuryConfig.objects.get_or_create(
+        hackathon=hackathon,
+        round_number=round_number,
+        defaults={'num_jury_per_team': 1, 'num_experts_per_team': 1}
+    )
+
+    action = request.POST.get('action')
+    if action == 'done':
+        from django.utils import timezone
+        round_config.is_locked = True
+        round_config.locked_at = timezone.now()
+        round_config.locked_by = request.user
+        round_config.save()
+        messages.success(request, f"Panel creation finalized and locked for Round {round_number}.")
+    else:
+        round_config.has_assigned_teams = False
+        round_config.save()
+        messages.success(request, f"All {saved_count} panel assignments saved successfully for Round {round_number}.")
+
+    ps_filter = request.POST.get('ps_filter', '').strip()
+    redirect_url = f'/features/jury/?sub=evaluation&hackathon={hackathon_id}&round_number={round_number}&panels_saved=true'
+    if ps_filter:
+        redirect_url += f'&problem_statement={ps_filter}'
+    return redirect(redirect_url)
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def save_jury_team_assignment(request):
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    jury_team_id = request.POST.get('jury_team_id')
+    problem_statement_id = request.POST.get('problem_statement_id')
+
+    if not jury_team_id:
+        messages.error(request, "Jury Panel is required.")
+        return render_route(request, '/features/jury/?sub=evaluation')
+
+    from events.models import JuryTeam, ProblemStatement, RoundJuryConfig
+    from accounts.models import JuryProfile, ExpertProfile
+
+    try:
+        jury_team = get_object_or_404(JuryTeam, id=jury_team_id)
+
+        # ── LOCK GATE: Block if the round is locked ──
+        round_config = RoundJuryConfig.objects.filter(
+            hackathon=jury_team.hackathon, round_number=jury_team.round_number
+        ).first()
+        if round_config and round_config.is_locked:
+            messages.error(
+                request,
+                f"Team assignments for Round {jury_team.round_number} are locked. "
+                "Unlock them to make changes."
+            )
+            return redirect(
+                f'/features/jury/?sub=evaluation&hackathon={jury_team.hackathon_id}'
+                f'&round_number={jury_team.round_number}'
+            )
+
+        if problem_statement_id:
+            ps = get_object_or_404(ProblemStatement, id=problem_statement_id)
+            jury_team.problem_statement = ps
+        else:
+            jury_team.problem_statement = None
+
+        # Read jury slot inputs (e.g. jury_slot_1, jury_slot_2, ...)
+        jury_ids = []
+        for key in request.POST:
+            if key.startswith('jury_slot_') and request.POST[key]:
+                try:
+                    jury_ids.append(int(request.POST[key]))
+                except ValueError:
+                    pass
+
+        juries_to_set = JuryProfile.objects.filter(id__in=jury_ids)
+        jury_team.juries.set(juries_to_set)
+
+        # Read expert slot inputs (e.g. expert_slot_1, expert_slot_2, ...)
+        expert_ids = []
+        for key in request.POST:
+            if key.startswith('expert_slot_') and request.POST[key]:
+                try:
+                    expert_ids.append(int(request.POST[key]))
+                except ValueError:
+                    pass
+
+        experts_to_set = ExpertProfile.objects.filter(id__in=expert_ids)
+        jury_team.experts.set(experts_to_set)
+
+        jury_team.save()
+
+        # Sync automatic assignments for student teams
+        sync_automatic_team_assignments(jury_team.hackathon, jury_team.round_number)
+
+        messages.success(request, f"Assignments for Panel '{jury_team.name}' updated successfully.")
+        redirect_url = f'/features/jury/?sub=evaluation&hackathon={jury_team.hackathon.id}&round_number={jury_team.round_number}'
+        ps_filter = request.POST.get('ps_filter', '').strip()
+        if ps_filter:
+            redirect_url += f'&problem_statement={ps_filter}'
+        return redirect(redirect_url)
+    except Exception as exc:
+        messages.error(request, f"Failed to save panel assignment: {exc}")
+        return render_route(request, '/features/jury/?sub=evaluation')
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def lock_round_assignments(request):
+    """Toggle the lock state of jury team assignments for a specific round.
+
+    When locked:
+      - No new panels can be added for this round.
+      - Existing panel member assignments cannot be changed.
+    When unlocked:
+      - All editing is restored.
+    """
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    round_number = int(request.POST.get('round_number', 1))
+
+    if not hackathon_id:
+        messages.error(request, "Hackathon is required.")
+        return render_route(request, '/features/jury/?sub=evaluation')
+
+    from events.models import Hackathon, RoundJuryConfig
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    round_config, _ = RoundJuryConfig.objects.get_or_create(
+        hackathon=hackathon,
+        round_number=round_number,
+        defaults={'num_jury_per_team': 1, 'num_experts_per_team': 1}
+    )
+
+    # Prevent unlocking if the round is completed/promoted
+    from features.models import Team
+    is_round_promoted = Team.objects.filter(
+        hackathon=hackathon,
+        current_round__gt=round_number
+    ).exists()
+    is_round_completed = (hackathon.current_jury_round > round_number) or is_round_promoted
+
+    if is_round_completed and round_config.is_locked:
+        messages.error(
+            request,
+            f"Round {round_number} assignments are permanently locked because the round is already completed/promoted."
+        )
+        return redirect(
+            f'/features/jury/?sub=evaluation&hackathon={hackathon_id}&round_number={round_number}'
+        )
+
+    # Toggle the lock
+    if round_config.is_locked:
+        round_config.is_locked = False
+        round_config.locked_at = None
+        round_config.locked_by = None
+        round_config.save(update_fields=['is_locked', 'locked_at', 'locked_by'])
+        messages.success(
+            request,
+            f"Round {round_number} team assignments have been unlocked. "
+            "You can now add or modify jury panels."
+        )
+    else:
+        round_config.is_locked = True
+        round_config.locked_at = timezone.now()
+        round_config.locked_by = request.user
+        round_config.save(update_fields=['is_locked', 'locked_at', 'locked_by'])
+        messages.success(
+            request,
+            f"Round {round_number} team assignments are now locked. "
+            "No further jury panel creation or member changes are allowed."
+        )
+
+    return redirect(
+        f'/features/jury/?sub=evaluation&hackathon={hackathon_id}&round_number={round_number}'
+    )
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def alter_round_assignments(request):
+    """Increment the alter_offset or reset it to 0 for a specific round's team assignments."""
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    round_number = int(request.POST.get('round_number', 1))
+    reset = request.POST.get('reset') == 'true'
+
+    if not hackathon_id:
+        messages.error(request, "Hackathon is required.")
+        return redirect('/features/jury/?sub=evaluation')
+
+    from events.models import Hackathon, RoundJuryConfig
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    # ── LOCK GATE: Block if the round is locked ──
+    round_config = RoundJuryConfig.objects.filter(hackathon=hackathon, round_number=round_number).first()
+    if round_config and round_config.is_locked:
+        messages.error(
+            request,
+            f"Team assignments for Round {round_number} are locked. Unlock them first to alter assignments."
+        )
+        return redirect(f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}')
+
+    if not round_config:
+        round_config = RoundJuryConfig.objects.create(
+            hackathon=hackathon,
+            round_number=round_number,
+            num_jury_per_team=1,
+            num_experts_per_team=1,
+        )
+
+    if reset:
+        round_config.alter_offset = 0
+        round_config.alter_assignment = False
+        round_config.save()
+        messages.success(request, f"Team assignments for Round {round_number} have been restored to standard order.")
+    else:
+        round_config.alter_offset += 1
+        round_config.alter_assignment = True
+        round_config.save()
+        messages.success(request, f"Team assignments for Round {round_number} have been altered successfully (Shift #{round_config.alter_offset}).")
+
+    # Re-sync automatic assignments with the new config
+    sync_automatic_team_assignments(hackathon, round_number)
+
+    return redirect(f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}&show_assignments=true')
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def assign_round_teams(request):
+    denied = _feature_permission_required(request, 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    round_number = int(request.POST.get('round_number', 1))
+
+    if not hackathon_id:
+        messages.error(request, "Hackathon is required.")
+        return redirect('/features/jury/?sub=evaluation')
+
+    from events.models import Hackathon, RoundJuryConfig
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    # ── LOCK GATE: Block if the round is locked ──
+    round_config = RoundJuryConfig.objects.filter(hackathon=hackathon, round_number=round_number).first()
+    if round_config and round_config.is_locked:
+        messages.error(
+            request,
+            f"Team assignments for Round {round_number} are locked. Unlock them first to assign teams."
+        )
+        return redirect(f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}')
+
+    if not round_config:
+        round_config = RoundJuryConfig.objects.create(
+            hackathon=hackathon,
+            round_number=round_number,
+            num_jury_per_team=1,
+            num_experts_per_team=1,
+        )
+
+    round_config.has_assigned_teams = True
+    round_config.save()
+
+    sync_automatic_team_assignments(hackathon, round_number)
+    messages.success(request, f"Teams successfully assigned to panels for Round {round_number}.")
+
+    return redirect(f'/features/jury/?sub=evaluation&hackathon={hackathon.id}&round_number={round_number}&show_assignments=true')
 
 
 @login_required(login_url='/accounts/')
@@ -2966,6 +3981,7 @@ def save_team_evaluation_assignment(request):
     return render_route(request, '/features/jury/?sub=evaluation')
 
 
+
 @login_required(login_url='/accounts/')
 @never_cache
 def send_evaluator_invite(request):
@@ -3010,7 +4026,7 @@ def send_evaluator_invite(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
+                form_link = request.build_absolute_uri(reverse('expert_register_form', args=[token]))
                 _send_expert_invite_email(email, form_link, hackathon)
                 messages.success(request, f'Expert invitation sent to {email}.')
             else:
@@ -3021,7 +4037,7 @@ def send_evaluator_invite(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
+                form_link = request.build_absolute_uri(reverse('jury_register_form', args=[token]))
                 _send_jury_invite_email(email, form_link, hackathon)
                 messages.success(request, f'Jury invitation sent to {email}.')
     except Exception as exc:
@@ -3084,7 +4100,7 @@ def send_bulk_evaluator_invites(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
+                form_link = request.build_absolute_uri(reverse('expert_register_form', args=[token]))
                 _send_expert_invite_email(email, form_link, hackathon)
             else:
                 if JuryInvitation.objects.filter(email__iexact=email).exists():
@@ -3094,7 +4110,7 @@ def send_bulk_evaluator_invites(request):
                     invited_by=request.user, email=email,
                     hackathon=hackathon, token=token, status='invited',
                 )
-                form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
+                form_link = request.build_absolute_uri(reverse('jury_register_form', args=[token]))
                 _send_jury_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3153,7 +4169,7 @@ def send_jury_invite(request):
                 token=token,
                 status='invited',
             )
-            form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
+            form_link = request.build_absolute_uri(reverse('jury_register_form', args=[token]))
             _send_jury_invite_email(email, form_link, hackathon)
         messages.success(request, f'Jury invitation sent to {email}.')
     except Exception as exc:
@@ -3212,7 +4228,7 @@ def send_bulk_jury_invites(request):
                 invited_by=request.user, email=email,
                 hackathon=hackathon, token=token, status='invited',
             )
-            form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[token])}"
+            form_link = request.build_absolute_uri(reverse('jury_register_form', args=[token]))
             _send_jury_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3248,16 +4264,82 @@ def jury_register_form(request, token):
 
     if request.method == 'POST':
         try:
-            for f in ['first_name', 'last_name', 'phone_number', 'gender',
-                      'organization', 'designation', 'domain', 'linkedin_url', 'bio']:
-                setattr(invitation, f, request.POST.get(f, '').strip())
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            organization = request.POST.get('organization', '').strip()
+            designation = request.POST.get('designation', '').strip()
+            linkedin_url = request.POST.get('linkedin_url', '').strip()
+            bio = request.POST.get('bio', '').strip()
+
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not organization or len(organization) < 3:
+                raise ValueError("Organization must be at least 3 characters long.")
+            if not designation or len(designation) < 2:
+                raise ValueError("Designation must be at least 2 characters long.")
+                
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                domain = request.POST.get('domain', '').strip()
+            if not domain:
+                raise ValueError("At least one judging domain/area of expertise must be selected or specified.")
+                
+            if linkedin_url:
+                from django.core.validators import URLValidator
+                val_url = URLValidator()
+                try:
+                    val_url(linkedin_url)
+                except ValidationError:
+                    raise ValueError("Please enter a valid LinkedIn URL.")
+                    
             dob = request.POST.get('date_of_birth', '').strip()
             if dob:
-                invitation.date_of_birth = dob
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("Jury member must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
+
+            if not invitation.id_proof and 'id_proof' not in request.FILES:
+                raise ValueError("Government ID Proof is required.")
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+            if 'photo' in request.FILES:
+                _validate_image_file(request.FILES['photo'], "Photo")
+
+            invitation.first_name = first_name
+            invitation.last_name = last_name
+            invitation.phone_number = phone_number
+            invitation.gender = gender
+            invitation.organization = organization
+            invitation.designation = designation
+            invitation.domain = domain
+            invitation.linkedin_url = linkedin_url
+            invitation.bio = bio
+            invitation.date_of_birth = dob_date
+            
             if 'id_proof' in request.FILES:
                 invitation.id_proof = request.FILES['id_proof']
             if 'photo' in request.FILES:
                 invitation.photo = request.FILES['photo']
+                
             invitation.status       = 'pending'
             invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
@@ -3268,9 +4350,24 @@ def jury_register_form(request, token):
             logger.error(f'Jury form token {token}: {exc}', exc_info=True)
             messages.error(request, f'Submission failed: {exc}')
 
+    available_domains = []
+    if invitation.hackathon:
+        from events.models import HackathonDomain, ProblemStatement
+        h_domains = list(HackathonDomain.objects.filter(hackathon=invitation.hackathon).values_list('name', flat=True))
+        ps_domains = list(ProblemStatement.objects.filter(hackathon=invitation.hackathon).exclude(domain__isnull=True).exclude(domain='').values_list('domain', flat=True).distinct())
+        domain_set = set()
+        for d in h_domains + ps_domains:
+            if d and d not in domain_set:
+                domain_set.add(d)
+                available_domains.append(d)
+
+    selected_domains = [d.strip() for d in (invitation.domain or '').split(',')] if invitation.domain else []
+
     return render(request, 'features/jury_register_form.html', {
         'invitation': invitation,
         'is_rejected_resubmission': invitation.status == 'rejected',
+        'available_domains': available_domains,
+        'selected_domains': selected_domains,
     })
 
 
@@ -3303,18 +4400,95 @@ def edit_jury_invitation(request, invite_id):
 
     if request.method == 'POST':
         try:
-            for field in ['first_name', 'last_name', 'phone_number', 'gender',
-                          'organization', 'designation', 'domain', 'linkedin_url', 'bio']:
-                setattr(invite, field, request.POST.get(field, '').strip())
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
             email = request.POST.get('email', '').strip().lower()
-            if email:
-                invite.email = email
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            organization = request.POST.get('organization', '').strip()
+            designation = request.POST.get('designation', '').strip()
+            linkedin_url = request.POST.get('linkedin_url', '').strip()
+            bio = request.POST.get('bio', '').strip()
+
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            if not email:
+                raise ValueError("Email is required.")
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise ValueError("Please enter a valid email address.")
+                
+            if email != invite.email:
+                if JuryInvitation.objects.filter(email=email).exclude(id=invite.id).exists():
+                    raise ValueError(f"An invitation already exists for {email}.")
+                if User.objects.filter(email=email).exists():
+                    raise ValueError("A user with this email already exists.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not organization or len(organization) < 3:
+                raise ValueError("Organization must be at least 3 characters long.")
+            if not designation or len(designation) < 2:
+                raise ValueError("Designation must be at least 2 characters long.")
+                
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                domain = request.POST.get('domain', '').strip()
+            if not domain:
+                raise ValueError("At least one judging domain/area of expertise must be selected or specified.")
+                
+            if linkedin_url:
+                from django.core.validators import URLValidator
+                val_url = URLValidator()
+                try:
+                    val_url(linkedin_url)
+                except ValidationError:
+                    raise ValueError("Please enter a valid LinkedIn URL.")
+                    
             dob = request.POST.get('date_of_birth', '').strip()
-            invite.date_of_birth = dob or None
+            if dob:
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("Jury member must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
+
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+            if 'photo' in request.FILES:
+                _validate_image_file(request.FILES['photo'], "Photo")
+
+            invite.first_name = first_name
+            invite.last_name = last_name
+            invite.email = email
+            invite.phone_number = phone_number
+            invite.gender = gender
+            invite.organization = organization
+            invite.designation = designation
+            invite.domain = domain
+            invite.linkedin_url = linkedin_url
+            invite.bio = bio
+            invite.date_of_birth = dob_date
+            
             if 'id_proof' in request.FILES:
                 invite.id_proof = request.FILES['id_proof']
             if 'photo' in request.FILES:
                 invite.photo = request.FILES['photo']
+                
             invite.save()
             messages.success(request, f"Jury application for '{invite.email}' updated.")
             return render_route(request, 'view_jury_invitation', invite.id)
@@ -3322,8 +4496,25 @@ def edit_jury_invitation(request, invite_id):
             logger.error(f'Edit jury invitation {invite_id}: {exc}', exc_info=True)
             messages.error(request, f'Update failed: {exc}')
 
+    target_hackathon = invite.hackathon or Hackathon.objects.first()
+    available_domains = []
+    if target_hackathon:
+        from events.models import HackathonDomain, ProblemStatement
+        h_domains = list(HackathonDomain.objects.filter(hackathon=target_hackathon).values_list('name', flat=True))
+        ps_domains = list(ProblemStatement.objects.filter(hackathon=target_hackathon).exclude(domain__isnull=True).exclude(domain='').values_list('domain', flat=True).distinct())
+        domain_set = set()
+        for d in h_domains + ps_domains:
+            if d and d not in domain_set:
+                domain_set.add(d)
+                available_domains.append(d)
+
+    selected_domains = [d.strip() for d in (invite.domain or '').split(',')] if invite.domain else []
+
     return render(request, 'features/jury_invitation_edit.html', {
-        'invite': invite, 'tab': 'jury_ops', 'sub': 'invitations',
+        'invite': invite,
+        'available_domains': available_domains,
+        'selected_domains': selected_domains,
+        'tab': 'jury_ops', 'sub': 'invitations',
     })
 
 
@@ -3394,7 +4585,7 @@ def reject_jury_invitation(request, invite_id):
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
-    form_link = f"https://hackathon.okcl.org{reverse('jury_register_form', args=[invite.token])}"
+    form_link = request.build_absolute_uri(reverse('jury_register_form', args=[invite.token]))
     _send_rejection_correction_email(invite.email, form_link, 'Jury', reason, invite.hackathon)
     messages.success(request, f"Jury application for '{invite.email}' rejected.")
     return render_route(request, '/features/jury/?sub=invitations')
@@ -3450,6 +4641,7 @@ def edit_jury_member(request, jury_id):
     if denied:
         return denied
     jury = get_object_or_404(JuryProfile.objects.select_related('user'), id=jury_id)
+    invitation = JuryInvitation.objects.filter(created_user=jury.user).first()
 
     if request.method == 'POST':
         try:
@@ -3461,16 +4653,38 @@ def edit_jury_member(request, jury_id):
             if phone:
                 user.phone_number = phone
             user.save()
-            jury.domain = request.POST.get('domain', jury.domain or '').strip()
+
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                jury.domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                jury.domain = request.POST.get('domain', jury.domain or '').strip()
+
             jury.save()
             messages.success(request, f"Jury member '{user.username}' updated.")
+            return render_route(request, 'view_jury_member', jury_id)
         except Exception as exc:
             logger.error(f'Edit jury member {jury_id}: {exc}', exc_info=True)
             messages.error(request, f'Update failed: {exc}')
-        return render_route(request, 'view_jury_member', jury_id)
+
+    target_hackathon = (invitation.hackathon if invitation else None) or Hackathon.objects.first()
+    available_domains = []
+    if target_hackathon:
+        from events.models import HackathonDomain, ProblemStatement
+        h_domains = list(HackathonDomain.objects.filter(hackathon=target_hackathon).values_list('name', flat=True))
+        ps_domains = list(ProblemStatement.objects.filter(hackathon=target_hackathon).exclude(domain__isnull=True).exclude(domain='').values_list('domain', flat=True).distinct())
+        domain_set = set()
+        for d in h_domains + ps_domains:
+            if d and d not in domain_set:
+                domain_set.add(d)
+                available_domains.append(d)
+
+    selected_domains = [d.strip() for d in (jury.domain or '').split(',')] if jury.domain else []
 
     return render(request, 'features/jury_member_detail.html', {
         'jury': jury, 'edit_mode': True,
+        'available_domains': available_domains,
+        'selected_domains': selected_domains,
         'tab': 'jury_ops', 'sub': 'jury_roster',
     })
 
@@ -3517,7 +4731,10 @@ def toggle_jury_member_status(request, jury_id):
     jury.user.save(update_fields=['is_active'])
     action = 'activated' if jury.user.is_active else 'suspended'
     messages.success(request, f'Jury member "{jury.user.get_full_name() or jury.user.email}" {action}.')
-    return render_route(request, '/features/jury/?sub=jury_roster')
+    sub = request.GET.get('sub', 'jury_roster')
+    if sub not in ['jury_roster', 'invitations']:
+        sub = 'jury_roster'
+    return render_route(request, f'/features/jury/?sub={sub}')
 
 
 
@@ -3568,7 +4785,7 @@ def send_expert_invite(request):
                 token=token,
                 status='invited',
             )
-            form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
+            form_link = request.build_absolute_uri(reverse('expert_register_form', args=[token]))
             _send_expert_invite_email(email, form_link, hackathon)
         messages.success(request, f'Expert invitation sent to {email}.')
     except Exception as exc:
@@ -3627,7 +4844,7 @@ def send_bulk_expert_invites(request):
                 invited_by=request.user, email=email,
                 hackathon=hackathon, token=token, status='invited',
             )
-            form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[token])}"
+            form_link = request.build_absolute_uri(reverse('expert_register_form', args=[token]))
             _send_expert_invite_email(email, form_link, hackathon)
             sent += 1
         except Exception as exc:
@@ -3663,16 +4880,82 @@ def expert_register_form(request, token):
 
     if request.method == 'POST':
         try:
-            for f in ['first_name', 'last_name', 'phone_number', 'gender',
-                      'organization', 'designation', 'domain', 'linkedin_url', 'bio']:
-                setattr(invitation, f, request.POST.get(f, '').strip())
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            organization = request.POST.get('organization', '').strip()
+            designation = request.POST.get('designation', '').strip()
+            linkedin_url = request.POST.get('linkedin_url', '').strip()
+            bio = request.POST.get('bio', '').strip()
+
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not organization or len(organization) < 3:
+                raise ValueError("Organization must be at least 3 characters long.")
+            if not designation or len(designation) < 2:
+                raise ValueError("Designation must be at least 2 characters long.")
+                
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                domain = request.POST.get('domain', '').strip()
+            if not domain:
+                raise ValueError("At least one judging domain/area of expertise must be selected or specified.")
+                
+            if linkedin_url:
+                from django.core.validators import URLValidator
+                val_url = URLValidator()
+                try:
+                    val_url(linkedin_url)
+                except ValidationError:
+                    raise ValueError("Please enter a valid LinkedIn URL.")
+                    
             dob = request.POST.get('date_of_birth', '').strip()
             if dob:
-                invitation.date_of_birth = dob
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("Expert member must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
+
+            if not invitation.id_proof and 'id_proof' not in request.FILES:
+                raise ValueError("Government ID Proof is required.")
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+            if 'photo' in request.FILES:
+                _validate_image_file(request.FILES['photo'], "Photo")
+
+            invitation.first_name = first_name
+            invitation.last_name = last_name
+            invitation.phone_number = phone_number
+            invitation.gender = gender
+            invitation.organization = organization
+            invitation.designation = designation
+            invitation.domain = domain
+            invitation.linkedin_url = linkedin_url
+            invitation.bio = bio
+            invitation.date_of_birth = dob_date
+            
             if 'id_proof' in request.FILES:
                 invitation.id_proof = request.FILES['id_proof']
             if 'photo' in request.FILES:
                 invitation.photo = request.FILES['photo']
+                
             invitation.status       = 'pending'
             invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
@@ -3683,9 +4966,24 @@ def expert_register_form(request, token):
             logger.error(f'Expert form token {token}: {exc}', exc_info=True)
             messages.error(request, f'Submission failed: {exc}')
 
+    available_domains = []
+    if invitation.hackathon:
+        from events.models import HackathonDomain, ProblemStatement
+        h_domains = list(HackathonDomain.objects.filter(hackathon=invitation.hackathon).values_list('name', flat=True))
+        ps_domains = list(ProblemStatement.objects.filter(hackathon=invitation.hackathon).exclude(domain__isnull=True).exclude(domain='').values_list('domain', flat=True).distinct())
+        domain_set = set()
+        for d in h_domains + ps_domains:
+            if d and d not in domain_set:
+                domain_set.add(d)
+                available_domains.append(d)
+
+    selected_domains = [d.strip() for d in (invitation.domain or '').split(',')] if invitation.domain else []
+
     return render(request, 'features/expert_register_form.html', {
         'invitation': invitation,
         'is_rejected_resubmission': invitation.status == 'rejected',
+        'available_domains': available_domains,
+        'selected_domains': selected_domains,
     })
 
 
@@ -3718,18 +5016,95 @@ def edit_expert_invitation(request, invite_id):
 
     if request.method == 'POST':
         try:
-            for field in ['first_name', 'last_name', 'phone_number', 'gender',
-                          'organization', 'designation', 'domain', 'linkedin_url', 'bio']:
-                setattr(invite, field, request.POST.get(field, '').strip())
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
             email = request.POST.get('email', '').strip().lower()
-            if email:
-                invite.email = email
+            phone_number = request.POST.get('phone_number', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            organization = request.POST.get('organization', '').strip()
+            designation = request.POST.get('designation', '').strip()
+            linkedin_url = request.POST.get('linkedin_url', '').strip()
+            bio = request.POST.get('bio', '').strip()
+
+            if not first_name or len(first_name) < 2:
+                raise ValueError("First name must be at least 2 characters long.")
+            if not last_name or len(last_name) < 2:
+                raise ValueError("Last name must be at least 2 characters long.")
+            
+            if not email:
+                raise ValueError("Email is required.")
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise ValueError("Please enter a valid email address.")
+                
+            if email != invite.email:
+                if ExpertInvitation.objects.filter(email=email).exclude(id=invite.id).exists():
+                    raise ValueError(f"An invitation already exists for {email}.")
+                if User.objects.filter(email=email).exists():
+                    raise ValueError("A user with this email already exists.")
+            
+            phone_number = _clean_indian_phone_number(phone_number)
+            
+            if not organization or len(organization) < 3:
+                raise ValueError("Organization must be at least 3 characters long.")
+            if not designation or len(designation) < 2:
+                raise ValueError("Designation must be at least 2 characters long.")
+                
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                domain = request.POST.get('domain', '').strip()
+            if not domain:
+                raise ValueError("At least one judging domain/area of expertise must be selected or specified.")
+                
+            if linkedin_url:
+                from django.core.validators import URLValidator
+                val_url = URLValidator()
+                try:
+                    val_url(linkedin_url)
+                except ValidationError:
+                    raise ValueError("Please enter a valid LinkedIn URL.")
+                    
             dob = request.POST.get('date_of_birth', '').strip()
-            invite.date_of_birth = dob or None
+            if dob:
+                from datetime import datetime, date
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
+                    today = date.today()
+                    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+                    if age < 18:
+                        raise ValueError("Expert member must be at least 18 years old.")
+                except ValueError as e:
+                    if "18" in str(e):
+                        raise e
+                    raise ValueError("Please enter a valid date of birth in YYYY-MM-DD format.")
+            else:
+                dob_date = None
+
+            if 'id_proof' in request.FILES:
+                _validate_document_file(request.FILES['id_proof'], "Government ID proof")
+            if 'photo' in request.FILES:
+                _validate_image_file(request.FILES['photo'], "Photo")
+
+            invite.first_name = first_name
+            invite.last_name = last_name
+            invite.email = email
+            invite.phone_number = phone_number
+            invite.gender = gender
+            invite.organization = organization
+            invite.designation = designation
+            invite.domain = domain
+            invite.linkedin_url = linkedin_url
+            invite.bio = bio
+            invite.date_of_birth = dob_date
+            
             if 'id_proof' in request.FILES:
                 invite.id_proof = request.FILES['id_proof']
             if 'photo' in request.FILES:
                 invite.photo = request.FILES['photo']
+                
             invite.save()
             messages.success(request, f"Expert application for '{invite.email}' updated.")
             return render_route(request, 'view_expert_invitation', invite.id)
@@ -3809,7 +5184,7 @@ def reject_expert_invitation(request, invite_id):
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
-    form_link = f"https://hackathon.okcl.org{reverse('expert_register_form', args=[invite.token])}"
+    form_link = request.build_absolute_uri(reverse('expert_register_form', args=[invite.token]))
     _send_rejection_correction_email(invite.email, form_link, 'Expert', reason, invite.hackathon)
     messages.success(request, f"Expert application for '{invite.email}' rejected.")
     return render_route(request, '/features/jury/?sub=invitations')
@@ -3864,6 +5239,7 @@ def edit_expert_member(request, expert_id):
     if denied:
         return denied
     expert = get_object_or_404(ExpertProfile.objects.select_related('user'), id=expert_id)
+    invitation = ExpertInvitation.objects.filter(created_user=expert.user).first()
 
     if request.method == 'POST':
         try:
@@ -3875,16 +5251,38 @@ def edit_expert_member(request, expert_id):
             if phone:
                 user.phone_number = phone
             user.save()
-            expert.domain = request.POST.get('domain', expert.domain or '').strip()
+
+            domain_list = request.POST.getlist('domain')
+            if domain_list:
+                expert.domain = ", ".join([d.strip() for d in domain_list if d.strip()])
+            else:
+                expert.domain = request.POST.get('domain', expert.domain or '').strip()
+
             expert.save()
             messages.success(request, f"Expert member '{user.username}' updated.")
+            return render_route(request, 'view_expert_member', expert_id)
         except Exception as exc:
             logger.error(f'Edit expert member {expert_id}: {exc}', exc_info=True)
             messages.error(request, f'Update failed: {exc}')
-        return render_route(request, 'view_expert_member', expert_id)
+
+    target_hackathon = (invitation.hackathon if invitation else None) or Hackathon.objects.first()
+    available_domains = []
+    if target_hackathon:
+        from events.models import HackathonDomain, ProblemStatement
+        h_domains = list(HackathonDomain.objects.filter(hackathon=target_hackathon).values_list('name', flat=True))
+        ps_domains = list(ProblemStatement.objects.filter(hackathon=target_hackathon).exclude(domain__isnull=True).exclude(domain='').values_list('domain', flat=True).distinct())
+        domain_set = set()
+        for d in h_domains + ps_domains:
+            if d and d not in domain_set:
+                domain_set.add(d)
+                available_domains.append(d)
+
+    selected_domains = [d.strip() for d in (expert.domain or '').split(',')] if expert.domain else []
 
     return render(request, 'features/expert_member_detail.html', {
         'expert': expert, 'edit_mode': True,
+        'available_domains': available_domains,
+        'selected_domains': selected_domains,
         'tab': 'expert_ops', 'sub': 'expert_roster',
     })
 
@@ -3931,7 +5329,10 @@ def toggle_expert_member_status(request, expert_id):
     expert.user.save(update_fields=['is_active'])
     action = 'activated' if expert.user.is_active else 'suspended'
     messages.success(request, f'Expert member "{expert.user.get_full_name() or expert.user.email}" {action}.')
-    return render_route(request, '/features/jury/?sub=expert_roster')
+    sub = request.GET.get('sub', 'expert_roster')
+    if sub not in ['expert_roster', 'invitations']:
+        sub = 'expert_roster'
+    return render_route(request, f'/features/jury/?sub={sub}')
 
 
 
@@ -4025,6 +5426,9 @@ def media_communications_management(request):
     edit_voice_inspiration_id = request.GET.get('edit_voice_inspiration', '').strip()
     voice_inspiration_items = []
     edit_voice_inspiration = None
+    faq_items = []
+    edit_faq = None
+    edit_faq_id = request.GET.get('edit_faq', '').strip()
 
     if active_hackathon:
         creative_queryset = CreativeMaterial.objects.filter(hackathon=active_hackathon).order_by('-uploaded_at')
@@ -4197,6 +5601,11 @@ def media_communications_management(request):
         if edit_voice_inspiration_id.isdigit():
             edit_voice_inspiration = next((item for item in voice_inspiration_items if item['asset'].id == int(edit_voice_inspiration_id)), None)
 
+        # FAQ items
+        faq_items = list(FAQItem.objects.filter(hackathon=active_hackathon).order_by('display_order', '-created_at'))
+        if edit_faq_id.isdigit():
+            edit_faq = next((item for item in faq_items if item.id == int(edit_faq_id)), None)
+
     context = _feature_context(
         request,
         tab='media_ops',
@@ -4224,6 +5633,8 @@ def media_communications_management(request):
         feed_platform_choices=FEED_PLATFORM_CHOICES,
         voice_inspiration_items=voice_inspiration_items,
         edit_voice_inspiration=edit_voice_inspiration,
+        faq_items=faq_items,
+        edit_faq=edit_faq,
     )
     return render(request, 'features/media_communications.html', context)
 
@@ -4308,6 +5719,13 @@ def save_creative_asset(request):
                 creative.display_priority = voi_priority
                 if profile_image_upload:
                     creative.profile_image = profile_image_upload
+            elif asset_kind == 'testimonial':
+                creative.speaker_name = request.POST.get('speaker_name', '').strip()
+                creative.designation = request.POST.get('designation', '').strip()
+                creative.institute_name = request.POST.get('institute_name', '').strip()
+                creative.quote_text = request.POST.get('quote_text', '').strip()
+                if profile_image_upload:
+                    creative.profile_image = profile_image_upload
             creative.save()
             label = (
                 'Voice of Inspiration item' if is_voice_inspiration
@@ -4341,6 +5759,15 @@ def save_creative_asset(request):
                 create_kwargs['quote_text'] = voi_quote
                 create_kwargs['display_priority'] = voi_priority
                 create_kwargs['material_type'] = 'voice_of_inspiration'
+            elif asset_kind == 'testimonial':
+                create_kwargs['file'] = upload
+                create_kwargs['speaker_name'] = request.POST.get('speaker_name', '').strip()
+                create_kwargs['designation'] = request.POST.get('designation', '').strip()
+                create_kwargs['institute_name'] = request.POST.get('institute_name', '').strip()
+                create_kwargs['quote_text'] = request.POST.get('quote_text', '').strip()
+                create_kwargs['material_type'] = 'testimonial'
+                if profile_image_upload:
+                    create_kwargs['profile_image'] = profile_image_upload
             else:
                 create_kwargs['file'] = upload
 
@@ -4499,6 +5926,85 @@ def delete_creative_asset(request, creative_id):
     return redirect(f'/features/media-comms/?focus={focus}&hackathon={hackathon_id}{suffix}')
 
 
+@login_required(login_url='/accounts/')
+@require_POST
+def save_faq_item(request):
+    denied = _feature_permission_required(request, 'social_media_creative_mgt', 'media_sponsorship_mgt', 'announcement_communication_sys')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    question = request.POST.get('question', '').strip()
+    answer = request.POST.get('answer', '').strip()
+    display_order = request.POST.get('display_order', '0').strip()
+    item_id = request.POST.get('item_id', '').strip()
+    action = request.POST.get('action', 'publish')
+
+    try:
+        display_order = int(display_order)
+    except (TypeError, ValueError):
+        display_order = 0
+
+    if not hackathon_id or not question or not answer:
+        messages.error(request, 'Question and Answer are required.')
+        return redirect(f'/features/media-comms/?focus=faq&hackathon={hackathon_id}')
+
+    try:
+        if item_id:
+            faq = FAQItem.objects.get(id=item_id)
+            faq.hackathon_id = hackathon_id
+            faq.question = question
+            faq.answer = answer
+            faq.display_order = display_order
+            faq.is_published = action == 'publish'
+            faq.save()
+            messages.success(request, f'FAQ updated.')
+        else:
+            FAQItem.objects.create(
+                hackathon_id=hackathon_id,
+                question=question,
+                answer=answer,
+                display_order=display_order,
+                is_published=action == 'publish',
+                created_by=request.user,
+            )
+            messages.success(request, f'FAQ created.')
+    except Exception as exc:
+        messages.error(request, f'Unable to save FAQ: {exc}')
+
+    return redirect(f'/features/media-comms/?focus=faq&hackathon={hackathon_id}')
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def toggle_faq_status(request, faq_id):
+    denied = _feature_permission_required(request, 'social_media_creative_mgt', 'media_sponsorship_mgt', 'announcement_communication_sys')
+    if denied:
+        return denied
+
+    faq = get_object_or_404(FAQItem, id=faq_id)
+    hackathon_id = faq.hackathon_id
+    faq.is_suspended = not faq.is_suspended
+    faq.save()
+    status_label = 'suspended' if faq.is_suspended else 'activated'
+    messages.success(request, f'FAQ {status_label}.')
+    return redirect(f'/features/media-comms/?focus=faq&hackathon={hackathon_id}')
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def delete_faq_item(request, faq_id):
+    denied = _feature_permission_required(request, 'social_media_creative_mgt', 'media_sponsorship_mgt', 'announcement_communication_sys')
+    if denied:
+        return denied
+
+    faq = get_object_or_404(FAQItem, id=faq_id)
+    hackathon_id = faq.hackathon_id
+    faq.delete()
+    messages.success(request, f'FAQ deleted.')
+    return redirect(f'/features/media-comms/?focus=faq&hackathon={hackathon_id}')
+
+
 def _notify_team_not_qualified(team, round_number):
     try:
         from team.team.models import TeamNotification
@@ -4569,6 +6075,7 @@ def results_reporting_management(request):
     params = RoundMarkingParameter.objects.none()
     teams_data = []
     show_qualified = request.GET.get('show_qualified') == 'true'
+    show_top_10 = request.GET.get('top_10') == 'true'
 
     if active_hackathon:
         # Get marking parameters for this hackathon and round
@@ -4600,8 +6107,30 @@ def results_reporting_management(request):
                                 messages.error(request, f"Cutoff for {param.name} must be between 0 and 100.")
                         except (ValueError, Exception):
                             messages.error(request, f"Invalid cutoff score for {param.name}.")
-                messages.success(request, "Cutoff thresholds saved successfully.")
-                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+
+                # Calculate qualified count under updated cutoffs
+                qualified_count = 0
+                for t in teams:
+                    t_evals = TeamEvaluation.objects.filter(team=t, round_number=selected_round)
+                    evaluators_count = t_evals.values('evaluator').distinct().count()
+                    
+                    is_q = evaluators_count > 0
+                    for param in params:
+                        scores = [ev.score for ev in t_evals if ev.parameter_id == param.id]
+                        avg = sum(scores, Decimal('0')) / len(scores) if scores else Decimal('0')
+                        if avg < param.cutoff_score:
+                            is_q = False
+                            break
+                    if is_q:
+                        qualified_count += 1
+
+                messages.success(request, f"Cutoff thresholds saved successfully. Currently, {qualified_count} teams are qualified.")
+                redirect_url = f"{request.path}?hackathon={hackathon_filter}&round={selected_round}"
+                if show_qualified:
+                    redirect_url += "&show_qualified=true"
+                if show_top_10:
+                    redirect_url += "&top_10=true"
+                return redirect(redirect_url)
 
             elif action == 'promote_team':
                 team_id = request.POST.get('team_id')
@@ -4625,7 +6154,7 @@ def results_reporting_management(request):
                     old_round = team_to_promote.current_round
                     team_to_promote.current_round += 1
                     team_to_promote.save(update_fields=['current_round'])
-                    
+
                     TeamStatusLog.objects.create(
                         team=team_to_promote,
                         old_status=team_to_promote.status,
@@ -4633,8 +6162,17 @@ def results_reporting_management(request):
                         changed_by=request.user,
                         note=f"Promoted from Round {old_round} to Round {team_to_promote.current_round} after qualifying evaluation."
                     )
+
+                    # Advance hackathon.current_jury_round if this team is now in a higher round
+                    if team_to_promote.current_round > active_hackathon.current_jury_round:
+                        active_hackathon.current_jury_round = team_to_promote.current_round
+                        active_hackathon.save(update_fields=['current_jury_round'])
+
                     messages.success(request, f"Successfully promoted team '{team_to_promote.team_name}' to Round {team_to_promote.current_round}!")
-                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+                redirect_url = f"{request.path}?hackathon={hackathon_filter}&round={selected_round}"
+                if show_qualified: redirect_url += "&show_qualified=true"
+                if show_top_10: redirect_url += "&top_10=true"
+                return redirect(redirect_url)
 
             elif action == 'promote_qualified':
                 promoted_count = 0
@@ -4681,14 +6219,24 @@ def results_reporting_management(request):
                         suspended_count += 1
                 
                 if promoted_count > 0 or suspended_count > 0:
+                    # Advance hackathon.current_jury_round if any teams moved to a higher round
+                    if promoted_count > 0:
+                        next_round = selected_round + 1
+                        if next_round > active_hackathon.current_jury_round:
+                            active_hackathon.current_jury_round = next_round
+                            active_hackathon.save(update_fields=['current_jury_round'])
+
                     messages.success(
-                        request, 
+                        request,
                         f"Successfully promoted {promoted_count} qualified teams to Round {selected_round + 1}, "
                         f"and suspended {suspended_count} unqualified teams."
                     )
                 else:
                     messages.warning(request, "No teams were found to promote or suspend.")
-                return redirect(f"{request.path}?hackathon={hackathon_filter}&round={selected_round}" + ("&show_qualified=true" if show_qualified else ""))
+                redirect_url = f"{request.path}?hackathon={hackathon_filter}&round={selected_round}"
+                if show_qualified: redirect_url += "&show_qualified=true"
+                if show_top_10: redirect_url += "&top_10=true"
+                return redirect(redirect_url)
 
         # Query all evaluations for these teams in the current round
         all_evals = TeamEvaluation.objects.filter(
@@ -4697,23 +6245,53 @@ def results_reporting_management(request):
         ).select_related('evaluator', 'parameter')
 
         # Build detailed team data
+        from features.models import TeamEvaluationAssignment
+        qualified_teams_count = 0
         for team in teams:
             team_evals = [e for e in all_evals if e.team_id == team.id]
             
+            # Find all assigned evaluators for this team & round
+            assignment = TeamEvaluationAssignment.objects.filter(
+                team=team, round_number=selected_round
+            ).first()
+            
+            assigned_evaluators = []
+            if assignment:
+                if assignment.jury_1: assigned_evaluators.append(assignment.jury_1.user)
+                if assignment.jury_2: assigned_evaluators.append(assignment.jury_2.user)
+                if assignment.jury_3: assigned_evaluators.append(assignment.jury_3.user)
+                if assignment.expert_1: assigned_evaluators.append(assignment.expert_1.user)
+                if assignment.expert_2: assigned_evaluators.append(assignment.expert_2.user)
+            
             # Group scores by evaluator user
             evaluations_by_evaluator = {}
+            # Initialize for all assigned evaluators
+            for evaluator in assigned_evaluators:
+                evaluations_by_evaluator[evaluator.id] = {
+                    'user': evaluator,
+                    'scores': {},
+                    'remarks': "",
+                    'has_submitted': False
+                }
+            
+            # Populate actual evaluations
             for ev in team_evals:
-                if ev.evaluator not in evaluations_by_evaluator:
-                    evaluations_by_evaluator[ev.evaluator] = {
+                evaluator_id = ev.evaluator_id
+                if evaluator_id not in evaluations_by_evaluator:
+                    evaluations_by_evaluator[evaluator_id] = {
                         'user': ev.evaluator,
                         'scores': {},
-                        'remarks': ev.remarks or ""
+                        'remarks': ev.remarks or "",
+                        'has_submitted': True
                     }
-                evaluations_by_evaluator[ev.evaluator]['scores'][ev.parameter_id] = ev.score
+                evaluations_by_evaluator[evaluator_id]['scores'][ev.parameter_id] = ev.score
+                evaluations_by_evaluator[evaluator_id]['remarks'] = ev.remarks or ""
+                evaluations_by_evaluator[evaluator_id]['has_submitted'] = True
             
             # Calculate parameter averages
             parameter_averages = {}
-            is_qualified = len(evaluations_by_evaluator) > 0
+            submitted_evals_count = sum(1 for e in evaluations_by_evaluator.values() if e['has_submitted'])
+            is_qualified = submitted_evals_count > 0
             
             for param in params:
                 param_scores = [ev.score for ev in team_evals if ev.parameter_id == param.id]
@@ -4725,17 +6303,33 @@ def results_reporting_management(request):
             
             overall_score = sum(parameter_averages.values(), Decimal('0')) / len(params) if params else Decimal('0')
             
+            if is_qualified:
+                qualified_teams_count += 1
+
             item = {
                 'team': team,
                 'evaluations_by_evaluator': list(evaluations_by_evaluator.values()),
                 'parameter_averages': parameter_averages,
                 'is_qualified': is_qualified,
                 'overall_score': overall_score,
-                'evaluators_count': len(evaluations_by_evaluator),
+                'evaluators_count': submitted_evals_count,
             }
             
             if not show_qualified or is_qualified:
                 teams_data.append(item)
+
+        # Apply Top 10 filter
+        if show_top_10:
+            teams_data.sort(key=lambda x: x['overall_score'], reverse=True)
+            teams_data = teams_data[:10]
+
+    is_round_promoted = False
+    if active_hackathon:
+        is_round_promoted = Team.objects.filter(
+            hackathon=active_hackathon,
+            current_round__gt=selected_round
+        ).exists()
+    is_round_completed = (active_hackathon.current_jury_round > selected_round) or is_round_promoted if active_hackathon else False
 
     total_rounds_range = range(1, (active_hackathon.number_of_rounds if active_hackathon else 5) + 1)
 
@@ -4750,8 +6344,77 @@ def results_reporting_management(request):
         params=params,
         teams_data=teams_data,
         show_qualified=show_qualified,
+        show_top_10=show_top_10,
+        qualified_teams_count=qualified_teams_count,
+        total_teams_count=teams.count() if active_hackathon else 0,
+        is_round_completed=is_round_completed,
     )
     return render(request, 'features/results_reporting.html', context)
+
+
+@login_required(login_url='/accounts/')
+@require_POST
+def reset_evaluation_data(request):
+    """
+    Resets all team evaluations, promotions, panel creations, and locks
+    for the active hackathon back to Round 1 status.
+    """
+    denied = _feature_permission_required(request, 'reporting_result_mgt', 'evaluation_coordination')
+    if denied:
+        return denied
+
+    hackathon_id = request.POST.get('hackathon_id')
+    if not hackathon_id:
+        messages.error(request, "Hackathon ID is required.")
+        return redirect('/features/results-reporting/')
+
+    from events.models import Hackathon, JuryTeam, RoundJuryConfig
+    from features.models import Team, TeamEvaluationAssignment, TeamStatusLog
+    from jury.models import TeamEvaluation
+
+    hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+
+    # 1. Delete all panel configurations (JuryTeam) for this hackathon
+    deleted_panels, _ = JuryTeam.objects.filter(hackathon=hackathon).delete()
+
+    # 2. Delete all RoundJuryConfig (lock states, etc.)
+    deleted_configs, _ = RoundJuryConfig.objects.filter(hackathon=hackathon).delete()
+
+    # 3. Delete all TeamEvaluationAssignment (auto-assignments)
+    teams = Team.objects.filter(hackathon=hackathon)
+    deleted_assignments, _ = TeamEvaluationAssignment.objects.filter(team__in=teams).delete()
+
+    # 4. Delete all evaluations (TeamEvaluation)
+    deleted_evals, _ = TeamEvaluation.objects.filter(team__in=teams).delete()
+
+    # 5. Reset teams to Round 1 and 'submitted' status
+    updated_teams_count = 0
+    for team in teams:
+        if team.current_round > 1 or team.status in ['evaluated', 'disqualified']:
+            team.current_round = 1
+            team.status = 'submitted'
+            team.save(update_fields=['current_round', 'status'])
+            updated_teams_count += 1
+
+            # Log status change
+            TeamStatusLog.objects.create(
+                team=team,
+                old_status=team.status,
+                new_status='submitted',
+                changed_by=request.user,
+                note="Reset: Reset back to Round 1 evaluation state by admin."
+            )
+
+    # 6. Reset hackathon current_jury_round to 1
+    hackathon.current_jury_round = 1
+    hackathon.save(update_fields=['current_jury_round'])
+
+    messages.success(
+        request,
+        f"Reset complete! Deleted {deleted_panels} panels, {deleted_evals} evaluations, "
+        f"and reset {updated_teams_count} teams back to Round 1."
+    )
+    return redirect(f'/features/results-reporting/?hackathon={hackathon.id}')
 
 
 # ══════════════════════════════════════════════════════════════

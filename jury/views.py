@@ -86,8 +86,7 @@ def _build_team_cards(user, role):
     for assignment in assignments:
         team = assignment.team
         hackathon = team.hackathon
-        active_round = hackathon.get_active_round()
-        round_number = active_round['number'] if active_round else assignment.round_number
+        round_number = assignment.round_number
 
         parameters = RoundMarkingParameter.objects.filter(
             hackathon=hackathon,
@@ -95,7 +94,12 @@ def _build_team_cards(user, role):
         )
         total_params = parameters.count()
         scored_params = _count_evaluations(user, team, round_number, parameters)
-        is_complete = total_params > 0 and scored_params >= total_params
+        
+        is_closed = (team.current_round > round_number) or (hackathon.current_jury_round > round_number)
+        is_complete = (total_params > 0 and scored_params >= total_params) or is_closed
+
+        if team.current_round > round_number:
+            scored_params = total_params
 
         if is_complete:
             total_evaluated += 1
@@ -109,10 +113,11 @@ def _build_team_cards(user, role):
             'team_name': team.team_name,
             'hackathon_name': hackathon.name,
             'round_number': round_number,
-            'round_name': active_round['name'] if active_round else f"Round {round_number}",
+            'round_name': f"Round {round_number}",
             'total_params': total_params,
             'scored_params': scored_params,
             'is_complete': is_complete,
+            'is_closed': is_closed,
             'doc_count': doc_count,
             'progress_pct': int((scored_params / total_params) * 100) if total_params else 0,
         })
@@ -382,31 +387,48 @@ def jury_team_detail(request, team_id):
         return redirect('login')
 
     team = get_object_or_404(Team, id=team_id)
+    round_number_req = request.GET.get('round')
+    if round_number_req:
+        try:
+            round_number = int(round_number_req)
+        except ValueError:
+            round_number = None
+    else:
+        round_number = None
 
     if role == 'jury':
         jury = request.user.jury_profile
-        assignment = TeamEvaluationAssignment.objects.filter(team=team).filter(
+        assignments_qs = TeamEvaluationAssignment.objects.filter(team=team).filter(
             Q(jury_1=jury) | Q(jury_2=jury) | Q(jury_3=jury)
-        ).first()
+        )
     else:
         expert = request.user.expert_profile
-        assignment = TeamEvaluationAssignment.objects.filter(team=team).filter(
+        assignments_qs = TeamEvaluationAssignment.objects.filter(team=team).filter(
             Q(expert_1=expert) | Q(expert_2=expert)
-        ).first()
+        )
+
+    if round_number:
+        assignment = assignments_qs.filter(round_number=round_number).first()
+    else:
+        active_round = team.hackathon.current_jury_round
+        assignment = assignments_qs.filter(round_number=active_round).first()
+        if not assignment:
+            assignment = assignments_qs.filter(round_number=team.current_round).first()
+        if not assignment:
+            assignment = assignments_qs.first()
 
     if not assignment:
         messages.error(request, 'You are not assigned to evaluate this team.')
         return redirect('jury_team_evaluations')
 
     hackathon = team.hackathon
-    active_round = hackathon.get_active_round()
-    round_number = active_round['number'] if active_round else assignment.round_number
-    round_name = active_round['name'] if active_round else f"Round {round_number}"
+    round_number = assignment.round_number
+    round_name = f"Round {round_number}"
 
     parameters = RoundMarkingParameter.objects.filter(
         hackathon=hackathon,
         round_number=round_number,
-    ).order_by('id')
+    ).prefetch_related('sub_parameters').order_by('id')
 
     existing_evals = TeamEvaluation.objects.filter(
         evaluator=request.user,
@@ -415,11 +437,26 @@ def jury_team_detail(request, team_id):
     ).select_related('parameter')
     existing_map = {ev.parameter_id: ev for ev in existing_evals}
 
+    from .models import TeamSubParameterEvaluation
+    existing_sub_evals = TeamSubParameterEvaluation.objects.filter(
+        evaluator=request.user,
+        team=team,
+        round_number=round_number,
+    )
+    sub_eval_map = {ev.sub_parameter_id: ev.score for ev in existing_sub_evals}
+
     param_data = []
     for param in parameters:
         ev = existing_map.get(param.id)
+        sub_list = []
+        for sub in param.sub_parameters.all():
+            sub_list.append({
+                'sub': sub,
+                'score': sub_eval_map.get(sub.id, ''),
+            })
         param_data.append({
             'param': param,
+            'sub_parameters': sub_list,
             'score': ev.score if ev else '',
             'remarks': ev.remarks if ev else '',
         })
@@ -438,6 +475,7 @@ def jury_team_detail(request, team_id):
         is_published=True,
     ).order_by('-created_at') if problem_statement else Documentation.objects.none()
     all_scored = len(param_data) > 0 and all(p['score'] != '' for p in param_data)
+    is_closed = (team.current_round > round_number) or (hackathon.current_jury_round > round_number)
 
     context = {
         'role': role,
@@ -455,6 +493,7 @@ def jury_team_detail(request, team_id):
         'problem_podcasts': problem_podcasts,
         'problem_documentation': problem_documentation,
         'all_scored': all_scored,
+        'is_closed': is_closed,
         'active_nav': 'jury_evaluations',
         'live_hackathon': Hackathon.objects.filter(status='Live').order_by('-updated_at').first(),
     }
@@ -523,66 +562,125 @@ def jury_media_resources(request):
 @login_required(login_url='/accounts/')
 @require_POST
 def jury_submit_marks(request, team_id):
+    if request.method != 'POST':
+        return redirect('jury_team_evaluations')
+
     role = _get_evaluator_role(request.user)
     if not role:
         messages.error(request, 'Access denied.')
         return redirect('login')
 
     team = get_object_or_404(Team, id=team_id)
+    round_number_req = request.POST.get('round_number')
+    if round_number_req:
+        try:
+            round_number = int(round_number_req)
+        except ValueError:
+            round_number = None
+    else:
+        round_number = None
 
     if role == 'jury':
         jury = request.user.jury_profile
-        assigned = TeamEvaluationAssignment.objects.filter(team=team).filter(
+        assignments_qs = TeamEvaluationAssignment.objects.filter(team=team).filter(
             Q(jury_1=jury) | Q(jury_2=jury) | Q(jury_3=jury)
-        ).exists()
+        )
     else:
         expert = request.user.expert_profile
-        assigned = TeamEvaluationAssignment.objects.filter(team=team).filter(
+        assignments_qs = TeamEvaluationAssignment.objects.filter(team=team).filter(
             Q(expert_1=expert) | Q(expert_2=expert)
-        ).exists()
+        )
 
-    if not assigned:
+    if round_number:
+        assignment = assignments_qs.filter(round_number=round_number).first()
+    else:
+        assignment = assignments_qs.first()
+
+    if not assignment:
         messages.error(request, 'You are not assigned to evaluate this team.')
         return redirect('jury_team_evaluations')
 
     hackathon = team.hackathon
-    active_round = hackathon.get_active_round()
-    round_number = int(request.POST.get('round_number', 1))
-    if active_round:
-        round_number = active_round['number']
+    round_number = assignment.round_number
+
+    # Lock check: Prevent submissions if round/team is completed/promoted
+    is_closed = (team.current_round > round_number) or (hackathon.current_jury_round > round_number)
+    if is_closed:
+        messages.error(request, 'This evaluation round is closed and marks cannot be modified.')
+        return redirect(f"/jury/team/{team.id}/?round={round_number}")
 
     parameters = RoundMarkingParameter.objects.filter(
         hackathon=hackathon,
         round_number=round_number,
-    )
+    ).prefetch_related('sub_parameters')
 
+    from decimal import Decimal, InvalidOperation
+    from .models import TeamSubParameterEvaluation
     saved_count = 0
     errors = []
     for param in parameters:
-        score_raw = request.POST.get(f'score_{param.id}', '').strip()
-        remarks = request.POST.get(f'remarks_{param.id}', '').strip()
+        sub_params = param.sub_parameters.all()
+        sub_scores_sum = Decimal('0.00')
+        has_sub_scores = False
 
-        if not score_raw:
-            continue
+        if sub_params.exists():
+            for sub in sub_params:
+                sub_score_raw = request.POST.get(f'sub_score_{sub.id}', '').strip()
+                if sub_score_raw != '':
+                    try:
+                        val = Decimal(sub_score_raw)
+                        if val < 0:
+                            raise ValueError(f"Sub-parameter '{sub.name}' score cannot be negative.")
+                        if sub.cutoff_score > 0 and val > sub.cutoff_score:
+                            raise ValueError(f"Sub-parameter '{sub.name}' score ({val}) exceeds max marks ({sub.cutoff_score}).")
+                        TeamSubParameterEvaluation.objects.update_or_create(
+                            team=team,
+                            round_number=round_number,
+                            evaluator=request.user,
+                            sub_parameter=sub,
+                            defaults={'score': val},
+                        )
+                        sub_scores_sum += val
+                        has_sub_scores = True
+                    except (InvalidOperation, ValueError) as exc:
+                        errors.append(str(exc))
+            
+            if has_sub_scores:
+                remarks = request.POST.get(f'remarks_{param.id}', '').strip()
+                TeamEvaluation.objects.update_or_create(
+                    team=team,
+                    round_number=round_number,
+                    evaluator=request.user,
+                    parameter=param,
+                    defaults={'score': float(sub_scores_sum), 'remarks': remarks},
+                )
+                saved_count += 1
+        else:
+            score_raw = request.POST.get(f'score_{param.id}', '').strip()
+            remarks = request.POST.get(f'remarks_{param.id}', '').strip()
 
-        try:
-            score = float(score_raw)
-            if score < 0:
-                raise ValueError("Score cannot be negative.")
-            if score > 100:
-                raise ValueError("Score cannot be greater than 100.")
-        except ValueError as exc:
-            errors.append(f"'{param.name}': {exc}")
-            continue
+            if not score_raw:
+                continue
 
-        TeamEvaluation.objects.update_or_create(
-            team=team,
-            round_number=round_number,
-            evaluator=request.user,
-            parameter=param,
-            defaults={'score': score, 'remarks': remarks},
-        )
-        saved_count += 1
+            try:
+                score = float(score_raw)
+                if score < 0:
+                    raise ValueError("Score cannot be negative.")
+                max_allowed = float(param.max_marks) if (param.max_marks and param.max_marks > 0) else 100.0
+                if score > max_allowed:
+                    raise ValueError(f"Score ({score}) exceeds max marks ({max_allowed}).")
+            except ValueError as exc:
+                errors.append(f"'{param.name}': {exc}")
+                continue
+
+            TeamEvaluation.objects.update_or_create(
+                team=team,
+                round_number=round_number,
+                evaluator=request.user,
+                parameter=param,
+                defaults={'score': score, 'remarks': remarks},
+            )
+            saved_count += 1
 
     if errors:
         messages.warning(request, f"Some scores were skipped: {'; '.join(errors)}")
@@ -595,7 +693,7 @@ def jury_submit_marks(request, team_id):
     else:
         messages.info(request, "No scores were submitted. Please enter at least one score.")
 
-    return redirect('jury_team_detail', team_id=team_id)
+    return redirect(f"/jury/team/{team_id}/?round={round_number}")
 
 
 @login_required(login_url='/accounts/')

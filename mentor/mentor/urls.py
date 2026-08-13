@@ -20,4 +20,5 @@ urlpatterns = [
     path('profile/',      views.mentor_profile,      name='mentor_profile'),
     path('messages/',     views.mentor_messages,     name='mentor_messages'),
     path('messages/<int:user_id>/', views.mentor_conversation, name='mentor_conversation'),
+    path('messages/reply-team/<int:message_id>/', views.mentor_reply_team_message, name='mentor_reply_team_message'),
 ]

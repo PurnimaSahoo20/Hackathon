@@ -263,6 +263,20 @@
         </div>
     </div>
     {% endif %}
+
+    {% if reg.created_team and reg.created_team.current_round > 1 %}
+    <div style="background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1px solid #a7f3d0; border-radius: 20px; padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.05);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #10b981;">🎉</div>
+            <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #065f46;">Congratulations!</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #047857;">Your team has qualified Round {{ reg.created_team.current_round|add:"-1" }} and has been promoted to Round {{ reg.created_team.current_round }}!</p>
+            </div>
+        </div>
+        <span style="font-size: 11px; background: #10b981; color: white; font-weight: 800; padding: 6px 14px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em;">Promoted</span>
+    </div>
+    {% endif %}
+
     <section class="dash-hero">
         <div class="dash-hero-grid">
             <div style="display: flex; flex-direction: column; justify-content: center;">
@@ -270,8 +284,11 @@
                 <h1 class="dash-title">{{ reg.hackathon.name }}</h1>
                 <div class="dash-subtitle">Team Dashboard &middot; {{ reg.team_name }}</div>
                 <div class="dash-meta">
+                    {% if reg.created_team %}
+                    <span class="dash-pill team" style="background:#f0fdf4; border-color:#a7f3d0; color:#047857;"><ion-icon name="ribbon-outline"></ion-icon> Team Round: {{ reg.created_team.current_round }}</span>
+                    {% endif %}
                     {% if active_round %}
-                    <span class="dash-pill team"><ion-icon name="disc-outline"></ion-icon> {{ active_round.name }}</span>
+                    <span class="dash-pill team"><ion-icon name="disc-outline"></ion-icon> Event Active: {{ active_round.name }}</span>
                     <span class="dash-pill status-green"><ion-icon name="play-circle-outline"></ion-icon> Active</span>
                     <span class="dash-pill status-amber"><ion-icon name="calendar-outline"></ion-icon> {{ active_round.start_date|date:"d M" }} - {{ active_round.end_date|date:"d M Y" }}</span>
                     {% else %}

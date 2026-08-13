@@ -102,6 +102,34 @@
     </div>
 </div>
 
+{% if can_upload_memories %}
+<div class="info-box" style="background: linear-gradient(135deg, #fff7ed, #fff1e6); border: 1px solid rgba(234, 88, 12, 0.25); border-radius: 20px; padding: 24px; margin-bottom: 28px; box-shadow: var(--shadow-soft);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(234, 88, 12, 0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #ea580c;">📸</div>
+        <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #1e293b;">Share Your Hackathon Memories</h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Congratulations on qualifying the final round! Upload your photos and videos to showcase your journey.</p>
+        </div>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) auto; align-items: end;">
+        {% csrf_token %}
+        <div class="field" style="margin: 0;">
+            <label for="title" style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Memory Title</label>
+            <input type="text" name="title" id="title" placeholder="e.g. Team working on final prototype" style="width: 100%; padding: 11px 14px; border: 1.5px solid rgba(234, 88, 12, 0.2); border-radius: 10px; font-size: 13px; outline: none; background: #fff;">
+        </div>
+        <div class="field" style="margin: 0;">
+            <label for="file" style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Upload Photo / Video</label>
+            <input type="file" name="file" id="file" accept="image/*,video/*" required style="width: 100%; padding: 8px 14px; border: 1.5px solid rgba(234, 88, 12, 0.2); border-radius: 10px; font-size: 13px; outline: none; background: #fff;">
+        </div>
+        <button type="submit" class="cta-link" style="border: none; cursor: pointer; height: 44px; padding: 0 24px; border-radius: 12px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <ion-icon name="cloud-upload-outline" style="font-size: 18px;"></ion-icon>
+            Upload Memory
+        </button>
+    </form>
+</div>
+{% endif %}
+
 <div class="gallery-grid">
     {% for item in creatives %}
     <a class="gallery-card" href="{{ item.file.url }}" target="_blank">

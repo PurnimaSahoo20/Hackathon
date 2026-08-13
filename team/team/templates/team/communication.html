@@ -1,30 +1,116 @@
 {% extends "team/base.html" %}
-{% block title %}Communication{% endblock %}
+{% block title %}Communication — HackNexus Team Portal{% endblock %}
+
 {% block content %}
-<div class="page-header"><div><div class="page-title">Communication</div><div class="page-subtitle">Send messages to admin, SPOC, and mentor</div></div></div>
+<div class="page-header">
+    <div>
+        <div class="page-title">Communication & Support</div>
+        <div class="page-subtitle">Reach out directly to your SPOC, assigned Mentor, or Event Support Admins.</div>
+    </div>
+</div>
+
 <div class="two-grid">
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Send New Message</div>
+    <!-- SEND MESSAGE FORM -->
+    <div class="table-wrap" style="padding:28px">
+        <div style="font-size:16px; font-weight:800; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+            <ion-icon name="paper-plane-outline" style="color:var(--accent); font-size:20px;"></ion-icon>
+            Send New Message
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:20px;">
+            Select the recipient category below. Your SPOC, Mentor, or Admin will receive an instant in-app notification.
+        </div>
+
         <form method="POST" action="{% url 'team_send_support_message' %}" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="field"><label>Category</label><select name="category"><option value="venue">Venue Admin</option><option value="health">Health Admin</option><option value="grievance">Grievance Admin</option><option value="logistics">Logistics Admin</option><option value="spoc">SPOC</option><option value="mentor">Mentor</option><option value="general">General Support</option></select></div>
-            <div class="field"><label>Subject</label><input type="text" name="subject" required placeholder="Short summary"></div>
-            <div class="field"><label>Message</label><textarea name="message" rows="5" required placeholder="Write your message"></textarea></div>
-            <div class="field"><label>Attachment</label><input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>
-            <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Send Message</button>
+            <div class="field">
+                <label>Recipient Category</label>
+                <select name="category" required style="border-radius:12px; padding:12px 14px;">
+                    <option value="spoc">🎓 College SPOC</option>
+                    <option value="mentor">👨‍🏫 Assigned Team Mentor</option>
+                    <option value="venue">🏛️ Venue Admin</option>
+                    <option value="health">🏥 Health & Safety Admin</option>
+                    <option value="grievance">⚖️ Grievance Admin</option>
+                    <option value="logistics">🚚 Logistics Admin</option>
+                    <option value="general" selected>💬 General Support</option>
+                </select>
+            </div>
+            
+            <div class="field">
+                <label>Subject</label>
+                <input type="text" name="subject" required placeholder="Brief summary of your query or issue" style="border-radius:12px; padding:12px 14px;">
+            </div>
+
+            <div class="field">
+                <label>Message</label>
+                <textarea name="message" rows="5" required placeholder="Describe your query, request, or issue in detail..." style="border-radius:12px; padding:12px 14px; min-height:120px;"></textarea>
+            </div>
+
+            <div class="field">
+                <label>Attachment (Optional)</label>
+                <div class="modern-upload-box">
+                    <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div class="field-tip">PDF, JPG, PNG, DOCX. Max: 5MB.</div>
+                </div>
+            </div>
+
+            <button type="submit" class="section-btn primary" style="width:100%; padding:14px; font-size:14px; font-weight:800; border-radius:12px; margin-top:8px;">
+                Send Message
+            </button>
         </form>
     </div>
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Recent Messages</div>
+
+    <!-- RECENT MESSAGES & REPLIES -->
+    <div class="table-wrap" style="padding:28px">
+        <div style="font-size:16px; font-weight:800; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+            <ion-icon name="chatbubbles-outline" style="color:var(--accent); font-size:20px;"></ion-icon>
+            Recent Messages & Replies
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:20px;">
+            Track the status of your queries and view replies from SPOC, Mentor, and Admins.
+        </div>
+
         {% for msg in support_messages %}
-        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:6px"><strong>{{ msg.subject }}</strong><span class="badge {% if msg.status == 'resolved' %}badge-green{% elif msg.status == 'reviewed' %}badge-blue{% else %}badge-amber{% endif %}">{{ msg.status|title }}</span></div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ msg.get_category_display }} · {{ msg.created_at|date:"M j, Y H:i" }}</div>
-            <div style="font-size:13px;color:var(--text);line-height:1.5">{{ msg.message }}</div>
-            {% if msg.admin_reply %}<div style="margin-top:10px;padding:10px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-size:12px">{{ msg.admin_reply }}</div>{% endif %}
+        <div style="padding:18px; border:1px solid var(--border); border-radius:16px; background:#fff; margin-bottom:14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                <div>
+                    <span class="badge badge-purple" style="margin-right:6px;">{{ msg.get_category_display }}</span>
+                    <strong style="font-size:15px; color:var(--text);">{{ msg.subject }}</strong>
+                </div>
+                <span class="badge {% if msg.status == 'resolved' %}badge-green{% elif msg.status == 'reviewed' %}badge-blue{% else %}badge-amber{% endif %}">
+                    {{ msg.get_status_display }}
+                </span>
+            </div>
+
+            <div style="font-size:11px; color:var(--muted); margin-bottom:10px; font-weight:600;">
+                Sent on {{ msg.created_at|date:"M j, Y H:i" }}
+            </div>
+
+            <div style="font-size:13px; color:var(--text); line-height:1.6; background:var(--bg); padding:12px 14px; border-radius:12px; border:1px solid var(--border);">
+                {{ msg.message|linebreaksbr }}
+                {% if msg.attachment %}
+                <div style="margin-top:8px;">
+                    <a href="/media/{{ msg.attachment }}" target="_blank" class="file-preview-badge" style="margin-top:0; font-size:11px;">
+                        📎 View Attachment
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if msg.admin_reply %}
+            <div style="margin-top:12px; padding:14px; border-radius:12px; background:rgba(234, 88, 12, 0.06); border:1px solid rgba(234, 88, 12, 0.2); color:var(--text); font-size:13px; line-height:1.6;">
+                <div style="font-weight:800; color:var(--accent); font-size:12px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <ion-icon name="checkmark-done-circle" style="font-size:16px;"></ion-icon> Response:
+                </div>
+                {{ msg.admin_reply }}
+            </div>
+            {% endif %}
         </div>
         {% empty %}
-        <div style="color:var(--muted)">No messages yet.</div>
+        <div style="text-align:center; padding:48px 20px; color:var(--muted);">
+            <div style="font-size:36px; margin-bottom:10px; opacity:0.5;">💬</div>
+            <div style="font-size:14px; font-weight:700;">No messages sent yet</div>
+            <div style="font-size:12px; margin-top:4px;">Use the form on the left to send a message to SPOC, Mentor, or Admin.</div>
+        </div>
         {% endfor %}
     </div>
 </div>

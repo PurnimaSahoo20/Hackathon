@@ -11,7 +11,43 @@
             <div class="field"><label>To</label><input type="text" name="destination" required></div>
             <div class="field"><label>Date of Journey</label><input type="date" name="journey_date" required></div>
             <div class="field"><label>Travel Mode</label><select name="travel_mode"><option value="train">Train</option><option value="bus">Bus</option><option value="flight">Flight</option><option value="car">Car</option><option value="other">Other</option></select></div>
-            <div class="field"><label>Traveler Name</label><input type="text" name="traveler_name"></div>
+            <div class="field">
+                <label>Ticket Type</label>
+                <div style="display:flex; gap:20px; margin-top:8px; margin-bottom:12px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal;">
+                        <input type="radio" name="ticket_type" value="group" checked onchange="toggleTravelerSelection()"> Group Ticket (Whole Team)
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal;">
+                        <input type="radio" name="ticket_type" value="individual" onchange="toggleTravelerSelection()"> Individual Ticket
+                    </label>
+                </div>
+            </div>
+
+            <div class="field" id="traveler-select-section" style="display:none; margin-bottom:16px;">
+                <label>Select Traveler(s)</label>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px; background:rgba(0,0,0,0.02); padding:12px; border-radius:8px; border:1px solid var(--border)">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal; cursor:pointer;">
+                        <input type="checkbox" name="travelers" value="{{ leader_name }}" checked> {{ leader_name }} (Leader)
+                    </label>
+                    {% for m in members %}
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal; cursor:pointer;">
+                        <input type="checkbox" name="travelers" value="{{ m.name|default:m.email }}"> {{ m.name|default:m.email }} (Member)
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <script>
+            function toggleTravelerSelection() {
+                const ticketType = document.querySelector('input[name="ticket_type"]:checked').value;
+                const selectSection = document.getElementById('traveler-select-section');
+                if (ticketType === 'individual') {
+                    selectSection.style.display = 'block';
+                } else {
+                    selectSection.style.display = 'none';
+                }
+            }
+            </script>
             <div class="two-grid">
                 <div class="field"><label>Ticket Number</label><input type="text" name="ticket_number" placeholder="PNR / Ticket No."></div>
                 <div class="field"><label>Ticket Amount (₹)</label><input type="number" step="0.01" name="ticket_amount" placeholder="e.g. 1500.00"></div>

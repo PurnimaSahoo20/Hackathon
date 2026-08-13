@@ -79,6 +79,13 @@ class Hackathon(models.Model):
     round_5_type = models.CharField(max_length=50, choices=ROUND_TYPE_CHOICES, default='Online')
     round_5_venue = models.CharField(max_length=255, null=True, blank=True)
 
+    # Round Total Marks (for parameter sum validation)
+    round_1_total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=100.00)
+    round_2_total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=100.00)
+    round_3_total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=100.00)
+    round_4_total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=100.00)
+    round_5_total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=100.00)
+
     min_team_size = models.IntegerField(default=1)
     max_team_size = models.IntegerField(default=4)
     number_of_mentors = models.IntegerField(default=0)
@@ -95,6 +102,12 @@ class Hackathon(models.Model):
                                     help_text='Background banner image for the hero section on the landing page.')
 
     status = models.CharField(max_length=50, default='Draft')
+
+    # ── Jury Round Control ──
+    current_jury_round = models.IntegerField(
+        default=1,
+        help_text="The round for which jury panels can currently be created. Advances when admin promotes teams."
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -191,12 +204,30 @@ class RoundMarkingParameter(models.Model):
     name = models.CharField(max_length=255)
     is_others = models.BooleanField(default=False)
     cutoff_score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="The cutoff score required for this parameter")
+    max_marks = models.DecimalField(max_digits=5, decimal_places=2, default=100.00, help_text="The maximum marks (total marks) allowed for this parameter")
 
     class Meta:
         db_table = 'events_roundmarkingparameter'
 
     def __str__(self):
         return f"{self.hackathon.name} - R{self.round_number} - {self.name}"
+
+
+class MarkingSubParameter(models.Model):
+    """Optional sub-parameters that break down a marking parameter into finer criteria."""
+    parent_parameter = models.ForeignKey(
+        RoundMarkingParameter, on_delete=models.CASCADE, related_name='sub_parameters'
+    )
+    name = models.CharField(max_length=255)
+    cutoff_score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="The score for this sub-parameter")
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'events_markingsubparameter'
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return f"{self.parent_parameter.name} → {self.name}"
 
 
 class HackathonDomain(models.Model):
@@ -235,3 +266,80 @@ class HeroBannerImage(models.Model):
 
     def __str__(self):
         return f"{self.hackathon.name} - Banner #{self.display_order}"
+
+
+class RoundJuryConfig(models.Model):
+    """Per-round jury/expert team composition blueprint.
+
+    Defines how many jury members and experts each evaluation team
+    should have for a specific round.  The actual team instances
+    (with names) are stored in JuryTeam.
+    """
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name='jury_configs')
+    round_number = models.IntegerField()
+    num_jury_per_team = models.IntegerField(
+        default=1, help_text='Number of jury members in each evaluation team'
+    )
+    num_experts_per_team = models.IntegerField(
+        default=1, help_text='Number of experts in each evaluation team'
+    )
+
+    # ── Lock control ──
+    is_locked = models.BooleanField(
+        default=False,
+        help_text="When True, no new panels can be created and assignments are frozen for this round."
+    )
+    is_team_locked = models.BooleanField(
+        default=False,
+        help_text="When True, team assignments are locked for this round."
+    )
+    locked_at = models.DateTimeField(null=True, blank=True)
+    locked_by = models.ForeignKey(
+        'accounts.User', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='locked_jury_configs'
+    )
+    alter_assignment = models.BooleanField(
+        default=False,
+        help_text="When True, the round robin assignment order of teams to panels is altered."
+    )
+    alter_offset = models.IntegerField(
+        default=0,
+        help_text="The rotational offset used to alter the round robin team panel assignment order."
+    )
+    has_assigned_teams = models.BooleanField(
+        default=False,
+        help_text="When True, team panel assignments have been initiated and saved for the round."
+    )
+
+    class Meta:
+        db_table = 'events_roundjuryconfig'
+        unique_together = ('hackathon', 'round_number')
+
+    def __str__(self):
+        return (
+            f"{self.hackathon.name} - R{self.round_number}: "
+            f"{self.num_jury_per_team} jury + {self.num_experts_per_team} experts per team"
+        )
+
+
+class JuryTeam(models.Model):
+    """A named evaluation team for a specific round.
+
+    Each team will later be assigned jury/expert users and mapped to
+    problem statements (handled separately from the event form).
+    """
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name='jury_teams')
+    round_number = models.IntegerField()
+    name = models.CharField(max_length=255, help_text='Team label, e.g. Panel A')
+    display_order = models.PositiveIntegerField(default=0)
+    problem_statement = models.ForeignKey('events.ProblemStatement', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_jury_teams')
+    juries = models.ManyToManyField('accounts.JuryProfile', blank=True, related_name='assigned_jury_teams')
+    experts = models.ManyToManyField('accounts.ExpertProfile', blank=True, related_name='assigned_jury_teams')
+
+    class Meta:
+        db_table = 'events_juryteam'
+        ordering = ['round_number', 'display_order', 'name']
+
+    def __str__(self):
+        return f"{self.hackathon.name} - R{self.round_number} - {self.name}"
+

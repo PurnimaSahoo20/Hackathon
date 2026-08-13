@@ -82,6 +82,7 @@
 
 {% if sub == 'budget' %}
 <div id="budgetForm" class="slide-form">
+  <div class="modal-box">
     <!-- Form content same as before -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Set Event Budget</h3>
@@ -109,6 +110,7 @@
             <button type="button" class="btn-draft" onclick="closeForm('budgetForm')" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
@@ -144,6 +146,7 @@
 
 {% elif sub == 'sponsorships' %}
 <div id="sponsorForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 id="sponsorFormTitle" style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Sponsorship</h3>
         <button type="button" onclick="closeSponsorForm()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
@@ -196,6 +199,7 @@
             <button type="button" class="btn-draft" onclick="closeSponsorForm()" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
@@ -307,6 +311,7 @@
 
 {% elif sub == 'transactions' %}
 <div id="txForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Process Transaction</h3>
         <button type="button" onclick="closeForm('txForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
@@ -355,6 +360,7 @@
             <button type="button" class="btn-draft" onclick="closeForm('txForm')" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">

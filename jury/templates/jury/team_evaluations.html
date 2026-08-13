@@ -271,7 +271,7 @@
                 </div>
             </div>
             <span class="status-badge {% if card.is_complete %}status-complete{% else %}status-pending{% endif %}">
-                {% if card.is_complete %}Done{% else %}Pending{% endif %}
+                {% if card.is_complete %}Completed{% else %}Pending{% endif %}
             </span>
         </div>
 
@@ -297,10 +297,17 @@
         </div>
 
         <div style="margin-top:16px;">
-            <a href="{% url 'jury_team_detail' card.team.id %}" class="btn-evaluate {% if card.is_complete %}complete{% endif %}">
+            {% if card.is_closed %}
+            <a href="{% url 'jury_team_detail' card.team.id %}?round={{ card.round_number }}" class="btn-evaluate" style="background:#64748b; box-shadow:0 4px 10px rgba(100,116,139,0.2);">
+                <ion-icon name="eye-outline"></ion-icon>
+                View Marks
+            </a>
+            {% else %}
+            <a href="{% url 'jury_team_detail' card.team.id %}?round={{ card.round_number }}" class="btn-evaluate {% if card.is_complete %}complete{% endif %}">
                 <ion-icon name="{% if card.is_complete %}create-outline{% else %}clipboard-outline{% endif %}"></ion-icon>
                 {% if card.is_complete %}Update Marks{% else %}Evaluate Team{% endif %}
             </a>
+            {% endif %}
         </div>
     </div>
     {% endfor %}

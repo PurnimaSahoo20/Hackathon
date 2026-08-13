@@ -402,15 +402,25 @@
         <p>Set cutoff thresholds, review detailed evaluator marks, and promote qualified teams to the next round.</p>
     </div>
     
-    <div>
-        <form method="GET" id="hackathonForm">
-            <select name="hackathon" onchange="document.getElementById('hackathonForm').submit()" style="border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:10px 16px;font-weight:700;outline:none;">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <form method="GET" id="hackathonForm" style="margin:0;">
+            <select name="hackathon" onchange="document.getElementById('hackathonForm').submit()" style="border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:10px 16px;font-weight:700;outline:none;background:#fff;cursor:pointer;">
                 <option value="">Select hackathon</option>
                 {% for h in hackathons %}
                 <option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
                 {% endfor %}
             </select>
         </form>
+        {% if active_hackathon %}
+        <form method="POST" action="{% url 'reset_evaluation_data' %}" onsubmit="return confirm('⚠️ WARNING: This will permanently delete all jury panels, team assignments, scores/evaluations, and reset all teams back to Round 1. Are you sure you want to proceed?');" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+            <button type="submit" style="padding:10px 16px;background:none;border:1px solid #fca5a5;border-radius:var(--radius-md);color:#ef4444;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444';" onmouseout="this.style.background='none';this.style.borderColor='#fca5a5';">
+                <ion-icon name="refresh-outline" style="font-size:16px;"></ion-icon>
+                Reset Evaluation Data
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 
@@ -418,7 +428,7 @@
     <!-- Round Navigation -->
     <div class="round-tabs">
         {% for r in total_rounds_range %}
-        <a href="?hackathon={{ hackathon_filter }}&round={{ r }}{% if show_qualified %}&show_qualified=true{% endif %}" class="round-tab {% if selected_round == r %}active{% endif %}">
+        <a href="?hackathon={{ hackathon_filter }}&round={{ r }}{% if show_qualified %}&show_qualified=true{% endif %}{% if show_top_10 %}&top_10=true{% endif %}" class="round-tab {% if selected_round == r %}active{% endif %}">
             Round {{ r }}
         </a>
         {% endfor %}
@@ -426,7 +436,15 @@
 
     <!-- Cutoff Configuration Panel -->
     <div class="controls-card">
-        <h3 style="font-size:16px;font-weight:800;margin:0 0 16px 0;color:var(--dark);">Set Parameter Cutoffs (Round {{ selected_round }})</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <h3 style="font-size:16px;font-weight:800;margin:0;color:var(--dark);">Set Parameter Cutoffs (Round {{ selected_round }})</h3>
+            {% if params %}
+            <span style="background:var(--success-bg);color:var(--success);padding:6px 12px;border-radius:var(--radius-sm);font-weight:800;font-size:13px;border:1px solid #a7f3d0;display:flex;align-items:center;gap:6px;">
+                <ion-icon name="checkbox-outline" style="font-size:16px;"></ion-icon>
+                Qualified Teams: <strong>{{ qualified_teams_count }}</strong> / {{ total_teams_count }}
+            </span>
+            {% endif %}
+        </div>
         
         {% if params %}
             <form method="POST">
@@ -438,9 +456,9 @@
                     <div class="cutoff-input-group">
                         <label class="cutoff-label" for="cutoff_{{ param.id }}">{{ param.name }}</label>
                         <div class="cutoff-input-wrapper">
-                            <input type="number" step="0.01" min="0" max="100" class="cutoff-input" 
-                                   id="cutoff_{{ param.id }}" name="cutoff_{{ param.id }}" 
-                                   value="{{ param.cutoff_score|default:'0.00' }}">
+                             <input type="number" step="0.01" min="0" max="100" class="cutoff-input" 
+                                    id="cutoff_{{ param.id }}" name="cutoff_{{ param.id }}" 
+                                    value="{{ param.cutoff_score|default:'0.00' }}" {% if is_round_completed %}disabled{% endif %}>
                             <span class="cutoff-unit">/100</span>
                         </div>
                     </div>
@@ -448,10 +466,16 @@
                 </div>
                 
                 <div style="display:flex;justify-content:flex-end;">
+                    {% if not is_round_completed %}
                     <button type="submit" class="btn btn-primary">
                         <ion-icon name="save-outline" style="font-size:16px;"></ion-icon>
                         Save Cutoffs
                     </button>
+                    {% else %}
+                    <span style="color:var(--gray-600);font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;background:var(--gray-50);padding:8px 16px;border-radius:var(--radius-sm);border:1px dashed var(--gray-200);">
+                        <ion-icon name="lock-closed-outline" style="color:var(--danger);font-size:16px;"></ion-icon> Cutoffs locked (Round completed)
+                    </span>
+                    {% endif %}
                 </div>
             </form>
         {% else %}
@@ -463,19 +487,32 @@
 
     <!-- Teams Evaluation and Promotion -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-        <h3 style="font-size:18px;font-weight:800;margin:0;color:var(--dark);">
+        <h3 style="font-size:18px;font-weight:800;margin:0;color:var(--dark);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             Teams & Evaluations List (Round {{ selected_round }})
+            {% if show_top_10 %}
+            <span style="font-size:12px;background:#ffedd5;color:#ea580c;padding:4px 8px;border-radius:var(--radius-sm);font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+                <ion-icon name="ribbon-outline"></ion-icon> Top 10 Teams Only
+            </span>
+            {% endif %}
         </h3>
         
-        <div style="display:flex;gap:16px;align-items:center;">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
             <!-- Show Qualified Only Toggle -->
             <label class="filter-checkbox-label">
                 <input type="checkbox" class="filter-checkbox" id="qualifiedFilter" {% if show_qualified %}checked{% endif %}
-                       onchange="window.location.href='?hackathon={{ hackathon_filter }}&round={{ selected_round }}&show_qualified=' + this.checked">
+                       onchange="window.location.href='?hackathon={{ hackathon_filter }}&round={{ selected_round }}&show_qualified=' + this.checked + '&top_10={{ show_top_10|lower }}'">
                 Show Qualified Only
             </label>
 
+            <!-- Show Top 10 Toggle -->
+            <label class="filter-checkbox-label">
+                <input type="checkbox" class="filter-checkbox" id="top10Filter" {% if show_top_10 %}checked{% endif %}
+                       onchange="window.location.href='?hackathon={{ hackathon_filter }}&round={{ selected_round }}&show_qualified={{ show_qualified|lower }}&top_10=' + this.checked">
+                Show Top 10 Only
+            </label>
+
             <!-- Bulk Promotion Button -->
+            {% if not is_round_completed %}
             <form method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to promote all qualified teams to the next round? This action cannot be undone.');">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="promote_qualified">
@@ -484,6 +521,7 @@
                     Promote All Qualified
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
 
@@ -535,19 +573,31 @@
                         {% endif %}
                     </td>
                     <td onclick="event.stopPropagation()">
-                        {% if item.is_qualified %}
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="promote_team">
-                                <input type="hidden" name="team_id" value="{{ item.team.id }}">
-                                <button type="submit" class="btn btn-success" style="padding:6px 12px; font-size:12px;">
+                        {% if is_round_completed %}
+                            {% if item.team.current_round > selected_round %}
+                                <span style="color:var(--success);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px;">
+                                    <ion-icon name="checkmark-done-circle-outline" style="font-size:16px;"></ion-icon> Promoted
+                                </span>
+                            {% else %}
+                                <span style="color:var(--danger);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px;">
+                                    <ion-icon name="close-circle-outline" style="font-size:16px;"></ion-icon> Suspended
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            {% if item.is_qualified %}
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="promote_team">
+                                    <input type="hidden" name="team_id" value="{{ item.team.id }}">
+                                    <button type="submit" class="btn btn-success" style="padding:6px 12px; font-size:12px;">
+                                        Promote
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-outline" style="padding:6px 12px; font-size:12px;" disabled title="Team must meet all parameter cutoffs to qualify for promotion.">
                                     Promote
                                 </button>
-                            </form>
-                        {% else %}
-                            <button class="btn btn-outline" style="padding:6px 12px; font-size:12px;" disabled title="Team must meet all parameter cutoffs to qualify for promotion.">
-                                Promote
-                            </button>
+                            {% endif %}
                         {% endif %}
                     </td>
                 </tr>
@@ -561,7 +611,7 @@
                                     <span style="font-size:13px;font-weight:600;color:var(--gray-600);">Round {{ selected_round }}</span>
                                 </div>
                                 
-                                {% if item.evaluators_count > 0 %}
+                                {% if item.evaluations_by_evaluator %}
                                     <table class="eval-list-table">
                                         <thead>
                                             <tr>
@@ -577,20 +627,29 @@
                                             <tr>
                                                 <td>
                                                     <div style="font-weight:700;">{{ ev_data.user.get_full_name|default:ev_data.user.username }}</div>
-                                                    <div style="font-size:11px;color:var(--gray-600);">{{ ev_data.user.role.name }}</div>
+                                                    <div style="font-size:11px;color:var(--gray-600);">
+                                                        {{ ev_data.user.role.name|default:"Evaluator" }}
+                                                        {% if not ev_data.has_submitted %}
+                                                            <span style="color:#ef4444;font-weight:800;margin-left:4px;">(Pending Evaluation)</span>
+                                                        {% endif %}
+                                                    </div>
                                                     {% if ev_data.remarks %}
                                                         <span class="eval-remarks">"{{ ev_data.remarks }}"</span>
                                                     {% endif %}
                                                 </td>
                                                 {% for param in params %}
                                                 <td style="text-align:center;font-weight:600;">
-                                                    {% for p_id, score in ev_data.scores.items %}
-                                                        {% with p_id_str=p_id|stringformat:"s" param_id_str=param.id|stringformat:"s" %}
-                                                            {% if p_id_str == param_id_str %}
-                                                                {{ score|floatformat:2 }}
-                                                            {% endif %}
-                                                        {% endwith %}
-                                                    {% endfor %}
+                                                    {% if ev_data.has_submitted %}
+                                                        {% for p_id, score in ev_data.scores.items %}
+                                                            {% with p_id_str=p_id|stringformat:"s" param_id_str=param.id|stringformat:"s" %}
+                                                                {% if p_id_str == param_id_str %}
+                                                                    {{ score|floatformat:2 }}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <span style="color:#94a3b8;">—</span>
+                                                    {% endif %}
                                                 </td>
                                                 {% endfor %}
                                             </tr>

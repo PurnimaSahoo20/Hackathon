@@ -4,40 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Register Team” HackNexus</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --orange: #ff6b1a;
+            --blue: #e85d04;
+            --purple: #ff8c42;
+            --pink: #d62828;
+            --green: #2d9e2d;
+            --gold: #f4a261;
+            --bg: #fdf8f4;
+            --bg2: #fff5ed;
+            --surface: #ffffff;
+            --border: rgba(255, 107, 26, 0.2);
+            --text: #1a1a2e;
+            --muted: #34373b;
+            --glass: rgba(255, 107, 26, 0.06);
+            --glass-border: rgba(255, 107, 26, 0.2);
+            --blue-light: rgba(255, 107, 26, 0.08);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --font-head: "Poppins", sans-serif;
+            --font-mono: "Poppins", sans-serif;
+            --font-body: "Inter", sans-serif;
+        }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#eff6ff,#dbeafe);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-        .wrapper{max-width:600px;width:100%}
-        .brand{font-size:20px;font-weight:900;color:#f97316;text-align:center;margin-bottom:24px}
-        .brand span{color:#2563eb}
-        .card{background:#fff;border-radius:20px;padding:36px;box-shadow:0 20px 48px rgba(37,99,235,0.12)}
-        .card h2{font-size:22px;font-weight:800;color:#111827;margin-bottom:4px}
-        .card .sub{font-size:13px;color:#6b7280;margin-bottom:28px}
+        body{
+            font-family: var(--font-body);
+            background: radial-gradient(circle at top left, rgba(255, 107, 26, 0.08), transparent 30%), radial-gradient(circle at bottom right, rgba(232, 93, 4, 0.05), transparent 25%), var(--bg);
+            color: var(--text);
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.12;
+        }
+        .wrapper{max-width:600px;width:100%;position: relative;z-index: 10;}
+        .brand{
+            font-family: var(--font-head);
+            font-size:24px;
+            font-weight:900;
+            background: linear-gradient(90deg, var(--orange), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align:center;
+            margin-bottom:24px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .brand span{color: inherit;}
+        .card{
+            background:#fff;
+            border-radius:24px;
+            padding:36px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+        }
+        .card h2{
+            font-family: var(--font-head);
+            font-size:22px;
+            font-weight:800;
+            color: var(--text);
+            margin-bottom:6px;
+        }
+        .card .sub{
+            font-size:13px;
+            color: var(--muted);
+            margin-bottom:28px;
+        }
         .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
         .field{margin-bottom:18px}
-        .field label{display:block;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px}
-        .field input,.field select{width:100%;padding:12px 14px;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:#111827;background:#f5f8ff;outline:none;transition:border-color 0.2s}
-        .field input:focus,.field select:focus{border-color:#2563eb;background:#fff}
+        .field label{
+            display:block;
+            font-size:11px;
+            font-weight:800;
+            color: var(--muted);
+            text-transform:uppercase;
+            letter-spacing:0.08em;
+            margin-bottom:5px;
+            font-family: var(--font-mono);
+        }
+        .field input,.field select{
+            width:100%;
+            padding:12px 14px;
+            border:1.5px solid var(--border);
+            border-radius:10px;
+            font-size:13px;
+            font-family: var(--font-body);
+            color: var(--text);
+            background: rgba(255, 107, 26, 0.02);
+            outline:none;
+            transition: all 0.2s;
+        }
+        .field input:focus,.field select:focus{
+            border-color: var(--orange);
+            background:#fff;
+            box-shadow: 0 0 0 4px rgba(255, 107, 26, 0.1);
+        }
         .password-wrap{position:relative}
         .password-wrap input{padding-right:48px}
-        .password-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:none;color:#6b7280;cursor:pointer;font-size:18px;line-height:1;padding:0}
-        .password-toggle:hover{color:#2563eb}
-        .help{font-size:12px;color:#6b7280;margin-top:-8px;margin-bottom:16px}
-        .btn{width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s}
-        .btn:hover{background:#1d4ed8;transform:translateY(-1px)}
-        .login-link{text-align:center;margin-top:16px;font-size:13px;color:#6b7280}
-        .login-link a{color:#2563eb;font-weight:700;text-decoration:none}
-        .msg{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:16px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+        .password-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:none;color: var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;}
+        .password-toggle:hover{color: var(--orange)}
+        .help{
+            font-family: var(--font-body);
+            font-size:11px;
+            color: var(--muted);
+            margin-top:-8px;
+            margin-bottom:16px;
+            line-height: 1.45;
+        }
+        .btn{
+            width:100%;
+            padding:14px;
+            background: linear-gradient(135deg, var(--blue), var(--orange));
+            color:#fff;
+            border:none;
+            border-radius:10px;
+            font-size:15px;
+            font-weight:700;
+            font-family: var(--font-head);
+            cursor:pointer;
+            transition:all 0.2s;
+        }
+        .btn:hover{
+            transform:translateY(-1px);
+            box-shadow: 0 8px 20px rgba(255, 107, 26, 0.25);
+        }
+        .login-link{text-align:center;margin-top:16px;font-size:13px;color: var(--muted)}
+        .login-link a{color: var(--orange);font-weight:700;text-decoration:none}
+        .login-link a:hover{text-decoration: underline;}
+        .msg{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:16px;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
         .footer-note {
             margin-top: 22px;
             text-align: center;
-            color: var(--muted);
-            font-family: var(--mono);
+            font-family: var(--font-mono);
             font-size: 11px;
             font-weight: 700;
             letter-spacing: .08em;
             text-transform: uppercase;
+        }
+        .footer-note a {
+            color: var(--orange);
+            text-decoration: none;
+        }
+        .footer-note a:hover {
+            color: var(--blue);
+            text-decoration: underline;
         }
         @media(max-width:640px){.two-col{grid-template-columns:1fr}.card{padding:28px 22px}}
     </style>
@@ -64,14 +188,14 @@
                 <label>Password *</label>
                 <div class="password-wrap">
                     <input type="password" name="password" id="team-password" required placeholder="Create a password" minlength="8">
-                    <button type="button" class="password-toggle" data-target="team-password" aria-label="Show password">👁</button>
+                    <button type="button" class="password-toggle" data-target="team-password" aria-label="Show password"></button>
                 </div>
             </div>
             <div class="field">
                 <label>Confirm Password *</label>
                 <div class="password-wrap">
                     <input type="password" name="confirm_password" id="team-confirm-password" required placeholder="Re-enter your password" minlength="8">
-                    <button type="button" class="password-toggle" data-target="team-confirm-password" aria-label="Show password">👁</button>
+                    <button type="button" class="password-toggle" data-target="team-confirm-password" aria-label="Show password"></button>
                 </div>
             </div>
             <div class="help">Use at least 8 characters with 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.</div>
@@ -104,13 +228,17 @@
     </div>
 </div>
 <script>
+const eyeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+const eyeOffSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
 document.querySelectorAll('.password-toggle').forEach(function(button) {
+    button.innerHTML = eyeSvg;
     button.addEventListener('click', function() {
         const input = document.getElementById(button.dataset.target);
         if (!input) return;
         const show = input.type === 'password';
         input.type = show ? 'text' : 'password';
-        button.textContent = show ? '🙈' : '👁';
+        button.innerHTML = show ? eyeOffSvg : eyeSvg;
         button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
     });
 });

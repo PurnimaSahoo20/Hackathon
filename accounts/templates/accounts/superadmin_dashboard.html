@@ -78,6 +78,241 @@
         box-shadow: 0 10px 22px rgba(249, 115, 22, .12);
     }
 
+    /* ── Modal Overlay and Layout Styles ── */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(5px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    .modal-overlay.open {
+        display: flex !important;
+    }
+    .modal-card {
+        background: #fff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 780px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        border: 2px solid #fed7aa;
+        overflow: hidden;
+        animation: modalPop 0.3s ease-out;
+    }
+    .modal-card form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    @keyframes modalPop {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Header & Step progress */
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1.5px solid #fed7aa;
+        background: linear-gradient(135deg, #fff7ed, #fff);
+    }
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: #ea580c;
+    }
+    .step-progress-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .step-dots {
+        display: flex;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all 0.25s;
+    }
+    .step-dot.active {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+    }
+    .step-dot.completed {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+    }
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+    .close-modal:hover {
+        color: #ef4444;
+    }
+
+    /* Modal Body */
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        background: #fafafa;
+    }
+
+    /* Steps panes */
+    .form-step-pane {
+        display: none;
+    }
+    .form-step-pane.active {
+        display: block;
+    }
+
+    /* Compact Forms grid with equal sizes */
+    .form-grid-compact {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .form-group-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-compact.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-group-compact label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .form-group-compact input,
+    .form-group-compact select,
+    .form-group-compact textarea {
+        padding: 10px 12px;
+        font-size: 13.5px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s;
+        height: 40px; /* Force same height */
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .form-group-compact textarea {
+        height: 80px; /* Allow textarea to be taller but consistent */
+        resize: none;
+    }
+    .form-group-compact input[type="file"] {
+        padding: 7px 10px; /* align text height for files */
+    }
+    .form-group-compact input:focus,
+    .form-group-compact select:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+    }
+
+    /* Section Title */
+    .step-section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ea580c;
+        margin: 0 0 14px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1.5px solid #fed7aa;
+        padding-bottom: 6px;
+    }
+
+    /* Modal Footer */
+    .modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1.5px solid #fed7aa;
+        background: #fff;
+    }
+    .footer-buttons-left {
+        display: flex;
+        gap: 12px;
+    }
+    .footer-buttons-right {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* Navigation buttons styling */
+    .btn-step-prev {
+        padding: 9px 18px;
+        border: 1.5px solid #cbd5e1;
+        background: #fff;
+        color: #475569;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-prev:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .btn-step-next {
+        padding: 9px 22px;
+        border: 1.5px solid #ea580c;
+        background: #ea580c;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-next:hover {
+        background: #d97706;
+    }
+
+
     /* ── User row highlight when editing ── */
     tr.editing-row {
         background: #fff7ed !important;
@@ -514,56 +749,56 @@
 </section>
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="sc-icon-top">🎯</div>
+        <div class="sc-icon-top"><ion-icon name="calendar-outline" style="color: #ea580c; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ events_total }}</div>
         <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑
             {{events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
             month</div>{% endif %}<a href="?tab=events" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🏢</div>
+        <div class="sc-icon-top"><ion-icon name="shield-checkmark-outline" style="color: #3b82f6; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ admins_total }}</div>
         <div class="sc-label">Admins</div>
         <div class="sc-trend trend-neutral">↑ {{ admins_active }} active</div><a href="?tab=admin_mgt"
             class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">⚖️</div>
+        <div class="sc-icon-top"><ion-icon name="ribbon-outline" style="color: #8b5cf6; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ expert_jury_total }}</div>
         <div class="sc-label">Jury / Expert</div>
         <div class="sc-trend trend-neutral">{{ jury_count }} Jury • {{ expert_count }} Expert</div><a
             href="?tab=user_mgt" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🏫</div>
+        <div class="sc-icon-top"><ion-icon name="school-outline" style="color: #10b981; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ colleges_total }}</div>
         <div class="sc-label">Colleges Onboarded</div>
         <div class="sc-trend trend-up">↑ {{ colleges_new_week }} this week</div><a href="#" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">👥</div>
+        <div class="sc-icon-top"><ion-icon name="people-outline" style="color: #6366f1; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ teams_total }}</div>
         <div class="sc-label">Teams</div>
         <div class="sc-trend trend-up">↑ {{ teams_new_today }} new today</div><a href="#" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🚀</div>
+        <div class="sc-icon-top"><ion-icon name="briefcase-outline" style="color: #ec4899; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ execs_total }}</div>
         <div class="sc-label">Executives</div>
         <div class="sc-trend trend-neutral">All assigned</div><a href="?tab=exec_mgt" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">📋</div>
+        <div class="sc-icon-top"><ion-icon name="document-text-outline" style="color: #f59e0b; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ ps_total }}</div>
         <div class="sc-label">Problem Statements</div>
         <div class="sc-trend trend-neutral">Multiple domains</div><a href="?tab=problem_statements"
             class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">📍</div>
+        <div class="sc-icon-top"><ion-icon name="location-outline" style="color: #ef4444; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ venues_total }}</div>
         <div class="sc-label">Venue</div>
         <div class="sc-trend trend-up">{% if venues_total > 0 %}Confirmed{% else %}Pending{% endif %}</div><a href="#"
@@ -770,212 +1005,253 @@
 </div>
 
 {% elif tab == 'events' %}
-<div id="hackathonForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; font-size:22px; font-weight:800;">Create New Hackathon Event</h2>
-            <button onclick="toggleForm('hackathonForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="hackathonForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <!-- header -->
+        <div class="modal-header">
+            <h2>Create New Hackathon Event</h2>
+            <div class="step-progress-wrapper">
+                <div class="step-dots">
+                    <span class="step-dot active" data-step="1">1</span>
+                    <span class="step-dot" data-step="2">2</span>
+                    <span class="step-dot" data-step="3">3</span>
+                    <span class="step-dot" data-step="4">4</span>
+                </div>
+            </div>
+            <button type="button" onclick="toggleForm('hackathonForm')" class="close-modal"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data">
+        
+        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data" id="createHackathonFormElement">
             {% csrf_token %}
-            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Hackathon Name</label><input type="text" name="name" required
-                        placeholder="e.g. BPUT Smart Odisha Hackathon"></div>
-                <div class="form-group"><label>Organization Name</label><input type="text" name="organization_name"
-                        required placeholder="e.g. OKCL / BPUT"></div>
-                <div class="form-group"><label>Organization Logo</label><input type="file" name="organization_logo"
-                        accept="image/*"></div>
-            </div>
-            <div class="form-section-title">Branding &amp; Media</div>
-            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Upload logos and banner images for the landing
-                page. Event logo appears on the right side of the navbar, Platform logo on the left side, and the hero
-                banner as the background of the hero section.</p>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Event Logo <small style="color:#9ca3af;">(Navbar Right)</small></label>
-                    <input type="file" name="event_logo" accept="image/*">
-                </div>
-                <div class="form-group">
-                    <label>Platform Logo (HackNexus) <small style="color:#9ca3af;">(Navbar Left)</small></label>
-                    <input type="file" name="platform_logo" accept="image/*">
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Hero Banner Images <small style="color:#9ca3af;">(Hero Background – multiple banners for
-                            carousel)</small></label>
-                    <div id="createHeroBannerUploads">
-                        <div class="form-group" style="margin-bottom:8px;">
-                            <input type="file" name="hero_banners" accept="image/*">
+            <!-- body -->
+            <div class="modal-body">
+                <!-- STEP 1: Basic Information & Media -->
+                <div class="form-step-pane active" data-step="1">
+                    <div class="step-section-title">Basic Information</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Hackathon Name</label>
+                            <input type="text" name="name" required placeholder="e.g. BPUT Smart Odisha Hackathon">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Organization Name</label>
+                            <input type="text" name="organization_name" required placeholder="e.g. OKCL / BPUT">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Organization Logo</label>
+                            <input type="file" name="organization_logo" accept="image/*">
                         </div>
                     </div>
-                    <button type="button"
-                        onclick="(function(){ var c=document.getElementById('createHeroBannerUploads'); var d=document.createElement('div'); d.className='form-group'; d.style.marginBottom='8px'; d.innerHTML='<input type=\'file\' name=\'hero_banners\' accept=\'image/*\'>'; c.appendChild(d); })()"
-                        style="padding:8px 16px; border:1px dashed #ea580c; background:transparent; color:#ea580c; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; margin-top:4px;">
-                        + Add Another Banner
-                    </button>
-                </div>
-            </div>
-            <div class="form-section-title">Problem Statement Domains</div>
-            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Define the domains/tracks for problem
-                statements. These domains will appear as categories in the PS creation dropdown and on the landing page.
-            </p>
-            <div class="form-group" style="margin-bottom:16px;">
-                <label>Number of Domains</label>
-                <input type="number" name="num_domains" id="numDomainsInput" value="0" min="0" max="20"
-                    style="max-width:200px;" oninput="updateDomainFields(this)">
-            </div>
-            <div id="domainsContainer"
-                style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:10px; margin-bottom:16px;">
-            </div>
-            <div class="form-section-title">Approval & Status</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Approval Date</label><input type="date" name="approval_date"></div>
-                <div class="form-group"><label>Approval Letter (PDF)</label><input type="file" name="approval_letter"
-                        accept=".pdf"></div>
-                <input type="hidden" name="status" value="Draft">
-            </div>
-            <div class="form-section-title">Key Timeline</div>
-            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">
-                <div class="form-group"><label>Poster Launch</label><input type="date" name="poster_launching_date" id="c_poster_launching_date" onchange="chainDates_create()"></div>
-                <div class="form-group"><label>Website Launch</label><input type="date" name="website_launching_date" id="c_website_launching_date" onchange="chainDates_create()"></div>
-                <div class="form-group"><label>Registration Opens</label><input type="date" name="registration_open" id="c_registration_open" onchange="chainDates_create()"></div>
-                <div class="form-group"><label>Registration Closes</label><input type="date" name="registration_close" id="c_registration_close" onchange="chainDates_create()"></div>
-            </div>
-
-            <div class="form-section-title">Team Configuration</div>
-            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px;">
-                <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1" min="1"></div>
-                <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4" min="1"></div>
-                <div class="form-group"><label>Mentors / Team</label><input type="number" name="number_of_mentors" value="1" min="0"></div>
-            </div>
-
-            <div class="form-section-title">Rounds</div>
-            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Each round's start date must be after the previous round's end date. Venue is required for Offline rounds.</p>
-            <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
-                <div class="form-group" style="margin:0; max-width:200px;">
-                    <label>Total Rounds</label>
-                    <input type="number" name="number_of_rounds" id="c_number_of_rounds" value="1" min="1" max="5" oninput="updateRoundVisibility_create(this.value)">
-                </div>
-            </div>
-
-            {% for i in "12345" %}
-            <div class="create-round-card" id="c_round_card_{{ i }}"
-                style="background:linear-gradient(135deg,#fffbf7,#fff8f0); border:1.5px solid #fed7aa; border-radius:14px; padding:16px 18px; margin-bottom:14px; {% if i != '1' %}display:none;{% endif %}">
-                <!-- Row 1: Name + Active toggle -->
-                <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
-                    <div style="flex:1; max-width:300px; min-width:120px;">
-                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Round {{ i }} Name</label>
-                        <input type="text" name="round_{{ i }}_name" value="Round {{ i }}"
-                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit;">
-                    </div>
-                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:#ea580c; white-space:nowrap; padding-top:20px;">
-                        <input type="checkbox" name="round_{{ i }}_is_enabled" checked style="width:15px; height:15px; accent-color:#ea580c;"> Active
-                    </label>
-                </div>
-                <!-- Row 2: Dates -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-                    <div>
-                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Start Date</label>
-                        <input type="date" name="round_{{ i }}_start_date" id="c_round_{{ i }}_start_date" onchange="chainDates_create()"
-                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">End Date</label>
-                        <input type="date" name="round_{{ i }}_end_date" id="c_round_{{ i }}_end_date" onchange="chainDates_create()"
-                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
-                    </div>
-                </div>
-                <!-- Row 3: Mode + Venue -->
-                <div style="display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:end; margin-bottom:12px;">
-                    <div>
-                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Mode</label>
-                        <select name="round_{{ i }}_type" id="c_round_{{ i }}_type" onchange="toggleVenue_create('{{ i }}')"
-                            style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; background:white; cursor:pointer;">
-                            <option value="Online">🌐 Online</option>
-                            <option value="Offline">🏢 Offline</option>
-                        </select>
-                    </div>
-                    <div id="c_venue_group_{{ i }}" style="display:none;">
-                        <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Venue <span style="color:#ef4444;">*</span></label>
-                        <input type="text" name="round_{{ i }}_venue" id="c_round_{{ i }}_venue" placeholder="Enter venue location"
-                            style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box;">
-                    </div>
-                </div>
-                <!-- Row 4: Marking params (collapsible) -->
-                <div style="border-top:1px dashed #fed7aa; padding-top:12px; margin-top:4px;">
-                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                        <div class="form-group" style="margin:0; max-width:180px;">
-                            <label style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b; display:block; margin-bottom:4px;">Marking Parameters</label>
-                            <input type="number" name="round_{{ i }}_num_params" value="0" min="0"
-                                oninput="updateMarkingParams(this, {{ i }})"
-                                style="width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:inherit;">
+                    
+                    <div class="step-section-title" style="margin-top: 20px;">Branding &amp; Media</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Upload logos and banner images for the landing page.</p>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Event Logo <small style="color:#9ca3af;">(Navbar Right)</small></label>
+                            <input type="file" name="event_logo" accept="image/*">
                         </div>
-                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#374151; padding-top:18px; white-space:nowrap;">
-                            <input type="checkbox" name="round_{{ i }}_has_others" style="width:14px; height:14px; accent-color:#ea580c;"> Include 'Others'
-                        </label>
+                        <div class="form-group-compact">
+                            <label>Platform Logo <small style="color:#9ca3af;">(Navbar Left)</small></label>
+                            <input type="file" name="platform_logo" accept="image/*">
+                        </div>
+                        <div class="form-group-compact full-width">
+                            <label>Hero Banner Images <small style="color:#9ca3af;">(Hero Background – multiple banners for carousel)</small></label>
+                            <div id="createHeroBannerUploads" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:8px;">
+                                <div class="banner-upload-item" style="display:flex; gap:8px; align-items:center; width:100%;">
+                                    <input type="file" name="hero_banners" accept="image/*" style="flex:1; height:40px;">
+                                </div>
+                            </div>
+                            <button type="button"
+                                onclick="(function(){ 
+                                    var c = document.getElementById('createHeroBannerUploads'); 
+                                    var d = document.createElement('div'); 
+                                    d.className = 'banner-upload-item'; 
+                                    d.style.display = 'flex'; 
+                                    d.style.gap = '8px'; 
+                                    d.style.alignItems = 'center'; 
+                                    d.style.width = '100%'; 
+                                    d.innerHTML = '<input type=\'file\' name=\'hero_banners\' accept=\'image/*\' style=\'flex:1; height:40px;\'><button type=\'button\' onclick=\'this.parentElement.remove()\' style=\'background:#ef4444; color:#fff; border:none; height:40px; width:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;\' title=\'Remove input\'><ion-icon name=\'trash-outline\' style=\'font-size:16px;\'></ion-icon></button>'; 
+                                    c.appendChild(d); 
+                                })()"
+                                style="padding:6px 12px; border:1px dashed #ea580c; background:transparent; color:#ea580c; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:4px; max-width: 160px; height: auto;">
+                                + Add Another Banner
+                            </button>
+                        </div>
                     </div>
-                    <div id="round_{{ i }}_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-top:10px;"></div>
+                </div>
+
+                <!-- STEP 2: General Configuration & Domains -->
+                <div class="form-step-pane" data-step="2">
+                    <div class="step-section-title">Team Configuration</div>
+                    <div class="form-grid-compact" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="form-group-compact">
+                            <label>Min Team Size</label>
+                            <input type="number" name="min_team_size" value="1" min="1">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Max Team Size</label>
+                            <input type="number" name="max_team_size" value="4" min="1">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Mentors / Team</label>
+                            <input type="number" name="number_of_mentors" value="1" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="step-section-title" style="margin-top: 24px;">Problem Statement Domains</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Define the domains/tracks for problem statements.</p>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Number of Domains</label>
+                            <input type="number" name="num_domains" id="numDomainsInput" value="0" min="0" max="20" oninput="updateDomainFields(this)">
+                        </div>
+                    </div>
+                    <div id="domainsContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+                    </div>
+                </div>
+
+                <!-- STEP 3: Timeline & Approval -->
+                <div class="form-step-pane" data-step="3">
+                    <div class="step-section-title">Approval & Status</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Approval Date</label>
+                            <input type="date" name="approval_date">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Approval Letter (PDF)</label>
+                            <input type="file" name="approval_letter" accept=".pdf">
+                        </div>
+                        <input type="hidden" name="status" value="Draft">
+                    </div>
+                    
+                    <div class="step-section-title" style="margin-top: 24px;">Key Timeline</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Poster Launch</label>
+                            <input type="date" name="poster_launching_date" id="c_poster_launching_date" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Website Launch</label>
+                            <input type="date" name="website_launching_date" id="c_website_launching_date" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Registration Opens</label>
+                            <input type="date" name="registration_open" id="c_registration_open" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Registration Closes</label>
+                            <input type="date" name="registration_close" id="c_registration_close" onchange="chainDates_create()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Round-wise Configuration -->
+                <div class="form-step-pane" data-step="4">
+                    <div class="step-section-title">Rounds</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Define start/end dates, mode, and parameters for each round.</p>
+                    <div class="form-grid-compact" style="margin-bottom:16px;">
+                        <div class="form-group-compact">
+                            <label>Total Rounds</label>
+                            <input type="number" name="number_of_rounds" id="c_number_of_rounds" value="1" min="1" max="5" oninput="updateRoundVisibility_create(this.value)">
+                        </div>
+                    </div>
+                    
+                    {% for i in "12345" %}
+                    <div class="create-round-card" id="c_round_card_{{ i }}"
+                        style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if i != '1' %}display:none;{% endif %}">
+                        
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round {{ i }} Name</label>
+                                <input type="text" name="round_{{ i }}_name" value="Round {{ i }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_{{ i }}_is_enabled" checked style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_{{ i }}_start_date" id="c_round_{{ i }}_start_date" onchange="chainDates_create()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_{{ i }}_end_date" id="c_round_{{ i }}_end_date" onchange="chainDates_create()">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_{{ i }}_type" id="c_round_{{ i }}_type" onchange="toggleVenue_create('{{ i }}')">
+                                    <option value="Online">🌐 Online</option>
+                                    <option value="Offline">🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="c_venue_group_{{ i }}" style="display:none;">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_{{ i }}_venue" id="c_round_{{ i }}_venue" placeholder="Enter venue location">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top:1px dashed #cbd5e1; padding-top:12px; margin-top:4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_{{ i }}_num_params" value="0" min="0" oninput="updateMarkingParams(this, {{ i }})">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round {{ i }} Total Marks</label>
+                                    <input type="number" name="round_{{ i }}_total_marks" value="100.00" step="0.01" min="0" oninput="validateMarkingTotals({{ i }})">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_{{ i }}_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                        <div id="round_{{ i }}_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;"></div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top:1px dashed #cbd5e1; padding-top:12px; margin-top:4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_{{ i }}_num_jury" value="0" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_{{ i }}_num_experts" value="0" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% endfor %}
-
-            <div style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap;">
-                <button type="button" onclick="toggleForm('hackathonForm')" class="draft-btn" style="flex:1; min-width:100px;">Cancel</button>
-                <button type="button" onclick="saveHackathonAsDraft()" class="draft-btn" style="flex:1; min-width:100px;"><ion-icon name="save-outline"></ion-icon> Draft</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2; min-width:160px;">Publish Hackathon</button>
+            
+            <!-- footer -->
+            <div class="modal-footer">
+                <div class="footer-buttons-left">
+                    <button type="button" class="btn-step-prev" style="display:none;">Back</button>
+                </div>
+                <div class="footer-buttons-right">
+                    <button type="button" class="btn-step-next">Next Step</button>
+                    <div class="submit-group" style="display:none; gap:10px;">
+                        <button type="button" onclick="saveHackathonAsDraft()" class="btn-step-prev" style="color:#ea580c; border-color:#ea580c;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                        <button type="submit" class="btn-step-next">Publish Event</button>
+                    </div>
+                </div>
             </div>
         </form>
-
-        <script>
-        /* ── Creation form: date chaining ── */
-        function chainDates_create() {
-            var ids = [
-                'c_poster_launching_date',
-                'c_website_launching_date',
-                'c_registration_open',
-                'c_registration_close',
-                'c_round_1_start_date','c_round_1_end_date',
-                'c_round_2_start_date','c_round_2_end_date',
-                'c_round_3_start_date','c_round_3_end_date',
-                'c_round_4_start_date','c_round_4_end_date',
-                'c_round_5_start_date','c_round_5_end_date',
-            ];
-            var prev = null;
-            ids.forEach(function(id) {
-                var el = document.getElementById(id);
-                if (!el) return;
-                if (prev) el.min = prev;
-                if (el.value) prev = el.value;
-            });
-        }
-
-        /* ── Creation form: show/hide rounds based on count ── */
-        function updateRoundVisibility_create(count) {
-            count = parseInt(count) || 1;
-            for (var i = 1; i <= 5; i++) {
-                var card = document.getElementById('c_round_card_' + i);
-                if (card) card.style.display = i <= count ? '' : 'none';
-            }
-        }
-
-        /* ── Creation form: toggle venue field ── */
-        function toggleVenue_create(roundNum) {
-            var sel = document.getElementById('c_round_' + roundNum + '_type');
-            var grp = document.getElementById('c_venue_group_' + roundNum);
-            var inp = document.getElementById('c_round_' + roundNum + '_venue');
-            if (!sel || !grp) return;
-            if (sel.value === 'Offline') {
-                grp.style.display = '';
-                if (inp) inp.required = true;
-            } else {
-                grp.style.display = 'none';
-                if (inp) { inp.required = false; inp.value = ''; }
-            }
-        }
-        </script>
     </div>
 </div>
 
@@ -1240,72 +1516,64 @@
 {% elif tab == 'admin_mgt' %}
 
 <!-- Create form (hidden by default) -->
-<div id="adminForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Administrator</h2>
-            <button onclick="toggleForm('adminForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="adminForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard New Administrator</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('adminForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST" id="onboardAdminForm">
+        <form action="/accounts/create-user/" method="POST" id="onboardAdminForm" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="role" value="{{ admin_role.id }}">
             <input type="hidden" name="status" id="admin_form_status" value="active">
-            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
-                        placeholder="e.g. John" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
-                        placeholder="e.g. Doe" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username"
-                        placeholder="e.g. jdoe_admin" required></div>
-                <div class="form-group"><label>Email ID</label><input type="email" name="email"
-                        placeholder="e.g. jdoe@example.com" required></div>
-            </div>
-            <div class="form-group" style="margin-bottom:20px;"><label>Credentials (Password)</label><input
-                    type="password" name="password" required placeholder="••••••••"></div>
-            <div class="form-section-title">Administrative Permissions</div>
-            <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Select the modules this administrator can
-                manage.</p>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Basic Information</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" placeholder="e.g. John" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" placeholder="e.g. Doe" required></div>
+                    <div class="form-group-compact"><label>Username</label><input type="text" name="username" placeholder="e.g. jdoe_admin" required></div>
+                    <div class="form-group-compact"><label>Email ID</label><input type="email" name="email" placeholder="e.g. jdoe@example.com" required></div>
+                </div>
+                <div class="form-group-compact" style="margin-bottom:20px; max-width: 48%;"><label>Credentials (Password)</label><input type="password" name="password" required placeholder="••••••••"></div>
+                <div class="form-section-title">Administrative Permissions</div>
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Select the modules this administrator can manage.</p>
 
-            <div class="form-group" style="margin-bottom:16px; max-width: 300px;">
-                <label>Admin Role (Auto-selects permissions)</label>
-                <select id="adminTypeSelect" onchange="autoSelectPermissions(this.value)">
-                    <option value="">-- Custom Selection --</option>
-                    <option value="spoc">SPOC & College Mgt</option>
-                    <option value="team">Team & Event Monitor</option>
-                    <option value="problem">Problem Statement & Content Management</option>
-                    <option value="venue">Venue & Logistics Management</option>
-                    <option value="finance">Financial Management</option>
-                    <option value="jury">Jury & Evaluation</option>
-                    <option value="support">Support & Stay Ops</option>
-                    <option value="media">Media & Communications</option>
-                    <option value="results">Results & Awards</option>
-                </select>
-            </div>
+                <div class="form-group-compact" style="margin-bottom:16px; max-width: 300px;">
+                    <label>Admin Role (Auto-selects permissions)</label>
+                    <select id="adminTypeSelect" onchange="autoSelectPermissions(this.value)">
+                        <option value="">-- Custom Selection --</option>
+                        <option value="spoc">SPOC & College Mgt</option>
+                        <option value="team">Team & Event Monitor</option>
+                        <option value="problem">Problem Statement & Content Management</option>
+                        <option value="venue">Venue & Logistics Management</option>
+                        <option value="finance">Financial Management</option>
+                        <option value="jury">Jury & Evaluation</option>
+                        <option value="support">Support & Stay Ops</option>
+                        <option value="media">Media & Communications</option>
+                        <option value="results">Results & Awards</option>
+                    </select>
+                </div>
 
-            <div
-                style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; background:#fffbf7; padding:18px; border-radius:14px; border:1px solid #fed7aa;">
-                {% for perm in all_permissions %}
-                <label
-                    style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px; border-radius:8px;">
-                    <input type="checkbox" name="permissions[]" value="{{ perm.id }}" data-perm-name="{{ perm.name }}"
-                        style="width:16px; height:16px; accent-color:#ea580c; margin-top:2px; flex-shrink:0;">
-                    <div>
-                        <div style="font-size:13px; font-weight:700; color:#374151;">{{ perm.name }}</div>
-                        <div style="font-size:11px; color:#94a3b8;">{{ perm.description }}</div>
-                    </div>
-                </label>
-                {% endfor %}
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; background:#fffbf7; padding:18px; border-radius:14px; border:1px solid #fed7aa;">
+                    {% for perm in all_permissions %}
+                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px; border-radius:8px;">
+                        <input type="checkbox" name="permissions[]" value="{{ perm.id }}" data-perm-name="{{ perm.name }}" style="width:16px; height:16px; accent-color:#ea580c; margin-top:2px; flex-shrink:0;">
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#374151;">{{ perm.name }}</div>
+                            <div style="font-size:11px; color:#94a3b8;">{{ perm.description }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
             </div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('adminForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="button"
-                    onclick="document.getElementById('admin_form_status').value='draft'; document.getElementById('onboardAdminForm').submit();"
-                    class="draft-btn" style="flex:1;"><ion-icon name="save-outline"></ion-icon> Save as Draft</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Configure & Onboard Admin</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('adminForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="button" onclick="document.getElementById('admin_form_status').value='draft'; document.getElementById('onboardAdminForm').submit();" class="btn-step-prev" style="width:auto; display:flex; align-items:center; gap:6px;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Configure & Onboard Admin</button>
+                </div>
             </div>
         </form>
     </div>
@@ -1355,8 +1623,7 @@
                                     style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:800;">DRAFT</span>
                                 {% endif %}
                                 <br>
-                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} • {{
-                                    admin.user.email }}</small>
+                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} •{{ admin.user.email }}</small>
                             </div>
                         </div>
                     </td>
@@ -1373,8 +1640,7 @@
                         <div style="display:flex; flex-wrap:wrap; gap:4px;">
                             {% for p in admin.permissions.all %}
                             <span class="badge"
-                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{
-                                p.name }}</span>
+                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{p.name }}</span>
                             {% empty %}
                             <span style="font-size:11px; color:#9ca3af; font-style:italic;">No permissions</span>
                             {% endfor %}
@@ -1462,41 +1728,43 @@
      TAB: EXECUTIVE MANAGEMENT
 ══════════════════════════════════════════ -->
 {% elif tab == 'exec_mgt' %}
-<div id="execForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Executive</h2>
-            <button onclick="toggleForm('execForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="execForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard New Executive</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('execForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST">
+        <form action="/accounts/create-user/" method="POST" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="role"
                 value="{% for r in roles %}{% if r.name == 'Executive' %}{{ r.id }}{% endif %}{% endfor %}">
-            <div class="form-section-title" style="margin-top:0;">Personal Details</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username" required></div>
-                <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label>Password</label><input type="password" name="password" required></div>
-                <div class="form-group">
-                    <label>Assign to Administrator</label>
-                    <select name="assigned_admin_id" required>
-                        <option value="">-- Select Admin --</option>
-                        {% for admin in administrators %}
-                        <option value="{{ admin.id }}">{{ admin.user.get_full_name }} (@{{ admin.user.username }})
-                        </option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Personal Details</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" required></div>
+                    <div class="form-group-compact"><label>Username</label><input type="text" name="username" required></div>
+                    <div class="form-group-compact"><label>Email</label><input type="email" name="email" required></div>
+                </div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>Password</label><input type="password" name="password" required></div>
+                    <div class="form-group-compact">
+                        <label>Assign to Administrator</label>
+                        <select name="assigned_admin_id" required>
+                            <option value="">-- Select Admin --</option>
+                            {% for admin in administrators %}
+                            <option value="{{ admin.id }}">{{ admin.user.get_full_name }} (@{{ admin.user.username }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div style="display:flex; gap:16px; margin-top:20px;">
-                <button type="button" onclick="toggleForm('execForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Onboard Executive</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('execForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Onboard Executive</button>
             </div>
         </form>
     </div>
@@ -1572,48 +1840,47 @@
      TAB: PROBLEM STATEMENTS
 ══════════════════════════════════════════ -->
 {% elif tab == 'problem_statements' %}
-<div id="psForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Define Problem Statement</h2>
-            <button onclick="toggleForm('psForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="psForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Define Problem Statement</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('psForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/events/create-problem-statement/" method="POST" enctype="multipart/form-data">
+        <form action="/events/create-problem-statement/" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="ps_id" value="">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Select Hackathon</label>
-                    <select name="hackathon" required>
-                        <option value="">-- Choose Event --</option>
-                        {% for h in hackathons %}
-                        <option value="{{ h.id }}">{{ h.name }}</option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact">
+                        <label>Select Hackathon</label>
+                        <select name="hackathon" required>
+                            <option value="">-- Choose Event --</option>
+                            {% for h in hackathons %}
+                            <option value="{{ h.id }}">{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Statement Title</label><input type="text" name="title" required placeholder="e.g. AI-driven Traffic Mgt"></div>
+                    <div class="form-group-compact">
+                        <label>Domain</label>
+                        <select name="domain">
+                            {% for choice in DOMAIN_CHOICES %}
+                            <option value="{{ choice }}">{{ choice }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Detailed PDF Reference (Optional)</label><input type="file" name="pdf_file" accept=".pdf" style="padding: 7px 10px; line-height: 24px;"></div>
                 </div>
-                <div class="form-group"><label>Statement Title</label><input type="text" name="title" required
-                        placeholder="e.g. AI-driven Traffic Mgt"></div>
-                <div class="form-group">
-                    <label>Domain</label>
-                    <select name="domain">
-                        {% for choice in DOMAIN_CHOICES %}
-                        <option value="{{ choice }}">{{ choice }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <div class="form-group-compact" style="margin-top:10px;"><label>Brief Description</label><textarea name="description" rows="4" style="height:auto; min-height:100px;"></textarea></div>
             </div>
-            <div class="form-group" style="margin-bottom:16px;"><label>Brief Description</label><textarea
-                    name="description" rows="4"></textarea></div>
-            <div class="form-group"><label>Detailed PDF Reference (Optional)</label><input type="file" name="pdf_file"
-                    accept=".pdf"></div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('psForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
-                    Draft</button>
-                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Publish
-                    Statement</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('psForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" name="action" value="draft" class="btn-step-prev" style="width:auto;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" name="action" value="publish" class="btn-step-next" style="width:auto; min-width:180px;">Publish Statement</button>
+                </div>
             </div>
         </form>
     </div>
@@ -1683,54 +1950,53 @@
      TAB: CREATIVES
 ══════════════════════════════════════════ -->
 {% elif tab == 'creatives' %}
-<div id="creativeForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Upload Creative Material</h2>
-            <button onclick="toggleForm('creativeForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="creativeForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Upload Creative Material</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('creativeForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="{% url 'create_creative_material' %}" method="POST" enctype="multipart/form-data">
+        <form action="{% url 'create_creative_material' %}" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="creative_id" value="">
-            <div class="form-grid">
+            
+            <div class="modal-body">
+                <div class="form-grid-compact" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="form-group-compact">
+                        <label>Select Hackathon</label>
+                        <select name="hackathon_id" required>
+                            <option value="">-- Choose Event --</option>
+                            {% for h in hackathons %}
+                            <option value="{{ h.id }}">{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Asset Title</label><input type="text" name="title" required placeholder="e.g. Event Header Poster"></div>
+                    <div class="form-group-compact"><label>File Upload (Image/PDF)</label><input type="file" name="file" required style="padding: 7px 10px; line-height: 24px;"></div>
+                </div>
                 <div class="form-group">
-                    <label>Select Hackathon</label>
-                    <select name="hackathon_id" required>
-                        <option value="">-- Choose Event --</option>
-                        {% for h in hackathons %}
-                        <option value="{{ h.id }}">{{ h.name }}</option>
+                    <label>Landing Page Placement</label>
+                    <div class="placement-grid">
+                        {% for value, label in landing_section_choices %}
+                        <label class="placement-option">
+                            <input type="checkbox" name="landing_sections" value="{{ value }}">
+                            <div>
+                                <strong>{{ label }}</strong>
+                                <span>Show this creative asset in the {{ label|lower }} section.</span>
+                            </div>
+                        </label>
                         {% endfor %}
-                    </select>
+                    </div>
+                    <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset should appear.</small>
                 </div>
-                <div class="form-group"><label>Asset Title</label><input type="text" name="title" required
-                        placeholder="e.g. Event Header Poster"></div>
             </div>
-            <div class="form-group"><label>File Upload (Image/PDF)</label><input type="file" name="file" required></div>
-            <div class="form-group">
-                <label>Landing Page Placement</label>
-                <div class="placement-grid">
-                    {% for value, label in landing_section_choices %}
-                    <label class="placement-option">
-                        <input type="checkbox" name="landing_sections" value="{{ value }}">
-                        <div>
-                            <strong>{{ label }}</strong>
-                            <span>Show this creative asset in the {{ label|lower }} section.</span>
-                        </div>
-                    </label>
-                    {% endfor %}
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('creativeForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" name="action" value="draft" class="btn-step-prev" style="width:auto;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" name="action" value="publish" class="btn-step-next" style="width:auto; min-width:180px;">Upload & Publish</button>
                 </div>
-                <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset
-                    should appear.</small>
-            </div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('creativeForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
-                    Draft</button>
-                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Upload &
-                    Publish</button>
             </div>
         </form>
     </div>
@@ -1783,8 +2049,7 @@
                         {% if cr.landing_sections %}
                         {% for value, label in landing_section_choices %}
                         {% if value in cr.landing_sections %}<span
-                            style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{
-                            label }}</span>{% endif %}
+                            style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{label }}</span>{% endif %}
                         {% endfor %}
                         {% else %}
                         <span style="color:#9ca3af;">Not selected</span>
@@ -1822,47 +2087,44 @@
 {% elif tab == 'user_mgt' %}
 
 <!-- user onboarding form -->
-<div id="userForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard Expert/Stakeholder</h2>
-            <button onclick="toggleForm('userForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="userForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard Expert/Stakeholder</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('userForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST" id="onboardUserForm">
+        <form action="/accounts/create-user/" method="POST" id="onboardUserForm" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
-            <div class="form-section-title" style="margin-top:0;">Identity Details</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
-                        placeholder="e.g. Alice" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
-                        placeholder="e.g. Smith" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username"
-                        placeholder="e.g. asmith_mentor" required></div>
-                <div class="form-group"><label>Email Address</label><input type="email" name="email"
-                        placeholder="e.g. alice@example.com" required></div>
-            </div>
-
-            <div class="form-grid" style="margin-top: 20px;">
-                <div class="form-group">
-                    <label>Assigned Role</label>
-                    <select name="role" required>
-                        <option value="">-- Select Role --</option>
-                        {% for r in other_roles_list %}
-                        <option value="{{ r.id }}">{{ r.name }}</option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Identity Details</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" placeholder="e.g. Alice" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" placeholder="e.g. Smith" required></div>
+                    <div class="form-group-compact"><label>Username</label><input type="text" name="username" placeholder="e.g. asmith_mentor" required></div>
+                    <div class="form-group-compact"><label>Email Address</label><input type="email" name="email" placeholder="e.g. alice@example.com" required></div>
                 </div>
-                <div class="form-group">
-                    <label>Credentials (Password)</label>
-                    <input type="password" name="password" required placeholder="••••••••">
+
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr); margin-top: 20px;">
+                    <div class="form-group-compact">
+                        <label>Assigned Role</label>
+                        <select name="role" required>
+                            <option value="">-- Select Role --</option>
+                            {% for r in other_roles_list %}
+                            <option value="{{ r.id }}">{{ r.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Credentials (Password)</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
                 </div>
             </div>
-
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('userForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Complete Onboarding</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('userForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Complete Onboarding</button>
             </div>
         </form>
     </div>
@@ -1981,12 +2243,10 @@
                         <span class="badge badge-amber">{{ payout.user.role.name|default:"Evaluator" }}</span>
                     </td>
                     <td style="padding:14px;">
-                        {% if payout.bank_account_holder or payout.bank_name or payout.account_number or payout.upi_id
-                        %}
+                        {% if payout.bank_account_holder or payout.bank_name or payout.account_number or payout.upi_id %}
                         <div style="font-size:13px; color:#374151; line-height:1.6;">
                             <strong>{{ payout.bank_account_holder|default:"-" }}</strong><br>
-                            {{ payout.bank_name|default:"-" }}{% if payout.branch_name %}, {{ payout.branch_name }}{%
-                            endif %}<br>
+                            {{ payout.bank_name|default:"-" }}{% if payout.branch_name %}, {{ payout.branch_name }}{% endif %}<br>
                             A/C: {{ payout.account_number|default:"-" }}<br>
                             IFSC: {{ payout.ifsc_code|default:"-" }}<br>
                             UPI: {{ payout.upi_id|default:"-" }}
@@ -2030,42 +2290,378 @@
     function toggleForm(formId) {
         const form = document.getElementById(formId);
         if (!form) return;
-        const isHidden = window.getComputedStyle(form).display === 'none';
-
-        document.querySelectorAll('.hidden-form').forEach(f => f.style.display = 'none');
-
-        if (isHidden) {
-            form.style.display = 'block';
-            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        const isOpen = form.classList.contains('open');
+        
+        // Close all first
+        document.querySelectorAll('.hidden-form').forEach(f => {
+            f.classList.remove('open');
+            f.style.display = 'none'; // for compat
+        });
+        
+        if (!isOpen) {
+            form.style.display = ''; // reset display block if set
+            form.classList.add('open');
+            if (form.resetStepForm) {
+                form.resetStepForm();
+            }
         }
     }
 
-    // ── Dynamic Marking Parameters ──
+    // ── Multi-Step Form Navigation ──
+    function initMultiStepForm(formId) {
+        const formEl = document.getElementById(formId);
+        if (!formEl) return;
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const stepPanes = formEl.querySelectorAll('.form-step-pane');
+        const stepDots = formEl.querySelectorAll('.step-dot');
+        const prevBtn = formEl.querySelector('.btn-step-prev');
+        const nextBtn = formEl.querySelector('.btn-step-next');
+        const submitGroup = formEl.querySelector('.submit-group');
+        
+        function updateFormUI() {
+            // Update panes
+            stepPanes.forEach(pane => {
+                pane.classList.toggle('active', parseInt(pane.dataset.step) === currentStep);
+            });
+            
+            // Update dots
+            stepDots.forEach(dot => {
+                const stepNum = parseInt(dot.dataset.step);
+                dot.classList.toggle('active', stepNum === currentStep);
+                dot.classList.toggle('completed', stepNum < currentStep);
+            });
+            
+            // Update buttons
+            if (prevBtn) {
+                prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+            }
+            if (currentStep === totalSteps) {
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (submitGroup) submitGroup.style.display = 'flex';
+            } else {
+                if (nextBtn) nextBtn.style.display = 'block';
+                if (submitGroup) submitGroup.style.display = 'none';
+            }
+        }
+        
+        if (nextBtn) {
+            nextBtn.onclick = function() {
+                // Perform validation on current step inputs before moving forward
+                const activePane = formEl.querySelector('.form-step-pane.active');
+                const inputs = activePane.querySelectorAll('input[required], select[required]');
+                let valid = true;
+                inputs.forEach(input => {
+                    if (!input.value) {
+                        input.reportValidity();
+                        valid = false;
+                    }
+                });
+                if (!valid) return;
+                
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        if (prevBtn) {
+            prevBtn.onclick = function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        // Expose reset to external triggers
+        formEl.resetStepForm = function() {
+            currentStep = 1;
+            updateFormUI();
+        };
+
+        // Initialize UI
+        updateFormUI();
+    }
+
+    /* ── Creation form: date chaining ── */
+    function chainDates_create() {
+        var ids = [
+            'c_poster_launching_date',
+            'c_website_launching_date',
+            'c_registration_open',
+            'c_registration_close',
+            'c_round_1_start_date','c_round_1_end_date',
+            'c_round_2_start_date','c_round_2_end_date',
+            'c_round_3_start_date','c_round_3_end_date',
+            'c_round_4_start_date','c_round_4_end_date',
+            'c_round_5_start_date','c_round_5_end_date',
+        ];
+        var prev = null;
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (prev) el.min = prev;
+            if (el.value) prev = el.value;
+        });
+    }
+
+    /* ── Creation form: show/hide rounds based on count ── */
+    function updateRoundVisibility_create(count) {
+        count = parseInt(count) || 1;
+        for (var i = 1; i <= 5; i++) {
+            var card = document.getElementById('c_round_card_' + i);
+            if (card) card.style.display = i <= count ? '' : 'none';
+        }
+    }
+
+    /* ── Creation form: toggle venue field ── */
+    function toggleVenue_create(roundNum) {
+        var sel = document.getElementById('c_round_' + roundNum + '_type');
+        var grp = document.getElementById('c_venue_group_' + roundNum);
+        var inp = document.getElementById('c_round_' + roundNum + '_venue');
+        if (!sel || !grp) return;
+        if (sel.value === 'Offline') {
+            grp.style.display = '';
+            if (inp) inp.required = true;
+        } else {
+            grp.style.display = 'none';
+            if (inp) { inp.required = false; inp.value = ''; }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initMultiStepForm('hackathonForm');
+        
+        // Run validation on load for each round
+        for (let r = 1; r <= 5; r++) {
+            validateMarkingTotals(r);
+        }
+
+        // Add input listener on form for auto validation
+        const form = document.getElementById('hackathonForm');
+        if (form) {
+            form.addEventListener('input', (e) => {
+                if (e.target.name && (e.target.name.includes('_total_marks') || e.target.name.includes('_cutoff'))) {
+                    const match = e.target.name.match(/round_(\d+)_/);
+                    if (match) {
+                        validateMarkingTotals(parseInt(match[1]));
+                    }
+                }
+            });
+        }
+    });
+
+    function validateMarkingTotals(roundNum) {
+        const totalMarkInput = document.querySelector(`input[name="round_${roundNum}_total_marks"]`);
+        if (!totalMarkInput) return;
+
+        const roundTotal = parseFloat(totalMarkInput.value) || 0;
+        
+        // Find all parameter cutoff inputs for this round
+        const paramCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        let paramsSum = 0;
+        paramCutoffInputs.forEach(input => {
+            paramsSum += parseFloat(input.value) || 0;
+        });
+
+        const isRoundEqual = (roundTotal.toFixed(2) === paramsSum.toFixed(2) && roundTotal > 0);
+
+        // Apply color styling to round total mark input and parameter mark inputs
+        const roundInputsToStyle = [totalMarkInput, ...Array.from(paramCutoffInputs)];
+        roundInputsToStyle.forEach(input => {
+            if (isRoundEqual) {
+                input.style.border = '2px solid #10b981';
+                input.style.backgroundColor = '#ecfdf5';
+                input.style.color = '#065f46';
+            } else {
+                input.style.border = '2px solid #ef4444';
+                input.style.backgroundColor = '#fef2f2';
+                input.style.color = '#991b1b';
+            }
+        });
+
+        // Validate each parameter's total marks vs sum of its sub-parameters
+        const numParamsInput = document.querySelector(`input[name="round_${roundNum}_num_params"]`);
+        const numParams = numParamsInput ? parseInt(numParamsInput.value) || 0 : paramCutoffInputs.length;
+
+        for (let j = 1; j <= numParams; j++) {
+            const paramInput = document.querySelector(`input[name="round_${roundNum}_param_${j}_cutoff"]`);
+            if (!paramInput) continue;
+
+            const paramTotal = parseFloat(paramInput.value) || 0;
+            
+            // Find sub-parameter cutoff inputs under this parameter
+            const subCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            
+            if (subCutoffInputs.length > 0) {
+                let subsSum = 0;
+                subCutoffInputs.forEach(input => {
+                    subsSum += parseFloat(input.value) || 0;
+                });
+
+                const isParamEqual = (paramTotal.toFixed(2) === subsSum.toFixed(2));
+
+                const subInputsToStyle = [paramInput, ...Array.from(subCutoffInputs)];
+                subInputsToStyle.forEach(input => {
+                    const isFullyValid = isRoundEqual && isParamEqual;
+                    if (isFullyValid) {
+                        input.style.border = '2px solid #10b981';
+                        input.style.backgroundColor = '#ecfdf5';
+                        input.style.color = '#065f46';
+                    } else {
+                        input.style.border = '2px solid #ef4444';
+                        input.style.backgroundColor = '#fef2f2';
+                        input.style.color = '#991b1b';
+                    }
+                });
+            }
+        }
+    }
+
+    // ── Dynamic Marking Parameters (with optional sub-parameters) ──
     function updateMarkingParams(inputElem, roundNum) {
         const count = parseInt(inputElem.value) || 0;
         const container = document.getElementById(`round_${roundNum}_params_container`);
         if (!container) return;
 
+        // Preserve existing values
+        const existingNames = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_name"]:not([name*="_sub_"])`);
+        const existingCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        const nameValues = Array.from(existingNames).map(input => input.value);
+        const cutoffValues = Array.from(existingCutoffs).map(input => input.value);
+
+        // Preserve existing sub-params per parameter
+        const existingSubs = {};
+        for (let j = 1; j <= nameValues.length; j++) {
+            const subInputs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_name"]`);
+            const subCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            existingSubs[j] = Array.from(subInputs).map((input, idx) => ({
+                name: input.value,
+                cutoff: subCutoffs[idx] ? subCutoffs[idx].value : '0.00'
+            }));
+        }
+
         container.innerHTML = '';
         for (let j = 1; j <= count; j++) {
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.style.marginBottom = '10px';
-            div.style.display = 'grid';
-            div.style.gridTemplateColumns = '1fr 120px';
-            div.style.gap = '8px';
-            div.innerHTML = `
-                <div>
-                    <label style="font-size:11px;">Parameter ${j} Name</label>
-                    <input type="text" name="round_${roundNum}_param_${j}_name" required placeholder="e.g. Innovation" style="width:100%; box-sizing:border-box;">
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 8px; background: #f8fafc;';
+
+            const nameVal = nameValues[j - 1] ? `value="${nameValues[j - 1]}"` : '';
+            const cutoffVal = cutoffValues[j - 1] ? `value="${cutoffValues[j - 1]}"` : 'value="0.00"';
+
+            // Main param row: Name + Total Marks + Add Sub-Parameter button
+            const paramRow = document.createElement('div');
+            paramRow.className = 'form-grid-compact';
+            paramRow.style.cssText = 'grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;';
+            paramRow.innerHTML = `
+                <div class="form-group-compact">
+                    <label>Parameter ${j} Name</label>
+                    <input type="text" name="round_${roundNum}_param_${j}_name" required ${nameVal} placeholder="e.g. Innovation">
                 </div>
-                <div>
-                    <label style="font-size:11px;">Cutoff Marks</label>
-                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" value="0.00" required style="width:100%; box-sizing:border-box;">
+                <div class="form-group-compact">
+                    <label>Total Marks</label>
+                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" ${cutoffVal} required oninput="validateMarkingTotals(${roundNum})">
+                </div>
+                <div class="form-group-compact">
+                    <button type="button" onclick="addSubParam(${roundNum}, ${j})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
                 </div>
             `;
-            container.appendChild(div);
+            wrapper.appendChild(paramRow);
+
+            // Sub-parameters section
+            const subSection = document.createElement('div');
+            subSection.style.cssText = 'margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;';
+
+            const subContainer = document.createElement('div');
+            subContainer.id = `round_${roundNum}_param_${j}_subs_container`;
+            subContainer.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;';
+
+            // Restore existing sub-params
+            const subs = existingSubs[j] || [];
+            subs.forEach((sub, idx) => {
+                const k = idx + 1;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+                row.innerHTML = `
+                    <div style="flex:2; min-width:0;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                        <input type="text" name="round_${roundNum}_param_${j}_sub_${k}_name" value="${sub.name}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                    </div>
+                    <div style="width:65px;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                        <input type="number" name="round_${roundNum}_param_${j}_sub_${k}_cutoff" value="${sub.cutoff}" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${j}">
+                    </div>
+                    <button type="button" onclick="removeSubParam(this, ${roundNum}, ${j})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                `;
+                subContainer.appendChild(row);
+            });
+
+            const subCounter = document.createElement('input');
+            subCounter.type = 'hidden';
+            subCounter.name = `round_${roundNum}_param_${j}_num_subs`;
+            subCounter.value = subs.length.toString();
+
+            subSection.appendChild(subContainer);
+            subSection.appendChild(subCounter);
+            wrapper.appendChild(subSection);
+
+            container.appendChild(wrapper);
         }
+        validateMarkingTotals(roundNum);
+    }
+
+    function addSubParam(roundNum, paramIdx) {
+        const container = document.getElementById(`round_${roundNum}_param_${paramIdx}_subs_container`);
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        if (!container || !counter) return;
+
+        const currentCount = parseInt(counter.value) || 0;
+        const k = currentCount + 1;
+        counter.value = k;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+        row.innerHTML = `
+            <div style="flex:2; min-width:0;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                <input type="text" name="round_${roundNum}_param_${paramIdx}_sub_${k}_name" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+            </div>
+            <div style="width:65px;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                <input type="number" name="round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff" value="0.00" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${paramIdx}">
+            </div>
+            <button type="button" onclick="removeSubParam(this, ${roundNum}, ${paramIdx})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+        `;
+        container.appendChild(row);
+        validateMarkingTotals(roundNum);
+    }
+
+    function removeSubParam(btn, roundNum, paramIdx) {
+        const row = btn.parentElement;
+        const container = row.parentElement;
+        row.remove();
+
+        // Re-index remaining sub-params
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        const rows = container.querySelectorAll(':scope > div');
+        rows.forEach((r, idx) => {
+            const k = idx + 1;
+            const label = r.querySelector('label');
+            if (label) label.textContent = `Sub ${k} Name`;
+            const nameInput = r.querySelector('input[name*="_name"]');
+            if (nameInput) nameInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_name`;
+            const cutoffInput = r.querySelector('input[name*="_cutoff"]');
+            if (cutoffInput) cutoffInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff`;
+        });
+        if (counter) counter.value = rows.length;
+        validateMarkingTotals(roundNum);
     }
 
 
@@ -2429,36 +3025,10 @@
         animate();
     }
 
-    // ── Dashboard charts (overview only) ──
-    {% if tab == 'overview' %}
-    document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data| safe
-    }};
-    const domainData = {{ domain_chart_data| safe }};
 
-    new Chart(document.getElementById('statusChart').getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: statusData.labels,
-            datasets: [{ data: statusData.data, backgroundColor: ['#ea580c', '#2563eb', '#7c3aed', '#059669', '#fcd34d'], borderWidth: 0 }]
-        },
-        options: { cutout: '65%', plugins: { legend: { display: false } } }
-    });
-
-    new Chart(document.getElementById('domainChart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: domainData.labels,
-            datasets: [{ data: domainData.data, backgroundColor: '#6366f1', borderRadius: 8 }]
-        },
-        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } } }
-    });
-    });
-    {% endif %}
     {% if tab == 'overview' or tab == 'analytics' %}
     document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data| safe
-    }};
+        const statusData = {{ status_chart_data| safe }};
     const registrationData = {{ registration_chart_data| safe }};
     const roleData = {{ role_chart_data| safe }};
     const growthData = {{ growth_chart_data| safe }};

@@ -13,10 +13,10 @@ from accounts.models import User, Role, SuperadminProfile, AdminProfile
 from accounts.rendering import render_route
 from events.models import (
     Hackathon, HackathonDomain, ProblemStatement, CreativeMaterial,
-    RoundMarkingParameter, HeroBannerImage,
+    RoundMarkingParameter, MarkingSubParameter, HeroBannerImage, RoundJuryConfig, JuryTeam,
     LANDING_SECTION_CHOICES, LANDING_SECTION_LABELS,
 )
-from features.models import Team, Venue, SponsorshipFund, Podcast
+from features.models import Team, Venue, SponsorshipFund, Podcast, FAQItem
 
 def _superadmin_required(request):
     return (
@@ -123,7 +123,7 @@ def _build_public_problem_statement_context(active_hackathon):
 
     # Default color palette for auto-assigned domain colors
     _default_colors = ['#fefce8', '#dbeafe', '#fdf2f8', '#fdf4ff', '#ecfdf5', '#fff7ed', '#f0fdf4', '#fef2f2']
-    _default_icons = ['🌾', '🏥', '🐾', '📚', '💻', '🔬', '🌍', '⚡']
+    _default_icons = ['leaf-outline', 'medkit-outline', 'paw-outline', 'book-outline', 'laptop-outline', 'flask-outline', 'earth-outline', 'flash-outline']
 
     # Try to load dynamic domains from HackathonDomain model
     dynamic_domains = []
@@ -197,7 +197,7 @@ def _build_public_problem_statement_context(active_hackathon):
                 'slug': 'agriculture',
                 'title': 'Agriculture',
                 'badge': 'SDG - 12',
-                'icon': '🌾',
+                'icon': 'leaf-outline',
                 'color': '#fefce8',
                 'subtitle': 'Crops, rural innovation, and farm sustainability',
                 'image': '/media/creatives/hero2.jpg',
@@ -207,7 +207,7 @@ def _build_public_problem_statement_context(active_hackathon):
                 'slug': 'healthcare',
                 'title': 'Healthcare',
                 'badge': 'SDG - 3',
-                'icon': '🏥',
+                'icon': 'medkit-outline',
                 'color': '#dbeafe',
                 'subtitle': 'Medical care, public health, and wellness systems',
                 'image': '/media/creatives/hero1-bg.jpg',
@@ -217,7 +217,7 @@ def _build_public_problem_statement_context(active_hackathon):
                 'slug': 'animal-resource',
                 'title': 'Animal Resource',
                 'badge': 'SDG - 12',
-                'icon': '🐾',
+                'icon': 'paw-outline',
                 'color': '#fdf2f8',
                 'subtitle': 'Livestock, veterinary, and animal systems',
                 'image': '/media/creatives/hero4.jpg',
@@ -227,7 +227,7 @@ def _build_public_problem_statement_context(active_hackathon):
                 'slug': 'education',
                 'title': 'Education',
                 'badge': 'SDG - 4',
-                'icon': '📚',
+                'icon': 'book-outline',
                 'color': '#fdf4ff',
                 'subtitle': 'Learning, inclusion, and skill development',
                 'image': '/media/creatives/hero3.jpg',
@@ -252,7 +252,7 @@ def _build_public_problem_statement_context(active_hackathon):
     grouped_problem_map['Other'] = {
         'slug': 'other',
         'title': 'Other',
-        'icon': '🧩',
+        'icon': 'cube-outline',
         'color': '#eef2ff',
         'subtitle': 'Published problem statements that do not match the main showcase tracks',
         'image': '/media/creatives/front-page.jpg',
@@ -418,6 +418,12 @@ def create_hackathon(request):
             )
             
             for i in range(1, 6):
+                total_marks_val = request.POST.get(f'round_{i}_total_marks')
+                if total_marks_val:
+                    setattr(hackathon, f'round_{i}_total_marks', total_marks_val)
+            hackathon.save()
+            
+            for i in range(1, 6):
                 try:
                     num_params = int(request.POST.get(f'round_{i}_num_params', 0))
                 except ValueError:
@@ -426,9 +432,21 @@ def create_hackathon(request):
                     param_name = request.POST.get(f'round_{i}_param_{j}_name')
                     cutoff_val = request.POST.get(f'round_{i}_param_{j}_cutoff') or 0.00
                     if param_name:
-                        RoundMarkingParameter.objects.create(
-                            hackathon=hackathon, round_number=i, name=param_name, cutoff_score=cutoff_val
+                        param_obj = RoundMarkingParameter.objects.create(
+                            hackathon=hackathon, round_number=i, name=param_name, max_marks=cutoff_val, cutoff_score=0.00
                         )
+                        # Save optional sub-parameters
+                        try:
+                            num_subs = int(request.POST.get(f'round_{i}_param_{j}_num_subs', 0))
+                        except ValueError:
+                            num_subs = 0
+                        for k in range(1, num_subs + 1):
+                            sub_name = (request.POST.get(f'round_{i}_param_{j}_sub_{k}_name') or '').strip()
+                            sub_cutoff = request.POST.get(f'round_{i}_param_{j}_sub_{k}_cutoff') or 0.00
+                            if sub_name:
+                                MarkingSubParameter.objects.create(
+                                    parent_parameter=param_obj, name=sub_name, cutoff_score=sub_cutoff, display_order=k
+                                )
                 if request.POST.get(f'round_{i}_has_others') == 'on':
                     RoundMarkingParameter.objects.create(
                         hackathon=hackathon, round_number=i, name="Others", is_others=True
@@ -456,6 +474,18 @@ def create_hackathon(request):
                     image=banner_file,
                     display_order=idx + 1,
                 )
+
+            # Save round jury/expert team configuration
+            for i in range(1, 6):
+                num_jury = int(request.POST.get(f'round_{i}_num_jury', 0) or 0)
+                num_experts = int(request.POST.get(f'round_{i}_num_experts', 0) or 0)
+                if num_jury or num_experts:
+                    RoundJuryConfig.objects.create(
+                        hackathon=hackathon,
+                        round_number=i,
+                        num_jury_per_team=max(num_jury, 0),
+                        num_experts_per_team=max(num_experts, 0),
+                    )
             
             messages.success(request, f'Hackathon {name} created successfully.')
         except Exception as e:
@@ -510,6 +540,10 @@ def edit_hackathon(request, hackathon_id):
             setattr(hackathon, f'round_{i}_type', rtype)
             rvenue = request.POST.get(f'round_{i}_venue', '') or None
             setattr(hackathon, f'round_{i}_venue', rvenue)
+            
+            total_marks_val = request.POST.get(f'round_{i}_total_marks')
+            if total_marks_val:
+                setattr(hackathon, f'round_{i}_total_marks', total_marks_val)
 
         status = request.POST.get('status')
         if status:
@@ -518,6 +552,11 @@ def edit_hackathon(request, hackathon_id):
         try:
             hackathon.save()
             
+            # Map existing cutoff scores by (round_number, name)
+            existing_cutoffs = {}
+            for param in hackathon.marking_parameters.all():
+                existing_cutoffs[(param.round_number, param.name.strip().lower())] = param.cutoff_score
+
             hackathon.marking_parameters.all().delete()
             for i in range(1, 6):
                 try:
@@ -528,12 +567,28 @@ def edit_hackathon(request, hackathon_id):
                     param_name = request.POST.get(f'round_{i}_param_{j}_name')
                     cutoff_val = request.POST.get(f'round_{i}_param_{j}_cutoff') or 0.00
                     if param_name:
-                        RoundMarkingParameter.objects.create(
-                            hackathon=hackathon, round_number=i, name=param_name, cutoff_score=cutoff_val
+                        key = (i, param_name.strip().lower())
+                        saved_cutoff = existing_cutoffs.get(key, 0.00)
+                        param_obj = RoundMarkingParameter.objects.create(
+                            hackathon=hackathon, round_number=i, name=param_name, max_marks=cutoff_val, cutoff_score=saved_cutoff
                         )
+                        # Save optional sub-parameters
+                        try:
+                            num_subs = int(request.POST.get(f'round_{i}_param_{j}_num_subs', 0))
+                        except ValueError:
+                            num_subs = 0
+                        for k in range(1, num_subs + 1):
+                            sub_name = (request.POST.get(f'round_{i}_param_{j}_sub_{k}_name') or '').strip()
+                            sub_cutoff = request.POST.get(f'round_{i}_param_{j}_sub_{k}_cutoff') or 0.00
+                            if sub_name:
+                                MarkingSubParameter.objects.create(
+                                    parent_parameter=param_obj, name=sub_name, cutoff_score=sub_cutoff, display_order=k
+                                )
                 if request.POST.get(f'round_{i}_has_others') == 'on':
+                    key = (i, "others")
+                    saved_cutoff = existing_cutoffs.get(key, 0.00)
                     RoundMarkingParameter.objects.create(
-                        hackathon=hackathon, round_number=i, name="Others", is_others=True
+                        hackathon=hackathon, round_number=i, name="Others", is_others=True, cutoff_score=saved_cutoff
                     )
 
             # Re-create dynamic PS domains
@@ -566,6 +621,19 @@ def edit_hackathon(request, hackathon_id):
                         image=banner_file,
                         display_order=max_order + idx + 1,
                     )
+
+            # Re-create round jury/expert team configuration
+            hackathon.jury_configs.all().delete()
+            for i in range(1, 6):
+                num_jury = int(request.POST.get(f'round_{i}_num_jury', 0) or 0)
+                num_experts = int(request.POST.get(f'round_{i}_num_experts', 0) or 0)
+                if num_jury or num_experts:
+                    RoundJuryConfig.objects.create(
+                        hackathon=hackathon,
+                        round_number=i,
+                        num_jury_per_team=max(num_jury, 0),
+                        num_experts_per_team=max(num_experts, 0),
+                    )
                     
             messages.success(request, f'Hackathon {hackathon.name} updated successfully.')
             return redirect('/accounts/dashboard/?tab=events')
@@ -575,7 +643,7 @@ def edit_hackathon(request, hackathon_id):
     round_params = {}
     for i in range(1, 6):
         params = hackathon.marking_parameters.filter(round_number=i)
-        normal_params = params.filter(is_others=False)
+        normal_params = params.filter(is_others=False).prefetch_related('sub_parameters')
         has_others = params.filter(is_others=True).exists()
         round_params[i] = {
             'params': normal_params,
@@ -587,11 +655,26 @@ def edit_hackathon(request, hackathon_id):
 
     existing_banners = list(hackathon.hero_banners.order_by('display_order'))
 
+    # Load jury/expert team config per round
+    jury_configs = {}
+    jury_teams = {}
+    for i in range(1, 6):
+        config = hackathon.jury_configs.filter(round_number=i).first()
+        teams = list(hackathon.jury_teams.filter(round_number=i).order_by('display_order'))
+        jury_configs[i] = {
+            'num_jury': config.num_jury_per_team if config else 0,
+            'num_experts': config.num_experts_per_team if config else 0,
+            'num_teams': len(teams),
+        }
+        jury_teams[i] = teams
+
     return render(request, 'events/edit_hackathon.html', {
         'hackathon': hackathon,
         'round_params': round_params,
         'existing_domains': existing_domains,
         'existing_banners': existing_banners,
+        'jury_configs': jury_configs,
+        'jury_teams': jury_teams,
     })
 
 
@@ -905,6 +988,11 @@ def landing_page(request):
         role = f'{kind} Testimonial'
         organization = ''
         display_title = _strip_prefix(asset.title, prefix) or f'{kind} Testimonial'
+        if display_title.startswith('[Landing:'):
+            if '] ' in display_title:
+                display_title = display_title.split('] ', 1)[1].strip()
+            elif ']' in display_title:
+                display_title = display_title.split(']', 1)[1].strip()
         try:
             user_id = int(_strip_prefix(asset.title, prefix).split('|', 1)[0].strip())
         except (TypeError, ValueError, IndexError):
@@ -1050,37 +1138,37 @@ def landing_page(request):
 
     about_cards = [
         {
-            'icon': '💡',
+            'icon': 'bulb-outline',
             'title': 'Innovation',
             'text': 'Spark practical ideas that move from concept to meaningful real-world impact.',
             'image': '/media/creatives/hero1-bg.jpg',
         },
         {
-            'icon': '🏆',
+            'icon': 'trophy-outline',
             'title': 'Recognition',
             'text': 'Celebrate strong solutions with visibility, credibility, and momentum.',
             'image': '/media/creatives/hero2.jpg',
         },
         {
-            'icon': '🌱',
+            'icon': 'leaf-outline',
             'title': 'Incubation',
             'text': 'Nurture early ideas with structure, support, and a path to growth.',
             'image': '/media/creatives/hero3.jpg',
         },
         {
-            'icon': '⚖️',
+            'icon': 'scale-outline',
             'title': 'Governance',
             'text': 'Enable transparent, organized, and accountable program operations.',
             'image': '/media/creatives/hero4.jpg',
         },
         {
-            'icon': '🤝',
+            'icon': 'people-outline',
             'title': 'Supporting Community',
             'text': 'Bring together participants, mentors, institutions, and partners in one ecosystem.',
             'image': '/media/creatives/front-page.jpg',
         },
         {
-            'icon': '🌿',
+            'icon': 'leaf-outline',
             'title': 'Sustainability',
             'text': 'Promote solutions that are resilient, scalable, and built to last.',
             'image': '/media/creatives/hero-bg.png',
@@ -1102,7 +1190,7 @@ def landing_page(request):
             'speaker': speaker,
             'role': role,
             'category': 'Expert Talk' if getattr(podcast, 'podcast_type', 'podcast') == 'expert_talk' else (podcast.problem_statement.domain if podcast.problem_statement and podcast.problem_statement.domain else 'Podcast'),
-            'duration': 'Featured',
+            'duration': getattr(podcast, 'duration', 'Featured') or 'Featured',
             'description': podcast.description or 'Watch this expert session to learn from practitioners and ecosystem leaders.',
             'url': podcast.video_url or (podcast.video_file.url if podcast.video_file else ''),
             'thumbnail_url': podcast.thumbnail.url if podcast.thumbnail else '',
@@ -1308,7 +1396,8 @@ def landing_page(request):
     if not partner_cards:
         partner_cards = sponsor_card_pool[4:8] if len(sponsor_card_pool) > 4 else sponsor_card_pool[:4]
 
-    faq_items = [
+    # Dynamic FAQ items from database, with hardcoded fallback
+    _default_faq_items = [
         {
             'question': 'Who can participate in HackNexus?',
             'answer': 'Students, startups, and professionals can participate. Use the registration page to check any current team-size or eligibility rules configured for the live hackathon.',
@@ -1326,6 +1415,16 @@ def landing_page(request):
             'answer': 'The platform supports mentor, jury, and expert workflows. Public details shown here expand automatically as those profiles are approved and published.',
         },
     ]
+    if active_hackathon:
+        db_faqs = FAQItem.objects.filter(
+            hackathon=active_hackathon, is_published=True, is_suspended=False
+        ).order_by('display_order', '-created_at')
+        if db_faqs.exists():
+            faq_items = [{'question': f.question, 'answer': f.answer} for f in db_faqs]
+        else:
+            faq_items = _default_faq_items
+    else:
+        faq_items = _default_faq_items
 
     documentation_links = Documentation.objects.filter(
         is_published=True,
@@ -1440,10 +1539,10 @@ def landing_page(request):
             'highlight': 'Smart India',
             'description': 'Transform ideas into impactful innovations that drive national development.',
             'highlights': [
-                {'icon': '📅', 'text': active_hackathon.registration_open.strftime('%b %d, %Y') if active_hackathon and active_hackathon.registration_open else 'Registrations Live'},
-                {'icon': '📍', 'text': active_hackathon.organization_name if active_hackathon else 'HackNexus Platform'},
-                {'icon': '💡', 'text': f'{total_problem_statements or 75}+ Challenges'},
-                {'icon': '🌍', 'text': 'National Level'},
+                {'icon': 'calendar-outline', 'text': active_hackathon.registration_open.strftime('%b %d, %Y') if active_hackathon and active_hackathon.registration_open else 'Registrations Live'},
+                {'icon': 'location-outline', 'text': active_hackathon.organization_name if active_hackathon else 'HackNexus Platform'},
+                {'icon': 'bulb-outline', 'text': f'{total_problem_statements or 75}+ Challenges'},
+                {'icon': 'earth-outline', 'text': 'National Level'},
             ],
             'primary_label': 'Register Now',
             'primary_target': '#registerModal',
@@ -1456,10 +1555,10 @@ def landing_page(request):
             'highlight': 'Transform.',
             'description': 'Join builders, mentors, and institutions in solving India-first challenges with execution-focused ideas.',
             'highlights': [
-                {'icon': '👥', 'text': f'{total_teams or 500}+ Teams'},
-                {'icon': '🏫', 'text': f'{total_institutions or 150}+ Institutions'},
-                {'icon': '🎯', 'text': f'{themes_count or len(top_tracks)} Themes'},
-                {'icon': '🎙️', 'text': f'{len(expert_talks)} Expert Talks'},
+                {'icon': 'people-outline', 'text': f'{total_teams or 500}+ Teams'},
+                {'icon': 'school-outline', 'text': f'{total_institutions or 150}+ Institutions'},
+                {'icon': 'flag-outline', 'text': f'{themes_count or len(top_tracks)} Themes'},
+                {'icon': 'mic-outline', 'text': f'{len(expert_talks)} Expert Talks'},
             ],
             'primary_label': 'View Tracks',
             'primary_target': '#tracksSection',
@@ -1472,10 +1571,10 @@ def landing_page(request):
             'highlight': 'Nation',
             'description': 'A developed, self-reliant India needs bold prototypes, sharp teams, and practical follow-through.',
             'highlights': [
-                {'icon': '🏆', 'text': 'Prize Support'},
-                {'icon': '👨‍🏫', 'text': 'Expert Mentorship'},
-                {'icon': '📈', 'text': 'Launch Visibility'},
-                {'icon': '🌟', 'text': 'Recognition'},
+                {'icon': 'trophy-outline', 'text': 'Prize Support'},
+                {'icon': 'school-outline', 'text': 'Expert Mentorship'},
+                {'icon': 'trending-up-outline', 'text': 'Launch Visibility'},
+                {'icon': 'star-outline', 'text': 'Recognition'},
             ],
             'primary_label': 'Browse Problems',
             'primary_target': '#tracksSection',
@@ -1488,10 +1587,10 @@ def landing_page(request):
             'highlight': 'Build Fast.',
             'description': 'Move from idea to prototype with a national-stage platform built for real outcomes and visible momentum.',
             'highlights': [
-                {'icon': 'IDEA', 'text': 'Creative Thinking'},
-                {'icon': 'ROCKET', 'text': 'Rapid Prototyping'},
-                {'icon': 'SPEED', 'text': 'Fast Execution'},
-                {'icon': 'BOOST', 'text': 'High Energy'},
+                {'icon': 'bulb-outline', 'text': 'Creative Thinking'},
+                {'icon': 'rocket-outline', 'text': 'Rapid Prototyping'},
+                {'icon': 'speedometer-outline', 'text': 'Fast Execution'},
+                {'icon': 'flash-outline', 'text': 'High Energy'},
             ],
             'primary_label': 'Register Now',
             'primary_target': '#registerModal',
