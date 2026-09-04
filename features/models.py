@@ -31,9 +31,10 @@ class Team(models.Model):
     )
     declared_member_count = models.PositiveIntegerField(default=1)
     leader_role_in_team = models.CharField(max_length=100, default='Leader')
-    leader_aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', null=True, blank=True)
-    leader_college_id_proof = models.FileField(upload_to='team_documents/college_ids/', null=True, blank=True)
+    leader_aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', max_length=255, null=True, blank=True)
+    leader_college_id_proof = models.FileField(upload_to='team_documents/college_ids/', max_length=255, null=True, blank=True)
     status = models.CharField(max_length=50, default='Active')
+    current_round = models.IntegerField(default=1, help_text="The round this team is currently in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -49,8 +50,8 @@ class TeamMember(models.Model):
     team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
     role_in_team = models.CharField(max_length=100, blank=True, default='Member')
-    aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', null=True, blank=True)
-    college_id_proof = models.FileField(upload_to='team_documents/college_ids/', null=True, blank=True)
+    aadhaar_proof = models.FileField(upload_to='team_documents/aadhaar/', max_length=255, null=True, blank=True)
+    college_id_proof = models.FileField(upload_to='team_documents/college_ids/', max_length=255, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -151,12 +152,20 @@ class TeamRegistration(models.Model):
         'Team', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='from_registration'
     )
+    registration_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    bank_reminder_sent = models.BooleanField(default=False)
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'accounts_teamregistration'
         ordering = ['-registered_at']
+
+    def save(self, *args, **kwargs):
+        if not self.registration_token:
+            import uuid
+            self.registration_token = uuid.uuid4().hex[:24]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.team_name} — {self.hackathon.name} [{self.status}]"
@@ -183,6 +192,9 @@ class TeamEvaluationAssignment(models.Model):
     expert_1 = models.ForeignKey('accounts.ExpertProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments_as_expert1')
     expert_2 = models.ForeignKey('accounts.ExpertProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments_as_expert2')
     
+    assigned_panel = models.ForeignKey(
+        'events.JuryTeam', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_team_evaluations'
+    )
     status = models.CharField(max_length=50, default='Pending') # Pending or Assigned
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -226,7 +238,7 @@ class TeamDocument(models.Model):
     )
     doc_type = models.CharField(max_length=30, choices=DOC_TYPE_CHOICES, default='other')
     title = models.CharField(max_length=255)
-    file = models.FileField(upload_to='team_documents/')
+    file = models.FileField(upload_to='team_documents/', max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -368,6 +380,7 @@ class Podcast(models.Model):
         choices=[('podcast', 'Podcast'), ('expert_talk', 'Expert Talk')],
         default='podcast'
     )
+    duration = models.CharField(max_length=100, blank=True, default='Featured')
     created_by = models.ForeignKey(
         'accounts.User', on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -451,6 +464,30 @@ class SocialFeedEntry(models.Model):
         return f"{self.title} ({self.get_platform_display()})"
 
 
+class FAQItem(models.Model):
+    """Dynamic FAQ entries managed per hackathon."""
+    hackathon = models.ForeignKey(
+        'events.Hackathon', on_delete=models.CASCADE, related_name='faq_items'
+    )
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    display_order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
+    is_published = models.BooleanField(default=True)
+    is_suspended = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'features_faqitem'
+        ordering = ['display_order', '-created_at']
+
+    def __str__(self):
+        return self.question[:80]
+
+
 # ─────────────────────────────────────────────────────────────
 # FINANCIAL MANAGEMENT
 # ─────────────────────────────────────────────────────────────
@@ -476,6 +513,8 @@ class SponsorshipFund(models.Model):
         'events.Hackathon', on_delete=models.CASCADE, related_name='sponsorships'
     )
     sponsor_name = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True, default='')
+    logo = models.ImageField(upload_to='sponsor_logos/', null=True, blank=True)
     amount_pledged = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     amount_received = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     status = models.CharField(max_length=50, default='Pending')

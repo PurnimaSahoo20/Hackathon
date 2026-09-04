@@ -149,9 +149,9 @@ class TeamleadProfileAdmin(admin.ModelAdmin):
 
 @admin.register(SpocInvitation)
 class SpocInvitationAdmin(admin.ModelAdmin):
-    list_display = ('email', 'status', 'institution_name', 'invited_by', 'invited_at')
+    list_display = ('email', 'status', 'institution_name', 'city', 'state', 'invited_by', 'invited_at')
     list_filter = ('status',)
-    search_fields = ('email', 'institution_name')
+    search_fields = ('email', 'institution_name', 'city', 'state')
     ordering = ('-invited_at',)
     list_per_page = 20
 

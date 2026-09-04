@@ -113,8 +113,49 @@
     <div class="info-item"><label>Submitted At</label><span>{{ invite.submitted_at|date:"M d, Y H:i"|default:"Not yet submitted" }}</span></div>
     <div class="info-item"><label>Invited By</label><span>{{ invite.invited_by.get_full_name|default:invite.invited_by.username|default:"—" }}</span></div>
     {% if invite.approved_at %}<div class="info-item"><label>Approved At</label><span>{{ invite.approved_at|date:"M d, Y H:i" }}</span></div>{% endif %}
-    {% if invite.rejection_reason %}<div class="info-item" style="grid-column:1/-1;"><label>Rejection Reason</label><span style="color:#dc2626;">{{ invite.rejection_reason }}</span></div>{% endif %}
+    {% if invite.rejection_reason %}<div class="info-item" style="grid-column:1/-1;"><label>Latest Rejection Reason</label><span style="color:#dc2626;">{{ invite.rejection_reason }}</span></div>{% endif %}
   </div>
+</div>
+
+<!-- Review & Resubmission History -->
+<div class="detail-card">
+  <div class="section-label">Review & Resubmission History</div>
+  {% if invite.review_history.all %}
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+      <thead>
+        <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Attempt</th>
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Action</th>
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Status</th>
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Reviewed By</th>
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Date & Time</th>
+          <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Reason / Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in invite.review_history.all %}
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:12px;font-weight:700;color:#111827;">Attempt #{{ log.attempt_number }}</td>
+          <td style="padding:12px;">
+            <span class="badge {% if log.action == 'approved' %}b-approved{% elif log.action == 'rejected' %}b-rejected{% elif log.action == 'resubmitted' %}b-pending{% else %}b-invited{% endif %}">
+              {{ log.get_action_display }}
+            </span>
+          </td>
+          <td style="padding:12px;font-size:13px;color:#374151;">{{ log.new_status|title }}</td>
+          <td style="padding:12px;font-size:13px;color:#4b5563;">{{ log.reviewed_by.get_full_name|default:log.reviewed_by.username|default:"System / Applicant" }}</td>
+          <td style="padding:12px;font-size:13px;color:#6b7280;">{{ log.created_at|date:"d M Y, H:i" }}</td>
+          <td style="padding:12px;font-size:13px;color:{% if log.action == 'rejected' %}#dc2626{% else %}#374151{% endif %};max-width:280px;word-break:break-word;">
+            {{ log.rejection_reason|default:log.admin_remarks|default:"—" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:#6b7280;font-size:13px;margin:0;">No review history recorded yet.</p>
+  {% endif %}
 </div>
 
 <!-- Reject Modal -->

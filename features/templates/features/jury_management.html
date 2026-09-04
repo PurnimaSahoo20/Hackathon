@@ -57,6 +57,60 @@
   .invite-toggle label:has(input:checked){background:#fff;color:#ea580c;box-shadow:0 2px 8px rgba(0,0,0,.08);}
   .toggle-section{display:none;}
   .toggle-section.active{display:block;animation:sl .25s ease;}
+
+  /* Round-gate & lock banners */
+  .round-gate-banner{display:flex;align-items:flex-start;gap:12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:20px;}
+  .round-gate-banner .icon{font-size:22px;color:#2563eb;flex-shrink:0;margin-top:1px;}
+  .round-gate-banner .text{font-size:13.5px;color:#1e40af;line-height:1.5;}
+  .lock-banner{display:flex;align-items:flex-start;gap:12px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:20px;}
+  .lock-banner .icon{font-size:22px;color:#dc2626;flex-shrink:0;margin-top:1px;}
+  .lock-banner .text{font-size:13.5px;color:#991b1b;line-height:1.5;}
+  .btn-lock{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;transition:all .2s;}
+  .btn-lock:hover{background:#fee2e2;}
+  .btn-unlock{background:#ecfdf5;color:#059669;border:1.5px solid #a7f3d0;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;transition:all .2s;}
+  .btn-unlock:hover{background:#d1fae5;}
+  .btn-add-panel-disabled{background:#f1f5f9;color:#94a3b8;border:1.5px dashed #cbd5e1;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:not-allowed;display:flex;align-items:center;gap:6px;position:relative;}
+  .panel-readonly{pointer-events:none;opacity:.7;}
+  
+  .locked-panels-scroll-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 290px;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 6px 4px 16px 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  .locked-panels-scroll-grid::-webkit-scrollbar {
+    height: 8px;
+  }
+  .locked-panels-scroll-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .locked-panels-scroll-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  .locked-panels-scroll-grid::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  .ps-section-header {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .ps-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 </style>
 {% endblock %}
 
@@ -87,75 +141,74 @@
 
 <!-- Send Invite slide form -->
 <div id="inviteForm" class="slide-form">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-    <h3 style="margin:0;color:#ea580c;font-weight:800;">Send Jury/Expert Invitation</h3>
-    <button type="button" onclick="document.getElementById('inviteForm').classList.remove('open')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
-  </div>
-  <div class="invite-toggle">
-    <label><input type="radio" name="invite_mode" value="single" checked onchange="toggleInviteMode('single')"><ion-icon name="person-outline"></ion-icon> Single Invitation</label>
-    <label><input type="radio" name="invite_mode" value="bulk" onchange="toggleInviteMode('bulk')"><ion-icon name="people-outline"></ion-icon> Bulk Upload (CSV)</label>
-  </div>
+  <div class="modal-box" style="max-width: 520px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Send Jury/Expert Invitation</h3>
+      <button type="button" onclick="document.getElementById('inviteForm').classList.remove('open')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;display:flex;align-items:center;justify-content:center;"><ion-icon name="close-circle-outline"></ion-icon></button>
+    </div>
+    <div class="invite-toggle" style="margin-bottom:18px;">
+      <label><input type="radio" name="invite_mode" value="single" checked onchange="toggleInviteMode('single')"><ion-icon name="person-outline"></ion-icon> Single Invitation</label>
+      <label><input type="radio" name="invite_mode" value="bulk" onchange="toggleInviteMode('bulk')"><ion-icon name="people-outline"></ion-icon> Bulk Upload (CSV)</label>
+    </div>
 
-  <div id="singleInviteSection" class="toggle-section active">
-    <form method="POST" action="{% url 'send_evaluator_invite' %}">
-      {% csrf_token %}
-      <div class="form-row">
-        <div class="fg">
+    <div id="singleInviteSection" class="toggle-section active">
+      <form method="POST" action="{% url 'send_evaluator_invite' %}">
+        {% csrf_token %}
+        <div class="fg" style="margin-bottom:14px;">
           <label>Email Address *</label>
           <input type="email" name="email" placeholder="e.g. evaluator@university.edu" required>
         </div>
-        <div class="fg">
+        <div class="fg" style="margin-bottom:14px;">
           <label>Role *</label>
           <select name="role" required>
-              <option value="jury">Jury</option>
-              <option value="expert">Expert</option>
+            <option value="jury">Jury</option>
+            <option value="expert">Expert</option>
           </select>
         </div>
-      </div>
-      <div class="fg">
+        <div class="fg" style="margin-bottom:18px;">
           <label>Target Hackathon <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
           <select name="hackathon_id">
             <option value="">-- Select Hackathon --</option>
             {% for h in hackathons %}<option value="{{ h.id }}">{{ h.name }}</option>{% endfor %}
           </select>
-      </div>
-      <div style="display:flex;gap:12px;">
-        <button type="submit" class="btn"><ion-icon name="send-outline"></ion-icon> Send Invitation</button>
-        <button type="button" class="btn-outline" onclick="document.getElementById('inviteForm').classList.remove('open')">Cancel</button>
-      </div>
-    </form>
-  </div>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn"><ion-icon name="send-outline"></ion-icon> Send Invitation</button>
+          <button type="button" class="btn-outline" onclick="document.getElementById('inviteForm').classList.remove('open')">Cancel</button>
+        </div>
+      </form>
+    </div>
 
-  <div id="bulkInviteSection" class="toggle-section">
-    <div class="upload-grid">
+    <div id="bulkInviteSection" class="toggle-section">
       <form method="POST" action="{% url 'send_bulk_evaluator_invites' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="fg">
-          <label>Bulk Invite via CSV</label>
+        <div class="fg" style="margin-bottom:14px;">
+          <label>Bulk Invite via CSV *</label>
           <input type="file" name="csv_file" accept=".csv" required>
         </div>
-        <div class="form-row">
-            <div class="fg">
-              <label>Role *</label>
-              <select name="role" required>
-                  <option value="jury">Jury</option>
-                  <option value="expert">Expert</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label>Target Hackathon <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
-              <select name="hackathon_id">
-                <option value="">-- Select Hackathon --</option>
-                {% for h in hackathons %}<option value="{{ h.id }}">{{ h.name }}</option>{% endfor %}
-              </select>
-            </div>
+        <div class="fg" style="margin-bottom:14px;">
+          <label>Role *</label>
+          <select name="role" required>
+            <option value="jury">Jury</option>
+            <option value="expert">Expert</option>
+          </select>
         </div>
-        <button type="submit" class="btn"><ion-icon name="cloud-upload-outline"></ion-icon> Send Bulk Invitations</button>
+        <div class="fg" style="margin-bottom:18px;">
+          <label>Target Hackathon <span style="font-size:11px;color:#9ca3af;">(optional)</span></label>
+          <select name="hackathon_id">
+            <option value="">-- Select Hackathon --</option>
+            {% for h in hackathons %}<option value="{{ h.id }}">{{ h.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="upload-note" style="margin-bottom:18px;">
+          <strong>CSV Format</strong><br>
+          Use a column named <code>email</code> or one email per row. Duplicates, existing users, and invalid emails are skipped automatically.
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn"><ion-icon name="cloud-upload-outline"></ion-icon> Send Bulk Invitations</button>
+          <button type="button" class="btn-outline" onclick="document.getElementById('inviteForm').classList.remove('open')">Cancel</button>
+        </div>
       </form>
-      <div class="upload-note">
-        <strong>CSV Format</strong><br>
-        Use a column named <code>email</code> or one email per row. Duplicates, existing users, and invalid emails are skipped automatically.
-      </div>
     </div>
   </div>
 </div>
@@ -372,17 +425,37 @@
 
 
 <!-- ════════════════════════════════
-     SUB-TAB: EVALUATION
+     SUB-TAB: EVALUATION & TEAM ASSIGNMENTS
 ════════════════════════════════ -->
 {% elif sub == 'evaluation' %}
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-  <div></div>
-  <form method="GET">
+  <div>
+    <h2 style="font-size:22px;font-weight:900;color:#1f2937;margin:0 0 4px 0;">Evaluation & Team Assignments</h2>
+    <p style="font-size:13px;color:#6b7280;margin:0;">Assign Problem Statements and Jury/Expert members to Jury Panels per round. Student teams are mapped automatically based on their chosen Problem Statement.</p>
+  </div>
+  <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
     <input type="hidden" name="sub" value="evaluation">
-    <select name="hackathon" onchange="this.form.submit()" style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;">
+    <select name="hackathon" onchange="this.form.submit()" style="border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px;font-family:'Outfit',sans-serif;font-weight:700;color:#1f2937;background:#fff;outline:none;">
       <option value="">Select hackathon</option>
       {% for h in hackathons %}<option value="{{ h.id }}" {% if hackathon_filter == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>{% endfor %}
     </select>
+    
+    {% if active_hackathon %}
+    <select name="problem_statement" onchange="this.form.submit()" style="border:1.5px solid #6366f1;border-radius:10px;padding:9px 14px;font-family:'Outfit',sans-serif;font-weight:700;color:#4338ca;background:#eef2ff;outline:none;max-width:240px;">
+      <option value="">All Problem Statements</option>
+      {% for ps in problem_statements %}
+      <option value="{{ ps.id }}" {% if ps_filter == ps.id|stringformat:"s" %}selected{% endif %}>
+        📌 {{ ps.title|truncatechars:35 }} {% if ps.domain %}({{ ps.domain }}){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+
+    <select name="round_number" onchange="this.form.submit()" style="border:1.5px solid #ea580c;border-radius:10px;padding:9px 14px;font-family:'Outfit',sans-serif;font-weight:800;color:#ea580c;background:#fff7ed;outline:none;">
+      {% for r in round_range %}
+      <option value="{{ r }}" {% if selected_round == r %}selected{% endif %}>Round {{ r }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
   </form>
 </div>
 
@@ -393,40 +466,776 @@
   <div class="stat-mini"><div class="num">{{ registration_counts.evaluated|default:0 }}</div><div class="lbl">Evaluated</div></div>
 </div>
 
+<!-- ── SECTION 1: JURY PANEL & PROBLEM STATEMENT ASSIGNMENT FOR THIS ROUND ── -->
+<div class="card" style="margin-bottom:28px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1.5px solid #f3f4f6;">
+    <div>
+      <h2 class="section-title" style="margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+        <span style="background:#fff7ed;color:#ea580c;padding:4px 8px;border-radius:6px;font-size:14px;font-weight:900;">Round {{ selected_round }}</span>
+        Jury Panel & Evaluator Allocation
+      </h2>
+      <p style="font-size:12.5px;color:#6b7280;margin:0;">
+        Assign a Problem Statement and members to each panel. <em>Assigned Jury/Expert members will be excluded from selection in other panels for Round {{ selected_round }}. Dropdowns display evaluators matching the Problem Statement's domain.</em>
+      </p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button type="button" onclick="toggleJuryPanelSection()" id="toggleJurySectionBtn" style="background:#f1f5f9;color:#475569;border:1.5px solid #cbd5e1;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
+        <ion-icon name="chevron-up-outline" id="toggleJuryIcon" style="font-size:16px;"></ion-icon>
+        <span id="toggleJuryText">Hide Section</span>
+      </button>
 
-<!-- Evaluation Readiness -->
-<div class="card">
-  <h2 class="section-title" style="margin-bottom:16px;">Evaluation Readiness Snapshot</h2>
+      {% if active_hackathon %}
+      <!-- Add Panel button — gated by current_jury_round and lock status -->
+      {% if selected_round == current_jury_round and not is_round_locked %}
+      <form method="POST" action="{% url 'add_jury_panel' %}" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="round_number" value="{{ selected_round }}">
+        {% if selected_ps_id %}<input type="hidden" name="problem_statement_id" value="{{ selected_ps_id }}">{% endif %}
+        <button type="submit" style="background:#4f46e5;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <ion-icon name="add-circle-outline" style="font-size:16px;"></ion-icon> + Add Panel
+        </button>
+      </form>
+      {% elif is_round_locked %}
+      <div class="btn-add-panel-disabled" title="Unlock assignments first to add new panels.">
+        <ion-icon name="lock-closed-outline" style="font-size:14px;"></ion-icon> + Add Panel
+      </div>
+      {% else %}
+      <div class="btn-add-panel-disabled" title="Panels can only be created for Round {{ current_jury_round }}. Promote teams to unlock Round {{ selected_round }}.">
+        <ion-icon name="ban-outline" style="font-size:14px;"></ion-icon> + Add Panel
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="juryPanelSectionBody">
+
+  <!-- Round-gate banner: viewing a non-active jury round -->
+  {% if selected_round != current_jury_round and not is_round_locked %}
+  <div class="round-gate-banner">
+    <ion-icon name="information-circle-outline" class="icon"></ion-icon>
+    <div class="text">
+      <strong>Viewing Round {{ selected_round }}</strong> — Jury panels can only be <em>created</em> for the active round (<strong>Round {{ current_jury_round }}</strong>).
+      Promote teams from Round {{ current_jury_round|add:"-1"|default:current_jury_round }} in the <a href="{% url 'results_reporting_management' %}" style="color:#1d4ed8;font-weight:700;">Results &amp; Round Promotion</a> page to unlock panel creation for this round.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Lock banner: assignments are locked for this round -->
+  {% if is_round_locked %}
+  <div class="lock-banner">
+    <ion-icon name="lock-closed-outline" class="icon"></ion-icon>
+    <div class="text">
+      <strong>🔒 Round {{ selected_round }} assignments are locked.</strong>
+      No new panels can be created and existing member assignments cannot be changed.
+      {% if round_jury_config.locked_by %}
+        Locked by <strong>{{ round_jury_config.locked_by.get_full_name|default:round_jury_config.locked_by.username }}</strong>
+        {% if round_jury_config.locked_at %}on <strong>{{ round_jury_config.locked_at|date:"M d, Y H:i" }}</strong>{% endif %}.
+      {% endif %}
+      Click <strong>Unlock Team Assignment</strong> below to re-enable editing.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Standalone form for panel deletion to avoid nested forms -->
+  <form id="standaloneDeletePanelForm" method="POST" action="" style="display:none;">
+    {% csrf_token %}
+  </form>
+
+  {% if jury_teams_data %}
+  
+  {% if is_round_locked %}
+    {% if not selected_ps_id %}
+      {# Case 1: Locked & All Problem Statements (Grouped by PS with Horizontal Scroll) #}
+      {% for group in grouped_jury_teams_data %}
+        <div class="ps-section-header" onclick="togglePsSection(this)" style="{% if not forloop.first %}margin-top: 24px;{% endif %} margin-bottom: 12px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9';" onmouseout="this.style.background='#f8fafc';">
+          <div class="ps-section-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            {% if group.problem_statement %}
+              <ion-icon name="folder-open-outline" style="font-size: 18px; color: #ea580c;"></ion-icon>
+              <strong>📌 {{ group.problem_statement.title }}</strong>
+              {% if group.problem_statement.domain %}
+                <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
+                  {{ group.problem_statement.domain }}
+                </span>
+              {% endif %}
+            {% else %}
+              <ion-icon name="alert-circle-outline" style="font-size: 18px; color: #64748b;"></ion-icon>
+              <strong>📂 Unassigned Panels</strong>
+            {% endif %}
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 11px; font-weight: 800; color: #6366f1; background: #eef2ff; padding: 3px 8px; border-radius: 12px; border: 1px solid #c7d2fe;">
+              {{ group.panels|length }} Panel{{ group.panels|pluralize }}
+            </span>
+            <ion-icon name="chevron-forward-outline" class="toggle-arrow" style="font-size: 18px; color: #64748b; transition: transform 0.2s;"></ion-icon>
+          </div>
+        </div>
+        <div class="locked-panels-scroll-grid" style="display: none;">
+          {% for item in group.panels %}
+            <!-- Locked Panel Card -->
+            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 3px 8px rgba(0,0,0,0.02);position:relative;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1.5px)';this.style.boxShadow='0 6px 14px rgba(0,0,0,0.04)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 3px 8px rgba(0,0,0,0.02)'">
+              
+              <!-- Card Header -->
+              <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:8px;">
+                <h3 style="margin:0;font-size:14px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:4px;">
+                  <ion-icon name="people-circle-outline" style="color:#ea580c;font-size:18px;"></ion-icon>
+                  {{ item.panel.name }}
+                </h3>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:10px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:9px;"></ion-icon> Locked
+                  </span>
+                  {% if item.teams_count > 0 %}
+                  <span style="font-size:10px;font-weight:800;color:#6366f1;background:#eef2ff;padding:2px 6px;border-radius:20px;">
+                    {{ item.teams_count }} Team{{ item.teams_count|pluralize }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Card Body -->
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                
+                <!-- Problem Statement -->
+                <div>
+                  <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                    <ion-icon name="bookmark-outline" style="font-size:10px;"></ion-icon> Problem Statement
+                  </div>
+                  {% if item.panel.problem_statement %}
+                  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:#1e293b;line-height:1.3;">
+                      {{ item.panel.problem_statement.title }}
+                    </div>
+                    {% if item.panel.problem_statement.domain %}
+                    <div style="font-size:10px;color:#64748b;margin-top:2px;display:flex;align-items:center;gap:3px;">
+                      <span style="background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;font-size:9px;text-transform:uppercase;">
+                        {{ item.panel.problem_statement.domain }}
+                      </span>
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% else %}
+                  <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:6px 10px;text-align:center;color:#94a3b8;font-size:11px;font-style:italic;">
+                    No Problem Statement Assigned
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Jury Members -->
+                <div>
+                  <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                    <ion-icon name="scale-outline" style="font-size:10px;"></ion-icon> Jury Members
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    {% for slot in item.jury_slots %}
+                      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#334155;background:#f8fafc;padding:4px 8px;border:1px solid #f1f5f9;border-radius:6px;">
+                        <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;width:40px;">Jury {{ slot.slot_num }}:</span>
+                        {% if slot.selected_id %}
+                          {% for j in item.panel.juries.all %}
+                            {% if j.id == slot.selected_id %}
+                              <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                                <span style="font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">
+                                  {{ j.user.get_full_name|default:j.user.username }}
+                                </span>
+                                <span style="font-size:9.5px;color:#64748b;margin-top:0px;">
+                                  @{{ j.user.username }} {% if j.domain %}({{ j.domain }}){% endif %}
+                                </span>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        {% else %}
+                          <span style="color:#94a3b8;font-style:italic;font-size:11px;">Unassigned</span>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <!-- Expert Members -->
+                <div>
+                  <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                    <ion-icon name="school-outline" style="font-size:10px;"></ion-icon> Expert Members
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    {% for slot in item.expert_slots %}
+                      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#334155;background:#f8fafc;padding:4px 8px;border:1px solid #f1f5f9;border-radius:6px;">
+                        <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;width:40px;">Expert {{ slot.slot_num }}:</span>
+                        {% if slot.selected_id %}
+                          {% for e in item.panel.experts.all %}
+                            {% if e.id == slot.selected_id %}
+                              <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                                <span style="font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">
+                                  {{ e.user.get_full_name|default:e.user.username }}
+                                </span>
+                                <span style="font-size:9.5px;color:#64748b;margin-top:0px;">
+                                  @{{ e.user.username }} {% if e.domain %}({{ e.domain }}){% endif %}
+                                </span>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        {% else %}
+                          <span style="color:#94a3b8;font-style:italic;font-size:11px;">Unassigned</span>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    {% else %}
+      {# Case 2: Locked & Specific Problem Statement (Single Grid) #}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(290px, 1fr));gap:12px;">
+        {% for item in jury_teams_data %}
+          <!-- Locked Panel Card -->
+          <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 3px 8px rgba(0,0,0,0.02);position:relative;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1.5px)';this.style.boxShadow='0 6px 14px rgba(0,0,0,0.04)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 3px 8px rgba(0,0,0,0.02)'">
+            
+            <!-- Card Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:8px;">
+              <h3 style="margin:0;font-size:14px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:4px;">
+                <ion-icon name="people-circle-outline" style="color:#ea580c;font-size:18px;"></ion-icon>
+                {{ item.panel.name }}
+              </h3>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:10px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">
+                  <ion-icon name="lock-closed-outline" style="font-size:9px;"></ion-icon> Locked
+                </span>
+                {% if item.teams_count > 0 %}
+                <span style="font-size:10px;font-weight:800;color:#6366f1;background:#eef2ff;padding:2px 6px;border-radius:20px;">
+                  {{ item.teams_count }} Team{{ item.teams_count|pluralize }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              
+              <!-- Problem Statement -->
+              <div>
+                <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                  <ion-icon name="bookmark-outline" style="font-size:10px;"></ion-icon> Problem Statement
+                </div>
+                {% if item.panel.problem_statement %}
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;">
+                  <div style="font-size:12px;font-weight:700;color:#1e293b;line-height:1.3;">
+                    {{ item.panel.problem_statement.title }}
+                  </div>
+                  {% if item.panel.problem_statement.domain %}
+                  <div style="font-size:10px;color:#64748b;margin-top:2px;display:flex;align-items:center;gap:3px;">
+                    <span style="background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;font-size:9px;text-transform:uppercase;">
+                      {{ item.panel.problem_statement.domain }}
+                    </span>
+                  </div>
+                  {% endif %}
+                </div>
+                {% else %}
+                <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:6px 10px;text-align:center;color:#94a3b8;font-size:11px;font-style:italic;">
+                  No Problem Statement Assigned
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Jury Members -->
+              <div>
+                <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                  <ion-icon name="scale-outline" style="font-size:10px;"></ion-icon> Jury Members
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  {% for slot in item.jury_slots %}
+                    <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#334155;background:#f8fafc;padding:4px 8px;border:1px solid #f1f5f9;border-radius:6px;">
+                      <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;width:40px;">Jury {{ slot.slot_num }}:</span>
+                      {% if slot.selected_id %}
+                        {% for j in item.panel.juries.all %}
+                          {% if j.id == slot.selected_id %}
+                            <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                              <span style="font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">
+                                {{ j.user.get_full_name|default:j.user.username }}
+                              </span>
+                              <span style="font-size:9.5px;color:#64748b;margin-top:0px;">
+                                @{{ j.user.username }} {% if j.domain %}({{ j.domain }}){% endif %}
+                              </span>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      {% else %}
+                        <span style="color:#94a3b8;font-style:italic;font-size:11px;">Unassigned</span>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Expert Members -->
+              <div>
+                <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:flex;align-items:center;gap:3px;">
+                  <ion-icon name="school-outline" style="font-size:10px;"></ion-icon> Expert Members
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  {% for slot in item.expert_slots %}
+                    <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#334155;background:#f8fafc;padding:4px 8px;border:1px solid #f1f5f9;border-radius:6px;">
+                      <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;width:40px;">Expert {{ slot.slot_num }}:</span>
+                      {% if slot.selected_id %}
+                        {% for e in item.panel.experts.all %}
+                          {% if e.id == slot.selected_id %}
+                            <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                              <span style="font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">
+                                {{ e.user.get_full_name|default:e.user.username }}
+                              </span>
+                              <span style="font-size:9.5px;color:#64748b;margin-top:0px;">
+                                @{{ e.user.username }} {% if e.domain %}({{ e.domain }}){% endif %}
+                              </span>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      {% else %}
+                        <span style="color:#94a3b8;font-style:italic;font-size:11px;">Unassigned</span>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# Locked status Done indicator #}
+    <div style="margin-top:24px;display:flex;justify-content:center;">
+      <div style="padding:10px 22px;background:#f1f5f9;color:#94a3b8;border:1.5px dashed #cbd5e1;border-radius:9px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;">
+        <ion-icon name="lock-closed-outline" style="font-size:17px;color:{% if is_round_completed %}#dc2626{% else %}#94a3b8{% endif %};"></ion-icon>
+        {% if is_round_completed %}Panels Permanently Locked (Round Completed){% else %}Panels Locked{% endif %}
+      </div>
+    </div>
+
+  {% else %}
+    {# Case 3: Not Locked (Editable Form & Multi-Column Grid) #}
+    <form method="POST" action="{% url 'save_all_jury_panels' %}" id="allPanelsForm">
+      {% csrf_token %}
+      <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+      <input type="hidden" name="round_number" value="{{ selected_round }}">
+      <input type="hidden" name="ps_filter" value="{{ ps_filter }}">
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:20px;">
+        {% for item in jury_teams_data %}
+        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:10px;">
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;">
+              <ion-icon name="people-circle-outline" style="color:#ea580c;font-size:22px;"></ion-icon>
+              {{ item.panel.name }}
+            </h3>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;font-weight:800;color:#6366f1;background:#eef2ff;padding:3px 8px;border-radius:6px;text-transform:uppercase;">
+                Round {{ selected_round }}
+              </span>
+              <button type="submit" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#059669;border-radius:6px;padding:3px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:800;" title="Save Panel">
+                <ion-icon name="save-outline" style="font-size:14px;"></ion-icon> Save
+              </button>
+              <button type="button" onclick="confirmDeleteJuryPanel({{ item.panel.id }}, '{{ item.panel.name|escapejs }}')" style="background:#fef2f2;border:1px solid #fecaca;color:#ef4444;border-radius:6px;padding:3px 7px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:800;" title="Remove Panel">
+                <ion-icon name="trash-outline" style="font-size:14px;"></ion-icon> Remove
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <!-- Problem Statement Selection -->
+            <div>
+              <label style="display:block;font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:4px;">
+                📌 Problem Statement
+              </label>
+              {% if selected_ps_id %}
+              {# PS filter is active — lock the field to the filtered PS #}
+              <input type="hidden" name="panel_{{ item.panel.id }}_problem_statement_id" value="{{ selected_ps_id }}">
+              <div style="width:100%;padding:9px 12px;font-size:13px;border:1.5px solid #6366f1;border-radius:8px;background:#eef2ff;font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="font-weight:700;color:#3730a3;">
+                  📌
+                  {% for ps in problem_statements %}{% if ps.id == selected_ps_id %}{{ ps.title }}{% if ps.domain %} (Domain: {{ ps.domain }}){% endif %}{% endif %}{% endfor %}
+                </span>
+                <span style="font-size:11px;font-weight:800;color:#6366f1;background:#c7d2fe;padding:2px 8px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                  <ion-icon name="lock-closed-outline" style="font-size:11px;"></ion-icon> Locked by filter
+                </span>
+              </div>
+              <p style="font-size:11px;color:#6b7280;margin:4px 0 0 2px;">
+                PS is locked to your active filter. Clear the filter above to change it.
+              </p>
+              {% else %}
+              {# No filter — allow free selection #}
+              <select name="panel_{{ item.panel.id }}_problem_statement_id" style="width:100%;max-width:100%;min-width:0;padding:9px 12px;font-size:13px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;outline:none;font-family:'Outfit',sans-serif;">
+                <option value="">-- Unassigned --</option>
+                {% for ps in problem_statements %}
+                <option value="{{ ps.id }}" {% if item.panel.problem_statement_id == ps.id %}selected{% endif %}>
+                  {{ ps.title }} {% if ps.domain %}(Domain: {{ ps.domain }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+              {% endif %}
+            </div>
+
+            <!-- Jury Members Selection -->
+            {% if item.jury_slots %}
+            <div>
+              <label style="display:block;font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">
+                ⚖️ Jury Members (Max {{ item.jury_slots|length }})
+              </label>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for slot in item.jury_slots %}
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#94a3b8;width:50px;">Jury {{ slot.slot_num }}:</span>
+                  {% if slot.available %}
+                  <select name="panel_{{ item.panel.id }}_jury_slot_{{ slot.slot_num }}" class="panel-jury-select" data-panel-id="{{ item.panel.id }}" style="flex:1;min-width:0;width:100%;padding:8px 10px;font-size:12.5px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;outline:none;">
+                    <option value="">-- None --</option>
+                    {% for j in slot.available %}
+                    <option value="{{ j.id }}" {% if slot.selected_id == j.id %}selected{% endif %}>
+                      {{ j.user.get_full_name|default:j.user.username }} (@{{ j.user.username }}) {% if j.domain %}[{{ j.domain }}]{% endif %}
+                    </option>
+                    {% endfor %}
+                  </select>
+                  {% else %}
+                  <div style="flex:1;min-width:0;padding:8px 12px;font-size:12.5px;border:1.5px dashed #fca5a5;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;display:flex;align-items:center;gap:6px;">
+                    <ion-icon name="alert-circle-outline" style="font-size:15px;flex-shrink:0;"></ion-icon>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{% if not item.has_domain_juries %}No jury members available for this domain{% else %}All jury members are already assigned{% endif %}">
+                      {% if not item.has_domain_juries %}No jury members available for this domain{% else %}All jury members are already assigned{% endif %}
+                    </span>
+                  </div>
+                  <input type="hidden" name="panel_{{ item.panel.id }}_jury_slot_{{ slot.slot_num }}" value="">
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Expert Members Selection -->
+            {% if item.expert_slots %}
+            <div>
+              <label style="display:block;font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">
+                🎓 Expert Members (Max {{ item.expert_slots|length }})
+              </label>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for slot in item.expert_slots %}
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#94a3b8;width:50px;">Expert {{ slot.slot_num }}:</span>
+                  {% if slot.available %}
+                  <select name="panel_{{ item.panel.id }}_expert_slot_{{ slot.slot_num }}" class="panel-expert-select" data-panel-id="{{ item.panel.id }}" style="flex:1;min-width:0;width:100%;padding:8px 10px;font-size:12.5px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;outline:none;">
+                    <option value="">-- None --</option>
+                    {% for e in slot.available %}
+                    <option value="{{ e.id }}" {% if slot.selected_id == e.id %}selected{% endif %}>
+                      {{ e.user.get_full_name|default:e.user.username }} (@{{ e.user.username }}) {% if e.domain %}[{{ e.domain }}]{% endif %}
+                    </option>
+                    {% endfor %}
+                  </select>
+                  {% else %}
+                  <div style="flex:1;min-width:0;padding:8px 12px;font-size:12.5px;border:1.5px dashed #fca5a5;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;display:flex;align-items:center;gap:6px;">
+                    <ion-icon name="alert-circle-outline" style="font-size:15px;flex-shrink:0;"></ion-icon>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{% if not item.has_domain_experts %}No expert members available for this domain{% else %}All expert members are already assigned{% endif %}">
+                      {% if not item.has_domain_experts %}No expert members available for this domain{% else %}All expert members are already assigned{% endif %}
+                    </span>
+                  </div>
+                  <input type="hidden" name="panel_{{ item.panel.id }}_expert_slot_{{ slot.slot_num }}" value="">
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- PANEL CREATION DONE BUTTON -->
+      <div style="margin-top:24px;display:flex;justify-content:center;">
+        <button type="submit" name="action" value="done" id="panelCreationDoneBtn" style="padding:10px 22px;background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(234,88,12,0.25);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(234,88,12,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(234,88,12,0.25)'">
+          <ion-icon name="checkmark-done-circle-outline" style="font-size:17px;"></ion-icon>
+          Panel Creation Done
+        </button>
+      </div>
+    </form>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align:center;padding:40px;background:#f9fafb;border-radius:12px;border:1px dashed #cbd5e1;color:#64748b;">
+    <ion-icon name="alert-circle-outline" style="font-size:36px;color:#94a3b8;margin-bottom:8px;"></ion-icon>
+    <p style="font-weight:700;margin:0 0 4px 0;color:#334155;">No Jury Panels for Round {{ selected_round }} yet.</p>
+    <p style="font-size:13px;margin:0;">Click the <strong>+ Add Panel</strong> button above to create your first panel.</p>
+  </div>
+  {% endif %}
+  </div>
+</div>
+
+
+<!-- ── ASSIGN/ALTER TEAMS BUTTON ── -->
+{% if jury_teams_data and not is_round_locked %}
+<div style="display:flex;justify-content:center;margin-bottom:28px;" id="assignTeamsWrapper">
+  {% if show_assignments or round_jury_config.alter_offset > 0 or round_jury_config.has_assigned_teams %}
+    <form id="assignAlterForm" method="POST" action="{% url 'alter_round_assignments' %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+      <input type="hidden" name="round_number" value="{{ selected_round }}">
+      <button type="submit" id="assignTeamsBtn" style="padding:10px 22px;background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(234,88,12,0.25);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(234,88,12,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(234,88,12,0.25)'">
+        <ion-icon name="swap-horizontal-outline" style="font-size:17px;"></ion-icon>
+        <span id="assignTeamsBtnText">Alter Assignment {% if round_jury_config.alter_offset > 0 %}(Shift #{{ round_jury_config.alter_offset }}){% endif %}</span>
+      </button>
+    </form>
+  {% else %}
+    <form id="assignTeamsForm" method="POST" action="{% url 'assign_round_teams' %}" style="margin:0;" onsubmit="return handleAssignTeamsSubmit(event);">
+      {% csrf_token %}
+      <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+      <input type="hidden" name="round_number" value="{{ selected_round }}">
+      <button type="submit" id="assignTeamsBtn" style="padding:10px 22px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(79,70,229,0.25);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(79,70,229,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(79,70,229,0.25)'">
+        <ion-icon name="people-outline" style="font-size:17px;"></ion-icon>
+        <span id="assignTeamsBtnText">Assign Teams</span>
+      </button>
+    </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ── SECTION 2: AUTOMATIC TEAM EVALUATION READINESS SNAPSHOT ── -->
+<div class="card" id="teamAssignmentSection" style="{% if not is_round_locked and not show_assignments and not round_jury_config.alter_assignment and not round_jury_config.has_assigned_teams %}display:none;{% endif %}">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div>
+      <h2 class="section-title" style="margin:0 0 4px 0;">Automatic Team Assignment Snapshot (Round {{ selected_round }})</h2>
+      <p style="font-size:12.5px;color:#6b7280;margin:0;">Student teams are automatically matched to Jury Panels based on their chosen Problem Statement.</p>
+    </div>
+  </div>
+
   <table>
-    
-    <thead><tr><th>TEAM</th><th>INSTITUTION</th><th>PROBLEM STATEMENT</th><th>STATUS</th><th>ASSIGNMENTS</th></tr></thead>
+    <thead>
+      <tr>
+        <th>TEAM NAME</th>
+        <th>INSTITUTION</th>
+        <th>PROBLEM STATEMENT</th>
+        <th>ASSIGNED JURY PANEL</th>
+        <th>EVALUATOR MEMBERS</th>
+        <th>QUALIFICATION</th>
+        <th>STATUS</th>
+        <th>ACTIONS</th>
+      </tr>
+    </thead>
     <tbody>
       {% for team in teams_for_eval %}
       <tr>
         <td><strong>{{ team.team_name }}</strong></td>
         <td>{{ team.institution.name|default:"—" }}</td>
-        <td>{{ team.problem_statement.title|default:"—" }}</td>
-        <td><span class="badge b-{% if team.eval_status == 'Assigned' %}approved{% else %}pending{% endif %}">{{ team.eval_status }}</span></td>
         <td>
-            {% if team.eval_assignment %}
-                <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">
-                    <strong>Round {{ team.eval_assignment.round_number }}</strong>:
-                    {% if team.eval_assignment.jury_1 %}J1, {% endif %}
-                    {% if team.eval_assignment.jury_2 %}J2, {% endif %}
-                    {% if team.eval_assignment.jury_3 %}J3, {% endif %}
-                    {% if team.eval_assignment.expert_1 %}E1, {% endif %}
-                    {% if team.eval_assignment.expert_2 %}E2{% endif %}
-                </div>
-            {% endif %}
-            <button class="btn-sm btn-outline" onclick="openAssignModal({{ team.id }}, '{{ team.team_name|escapejs }}', {{ team.eval_assignment.round_number|default:1 }}, {{ team.eval_assignment.jury_1_id|default:'null' }}, {{ team.eval_assignment.jury_2_id|default:'null' }}, {{ team.eval_assignment.jury_3_id|default:'null' }}, {{ team.eval_assignment.expert_1_id|default:'null' }}, {{ team.eval_assignment.expert_2_id|default:'null' }})">Assign Evaluators</button>
+          {% if team.problem_statement %}
+          <span style="font-weight:700;color:#1e293b;">{{ team.problem_statement.title }}</span>
+          {% else %}
+          <span style="color:#94a3b8;font-style:italic;">Not selected</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if team.eval_assignment and team.eval_assignment.assigned_panel %}
+            <span style="background:#eef2ff;color:#4338ca;padding:4px 8px;border-radius:6px;font-weight:800;font-size:12px;border:1px solid #c7d2fe;">
+              👥 {{ team.eval_assignment.assigned_panel.name }}
+            </span>
+          {% else %}
+            <span style="color:#9ca3af;font-size:12px;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if team.eval_assignment %}
+            <div style="font-size:12px;color:#475569;display:flex;flex-direction:column;gap:2px;">
+              {% if team.eval_assignment.jury_1 %}<span>⚖️ J1: <strong>{{ team.eval_assignment.jury_1.user.get_full_name|default:team.eval_assignment.jury_1.user.username }}</strong></span>{% endif %}
+              {% if team.eval_assignment.jury_2 %}<span>⚖️ J2: <strong>{{ team.eval_assignment.jury_2.user.get_full_name|default:team.eval_assignment.jury_2.user.username }}</strong></span>{% endif %}
+              {% if team.eval_assignment.jury_3 %}<span>⚖️ J3: <strong>{{ team.eval_assignment.jury_3.user.get_full_name|default:team.eval_assignment.jury_3.user.username }}</strong></span>{% endif %}
+              {% if team.eval_assignment.expert_1 %}<span>🎓 E1: <strong>{{ team.eval_assignment.expert_1.user.get_full_name|default:team.eval_assignment.expert_1.user.username }}</strong></span>{% endif %}
+              {% if team.eval_assignment.expert_2 %}<span>🎓 E2: <strong>{{ team.eval_assignment.expert_2.user.get_full_name|default:team.eval_assignment.expert_2.user.username }}</strong></span>{% endif %}
+            </div>
+          {% else %}
+            <span style="color:#9ca3af;font-size:12px;">Unassigned</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if team.qualification_status == 'Qualified' %}
+            <span class="badge" style="background:#ecfdf5;color:#059669;font-weight:700;border:1px solid #d1fae5;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;">
+              <ion-icon name="checkmark-circle-outline" style="font-size:14px;"></ion-icon> Qualified
+            </span>
+          {% elif team.qualification_status == 'Not Qualified' %}
+            <span class="badge" style="background:#fff1f2;color:#e11d48;font-weight:700;border:1px solid #fecdd3;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;">
+              <ion-icon name="close-circle-outline" style="font-size:14px;"></ion-icon> Not Qualified
+            </span>
+          {% elif team.qualification_status == 'Disqualified' %}
+            <span class="badge" style="background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fee2e2;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;">
+              <ion-icon name="ban-outline" style="font-size:14px;"></ion-icon> Disqualified
+            </span>
+          {% else %}
+            <span class="badge" style="background:#fff7ed;color:#d97706;font-weight:700;border:1px solid #ffedd5;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;">
+              <ion-icon name="time-outline" style="font-size:14px;"></ion-icon> Pending
+            </span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge b-{% if team.eval_status == 'Assigned' %}approved{% else %}pending{% endif %}">
+            {{ team.eval_status }}
+          </span>
+        </td>
+        <td>
+          {% if not is_round_locked %}
+          <button type="button" class="btn-sm btn-approve" style="cursor:pointer;" onclick="openAssignModal({{ team.id }}, '{{ team.team_name|escapejs }}', {{ selected_round }}, '{{ team.eval_assignment.jury_1_id|default:'' }}', '{{ team.eval_assignment.jury_2_id|default:'' }}', '{{ team.eval_assignment.jury_3_id|default:'' }}', '{{ team.eval_assignment.expert_1_id|default:'' }}', '{{ team.eval_assignment.expert_2_id|default:'' }}')">
+            <ion-icon name="create-outline"></ion-icon> Assign
+          </button>
+          {% else %}
+          <span style="color:#9ca3af;font-size:12px;">Locked</span>
+          {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" style="text-align:center;padding:32px;color:#9ca3af;">No teams available for evaluation yet.</td></tr>
+      <tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">No student teams registered for evaluation yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<!-- ── LOCK TEAM ASSIGNMENT BUTTON ── -->
+{% if active_hackathon and not is_round_locked %}
+<div style="{% if show_assignments or round_jury_config.alter_assignment or round_jury_config.has_assigned_teams %}display:flex;{% else %}display:none;{% endif %}justify-content:center;margin-top:28px;margin-bottom:28px;" id="lockTeamWrapper">
+  <form method="POST" action="{% url 'lock_round_assignments' %}" style="margin:0;"
+        onsubmit="return confirm('Lock Round {{ selected_round }} team assignments? No new panels or changes will be possible until unlocked.')">
+    {% csrf_token %}
+    <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+    <input type="hidden" name="round_number" value="{{ selected_round }}">
+    <button type="submit" style="padding:10px 22px;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(220,38,38,0.25);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(220,38,38,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(220,38,38,0.25)'">
+      <ion-icon name="lock-closed-outline" style="font-size:17px;"></ion-icon>
+      Lock Team Assignment
+    </button>
+  </form>
+</div>
+{% elif is_round_locked %}
+<div style="display:flex;justify-content:center;margin-top:28px;margin-bottom:28px;">
+  {% if is_round_completed %}
+  <div style="padding:12px 32px;background:#f8fafc;color:#64748b;border:1.5px dashed #cbd5e1;border-radius:12px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:8px;">
+    <ion-icon name="lock-closed-outline" style="font-size:18px;color:#dc2626;"></ion-icon>
+    Round {{ selected_round }} Completed — Team Assignments & Panels are Permanently Locked
+  </div>
+  {% else %}
+  <form method="POST" action="{% url 'lock_round_assignments' %}" style="margin:0;"
+        onsubmit="return confirm('Unlock Round {{ selected_round }} assignments? Editing will be re-enabled.')">
+    {% csrf_token %}
+    <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+    <input type="hidden" name="round_number" value="{{ selected_round }}">
+    <button type="submit" style="padding:10px 22px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(5,150,105,0.25);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(5,150,105,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(5,150,105,0.25)'">
+      <ion-icon name="lock-open-outline" style="font-size:17px;"></ion-icon>
+      Unlock Team Assignment
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if panels_summary and is_round_locked %}
+<!-- ── SECTION 3: PANEL TEAM DISTRIBUTION SUMMARY ── -->
+<div class="card" style="margin-top:28px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1.5px solid #f1f5f9;">
+    <div>
+      <h2 class="section-title" style="margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+        <span style="background:#fff7ed;color:#ea580c;padding:4px 8px;border-radius:6px;font-size:14px;font-weight:900;">Round {{ selected_round }}</span>
+        Panel Team Distribution
+      </h2>
+      <p style="font-size:12.5px;color:#6b7280;margin:0;">Summary of how many teams are assigned to each jury panel for this round.</p>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 18px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:#ea580c;">{{ registration_counts.teams|default:0 }}</div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Total Teams</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for panel in panels_summary %}
+    {% with max_teams=registration_counts.teams|default:1 %}
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 20px;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.06)'" onmouseout="this.style.boxShadow='none'">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+
+        <!-- Left: Panel Info -->
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+          <div style="width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <ion-icon name="people-circle-outline" style="font-size:22px;color:#fff;"></ion-icon>
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size:15px;font-weight:800;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ panel.name }}
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              📌 {{ panel.ps_name }}
+            </div>
+            <div style="display:flex;gap:10px;margin-top:5px;">
+              <span style="font-size:11px;color:#6366f1;font-weight:700;background:#eef2ff;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">
+                <ion-icon name="scale-outline" style="font-size:11px;"></ion-icon> {{ panel.juries_count }} {% if panel.juries_count == 1 %}Jury{% else %}Juries{% endif %}
+              </span>
+              <span style="font-size:11px;color:#059669;font-weight:700;background:#ecfdf5;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">
+                <ion-icon name="school-outline" style="font-size:11px;"></ion-icon> {{ panel.experts_count }} Expert{{ panel.experts_count|pluralize }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Team Count Badge -->
+        <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+          <div style="text-align:right;">
+            <div style="font-size:28px;font-weight:900;color:{% if panel.teams_count == 0 %}#94a3b8{% else %}#ea580c{% endif %};line-height:1;">
+              {{ panel.teams_count }}
+            </div>
+            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">
+              Team{{ panel.teams_count|pluralize }}
+            </div>
+          </div>
+          <!-- Mini visual bar -->
+          <div style="width:80px;height:36px;display:flex;align-items:flex-end;gap:2px;background:#f1f5f9;border-radius:8px;padding:6px 8px;overflow:hidden;">
+            <div style="flex:1;background:{% if panel.teams_count == 0 %}#e2e8f0{% else %}linear-gradient(to top,#ea580c,#f97316){% endif %};border-radius:3px;transition:height .4s;
+              height:{% if max_teams > 0 and panel.teams_count > 0 %}{% widthratio panel.teams_count max_teams 100 %}%{% else %}6px{% endif %};
+              min-height:6px;max-height:100%;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+    <!-- Grand total row -->
+    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:4px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;background:rgba(255,255,255,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+          <ion-icon name="bar-chart-outline" style="font-size:20px;color:#fb923c;"></ion-icon>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#fff;">Total — Round {{ selected_round }}</div>
+          <div style="font-size:12px;color:#94a3b8;">Across {{ panels_summary|length }} panel{{ panels_summary|length|pluralize }}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:900;color:#fb923c;">{{ registration_counts.teams|default:0 }}</div>
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Teams Scoped</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:900;color:#34d399;">{{ registration_counts.approved|default:0 }}</div>
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Approved</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:900;color:#60a5fa;">{{ registration_counts.submitted|default:0 }}</div>
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Submitted</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:900;color:#a78bfa;">{{ registration_counts.evaluated|default:0 }}</div>
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Evaluated</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
 {% endif %}
 
 <!-- Assign Evaluators Modal -->
@@ -510,6 +1319,18 @@
 
 {% block extra_js %}
 <script>
+function togglePsSection(header) {
+  const grid = header.nextElementSibling;
+  const arrow = header.querySelector('.toggle-arrow');
+  if (grid.style.display === 'none' || grid.style.display === '') {
+      grid.style.display = 'grid';
+      arrow.style.transform = 'rotate(90deg)';
+  } else {
+      grid.style.display = 'none';
+      arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
 function openRejectModal(id, email, role) {
   document.getElementById('rejectEmailText').textContent = 'Rejecting invitation for: ' + email;
   if (role === 'expert') {
@@ -587,5 +1408,191 @@ function toggleInviteMode(mode) {
         bulk.classList.add('active');
     }
 }
+
+function toggleJuryPanelSection(forceHide) {
+    const body = document.getElementById('juryPanelSectionBody');
+    const icon = document.getElementById('toggleJuryIcon');
+    const text = document.getElementById('toggleJuryText');
+    const btn = document.getElementById('toggleJurySectionBtn');
+    if (!body || !icon || !text || !btn) return;
+
+    const shouldHide = forceHide !== undefined ? forceHide : (body.style.display !== 'none');
+
+    if (shouldHide) {
+        body.style.display = 'none';
+        icon.setAttribute('name', 'chevron-down-outline');
+        text.textContent = 'Show Section';
+        btn.style.background = '#eef2ff';
+        btn.style.color = '#4f46e5';
+        btn.style.borderColor = '#c7d2fe';
+        localStorage.setItem('jury_section_hidden', 'true');
+    } else {
+        body.style.display = 'block';
+        icon.setAttribute('name', 'chevron-up-outline');
+        text.textContent = 'Hide Section';
+        btn.style.background = '#f1f5f9';
+        btn.style.color = '#475569';
+        btn.style.borderColor = '#cbd5e1';
+        localStorage.setItem('jury_section_hidden', 'false');
+    }
+}
+function confirmDeleteJuryPanel(panelId, panelName) {
+    if (confirm('Are you sure you want to remove ' + panelName + '?')) {
+        const form = document.getElementById('standaloneDeletePanelForm');
+        if (form) {
+            form.action = '/features/jury/delete-panel/' + panelId + '/';
+            form.submit();
+        }
+    }
+}
+
+window.panelsDirty = false;
+
+function showTeamAssignments() {
+    if (window.panelsDirty) {
+        alert("Please click the 'Panel Creation Done' button to save your panel configurations before assigning teams.");
+        return;
+    }
+    const section = document.getElementById('teamAssignmentSection');
+    const lockWrapper = document.getElementById('lockTeamWrapper');
+    const btn = document.getElementById('assignTeamsBtn');
+    const textSpan = document.getElementById('assignTeamsBtnText');
+    
+    if (section) {
+        section.style.display = 'block';
+        section.style.animation = 'sl .35s ease';
+        setTimeout(() => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+    }
+    if (lockWrapper) {
+        lockWrapper.style.display = 'flex';
+    }
+    
+    // Transform "Assign Teams" button to "Alter Assignment" submit button
+    if (btn && textSpan) {
+        btn.type = 'submit';
+        btn.onclick = null;
+        textSpan.textContent = 'Alter Assignment';
+        btn.style.background = 'linear-gradient(135deg,#ea580c,#f97316)';
+        btn.style.boxShadow = '0 4px 14px rgba(234,88,12,0.25)';
+        
+        btn.onmouseover = function() {
+            this.style.transform = 'translateY(-1px)';
+            this.style.boxShadow = '0 6px 16px rgba(234,88,12,0.3)';
+        };
+        btn.onmouseout = function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 14px rgba(234,88,12,0.25)';
+        };
+
+        const icon = btn.querySelector('ion-icon');
+        if (icon) {
+            icon.setAttribute('name', 'swap-horizontal-outline');
+        }
+    }
+}
+
+function updateAssignTeamsButtonState() {
+    const btn = document.getElementById('assignTeamsBtn');
+    const doneBtn = document.getElementById('panelCreationDoneBtn');
+    
+    if (doneBtn) {
+        doneBtn.removeAttribute('disabled');
+        doneBtn.style.background = 'linear-gradient(135deg,#ea580c,#f97316)';
+        doneBtn.style.cursor = 'pointer';
+        doneBtn.style.opacity = '1';
+        doneBtn.style.boxShadow = '0 4px 14px rgba(234,88,12,0.25)';
+    }
+
+    if (window.panelsDirty) {
+        if (btn) {
+            btn.style.background = '#94a3b8';
+            btn.style.cursor = 'not-allowed';
+            btn.style.boxShadow = 'none';
+            btn.title = "Save panel configurations first by clicking 'Panel Creation Done'.";
+            btn.setAttribute('disabled', 'true');
+        }
+    } else {
+        if (btn) {
+            const isAlterState = {% if show_assignments or round_jury_config.alter_offset > 0 or round_jury_config.has_assigned_teams %}true{% else %}false{% endif %};
+            if (isAlterState) {
+                btn.style.background = 'linear-gradient(135deg,#ea580c,#f97316)';
+            } else {
+                btn.style.background = 'linear-gradient(135deg,#4f46e5,#6366f1)';
+            }
+            btn.style.cursor = 'pointer';
+            btn.removeAttribute('disabled');
+            btn.title = "";
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('jury_section_hidden') === 'true') {
+        toggleJuryPanelSection(true);
+    }
+    
+    // Set initial button state based on panelsDirty
+    updateAssignTeamsButtonState();
+
+    const allPanelsForm = document.getElementById('allPanelsForm');
+    if (allPanelsForm) {
+        allPanelsForm.addEventListener('change', function() {
+            window.panelsDirty = true;
+            updateAssignTeamsButtonState();
+        });
+        allPanelsForm.addEventListener('input', function() {
+            window.panelsDirty = true;
+            updateAssignTeamsButtonState();
+        });
+    }
+
+    // ── Dynamic cross-slot filtering within each panel card ──
+    function syncPanelSlots(cssClass) {
+        // Group selects by panel ID
+        const selects = document.querySelectorAll('.' + cssClass);
+        const panels = {};
+        selects.forEach(sel => {
+            const pid = sel.getAttribute('data-panel-id');
+            if (!panels[pid]) panels[pid] = [];
+            panels[pid].push(sel);
+        });
+
+        // For each panel, sync visibility across its selects
+        Object.values(panels).forEach(group => {
+            // Gather all selected values in this panel (excluding empty)
+            const selectedVals = group.map(s => s.value).filter(v => v !== '');
+
+            group.forEach(sel => {
+                const currentVal = sel.value;
+                Array.from(sel.options).forEach(opt => {
+                    if (opt.value === '') return; // skip "-- None --"
+                    if (selectedVals.includes(opt.value) && opt.value !== currentVal) {
+                        opt.style.display = 'none';
+                        opt.disabled = true;
+                    } else {
+                        opt.style.display = '';
+                        opt.disabled = false;
+                    }
+                });
+            });
+        });
+    }
+
+    // Initial sync on page load
+    syncPanelSlots('panel-jury-select');
+    syncPanelSlots('panel-expert-select');
+
+    // Re-sync whenever a dropdown changes
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('panel-jury-select')) {
+            syncPanelSlots('panel-jury-select');
+        }
+        if (e.target.classList.contains('panel-expert-select')) {
+            syncPanelSlots('panel-expert-select');
+        }
+    });
+});
 </script>
 {% endblock %}

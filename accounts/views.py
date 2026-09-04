@@ -30,7 +30,7 @@ from .models import (
 )
 
 # cross-app imports
-from events.models import Hackathon, ProblemStatement, CreativeMaterial
+from events.models import Hackathon, HackathonDomain, ProblemStatement, CreativeMaterial
 from features.models import Team, Venue, TeamRegistration, TeamEvaluationAssignment
 from jury.models import EvaluatorProfile, TeamEvaluation
 from .rendering import render_route
@@ -521,7 +521,7 @@ def verify_otp(request):
             otp_record.is_verified = True
             otp_record.save()
             login(request, user)
-            del request.session['pending_2fa_user_id']
+            request.session.pop('pending_2fa_user_id', None)
             return _redirect_by_role(user)
         else:
             messages.error(request, 'Invalid or expired verification code.')
@@ -812,6 +812,16 @@ def superadmin_dashboard(request):
         context['DOMAIN_CHOICES'] = [
             "Agriculture", "Healthcare", "Animal Resource", "Education"
         ]
+        # Override with dynamic domains if configured on any live hackathon
+        live_hackathon = Hackathon.objects.filter(status='Live').order_by('-updated_at').first()
+        if live_hackathon:
+            dynamic_domains = list(
+                HackathonDomain.objects.filter(hackathon=live_hackathon)
+                .order_by('display_order', 'name')
+                .values_list('name', flat=True)
+            )
+            if dynamic_domains:
+                context['DOMAIN_CHOICES'] = dynamic_domains
 
     elif tab == 'creatives':
         query = request.GET.get('search_creatives', '')
@@ -900,7 +910,7 @@ def _send_welcome_email(user, plain_password, role_name):
             f"  Username : {user.username}\n"
             f"  Password : {plain_password}\n"
             f"  Role     : {role_name}\n\n"
-            f"Please log in at: http://127.0.0.1:8000/accounts/\n\n"
+            f"Please log in at: https://hackathon.okcl.org/accounts/\n\n"
             f"We strongly recommend changing your password after your first login.\n\n"
             f"— HackNexus Team"
         )
@@ -936,7 +946,7 @@ def _send_welcome_email(user, plain_password, role_name):
                 </table>
             </div>
             <p style="color: #374151; margin: 0;">
-                <a href="http://127.0.0.1:8000/accounts/"
+                <a href="https://hackathon.okcl.org/accounts/"
                    style="background: #ea580c; color: white; padding: 12px 24px;
                           border-radius: 8px; text-decoration: none; font-weight: 700;
                           display: inline-block; margin-top: 8px;">
@@ -988,9 +998,8 @@ def create_user(request):
             role_name = role.name if role else 'User'
             rn = role.name.lower() if role else ''
 
-            # For Admin role: username MUST equal the email address so the
-            # welcome email credential matches exactly what they type at login.
-            if rn == 'admin' and email:
+            # Use email as username when username is not provided
+            if not username and email:
                 username = email.strip().lower()
 
             user = User.objects.create_user(
@@ -1651,7 +1660,7 @@ def executive_send_reminder(request, user_id):
                 <div style="background:#fff7ed;border-left:4px solid #ea580c;padding:16px;border-radius:8px;margin:20px 0;">
                     <p style="margin:0;color:#374151;white-space:pre-line;">{body}</p>
                 </div>
-                <a href="http://127.0.0.1:8000/accounts/"
+                <a href="https://hackathon.okcl.org/accounts/"
                    style="background:#ea580c;color:white;padding:12px 24px;border-radius:8px;
                           text-decoration:none;font-weight:700;display:inline-block;margin-top:8px;">
                     Complete My Profile →

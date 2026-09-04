@@ -82,6 +82,7 @@
 
 {% if sub == 'budget' %}
 <div id="budgetForm" class="slide-form">
+  <div class="modal-box">
     <!-- Form content same as before -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Set Event Budget</h3>
@@ -109,6 +110,7 @@
             <button type="button" class="btn-draft" onclick="closeForm('budgetForm')" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
@@ -144,35 +146,48 @@
 
 {% elif sub == 'sponsorships' %}
 <div id="sponsorForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-        <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Sponsorship</h3>
-        <button type="button" onclick="closeForm('sponsorForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
+        <h3 id="sponsorFormTitle" style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Add Sponsorship</h3>
+        <button type="button" onclick="closeSponsorForm()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
     </div>
-    <form method="POST" action="{% url 'save_sponsorship' %}">
+    <form id="sponsorFormEl" method="POST" action="{% url 'save_sponsorship' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
-        <div class="form-row">
+        <input type="hidden" name="sponsor_id" id="edit_sponsor_id" value="">
+        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr;">
             <div class="fg">
                 <label>Sponsor Name *</label>
-                <input type="text" name="sponsor_name" required>
+                <input type="text" name="sponsor_name" id="edit_sponsor_name" required>
+            </div>
+            <div class="fg">
+                <label>Location</label>
+                <input type="text" name="location" id="edit_location" placeholder="e.g. Bhubaneswar, Odisha">
             </div>
             <div class="fg">
                 <label>Date Received</label>
-                <input type="date" name="date_received">
+                <input type="date" name="date_received" id="edit_date_received">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="fg">
+                <label>Institute Logo</label>
+                <input type="file" name="logo" accept="image/*" style="padding:8px;">
+                <small id="edit_logo_hint" style="color:#9ca3af;margin-top:4px;display:block;">Upload sponsor / institute logo (PNG, JPG, SVG)</small>
             </div>
         </div>
         <div class="form-row-3">
             <div class="fg">
                 <label>Amount Pledged (₹) *</label>
-                <input type="number" step="0.01" name="amount_pledged" value="0" required>
+                <input type="number" step="0.01" name="amount_pledged" id="edit_amount_pledged" value="0" required>
             </div>
             <div class="fg">
                 <label>Amount Received (₹) *</label>
-                <input type="number" step="0.01" name="amount_received" value="0" required>
+                <input type="number" step="0.01" name="amount_received" id="edit_amount_received" value="0" required>
             </div>
             <div class="fg">
                 <label>Status</label>
-                <select name="status">
+                <select name="status" id="edit_status">
                     <option value="Pending">Pending</option>
                     <option value="Partial">Partial</option>
                     <option value="Received">Received</option>
@@ -180,45 +195,123 @@
             </div>
         </div>
         <div style="margin-top:10px;">
-            <button type="submit" class="btn">Save Sponsorship</button>
-            <button type="button" class="btn-draft" onclick="closeForm('sponsorForm')" style="margin-left:10px;">Cancel</button>
+            <button type="submit" class="btn" id="sponsorSubmitBtn">Save Sponsorship</button>
+            <button type="button" class="btn-draft" onclick="closeSponsorForm()" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
     <div class="card-header">
         <h2 class="section-title">Sponsorship Funds</h2>
-        <button class="btn" onclick="openForm('sponsorForm')"><ion-icon name="add-outline"></ion-icon> Add Sponsorship</button>
+        <button class="btn" onclick="openAddSponsor()"><ion-icon name="add-outline"></ion-icon> Add Sponsorship</button>
     </div>
     <table>
         <thead>
             <tr>
+                <th>LOGO</th>
                 <th>SPONSOR NAME</th>
+                <th>LOCATION</th>
                 <th>AMOUNT PLEDGED</th>
                 <th>AMOUNT RECEIVED</th>
                 <th>DATE</th>
                 <th>STATUS</th>
+                <th style="text-align:center;">ACTIONS</th>
             </tr>
         </thead>
         <tbody>
             {% for s in sponsorships %}
             <tr>
+                <td>{% if s.logo %}<img src="{{ s.logo.url }}" alt="{{ s.sponsor_name }} logo" style="width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb;">{% else %}<span style="color:#d1d5db;">—</span>{% endif %}</td>
                 <td><strong>{{ s.sponsor_name }}</strong></td>
+                <td>{{ s.location|default:"—" }}</td>
                 <td style="font-weight:700;">₹{{ s.amount_pledged }}</td>
                 <td style="font-weight:700;color:#059669;">₹{{ s.amount_received }}</td>
-                <td>{{ s.date_received|default:"-" }}</td>
+                <td>{{ s.date_received|default:"—" }}</td>
                 <td><span style="padding:4px 8px;border-radius:12px;font-size:12px;font-weight:700;background:#{% if s.status == 'Received' %}ecfdf5;color:#059669;{% elif s.status == 'Partial' %}eff6ff;color:#2563eb;{% else %}fef3c7;color:#d97706;{% endif %}">{{ s.status }}</span></td>
+                <td style="text-align:center;">
+                    <div style="display:flex;gap:6px;justify-content:center;">
+                        <button type="button" onclick="viewSponsor(this)" title="View"
+                            data-id="{{ s.id }}"
+                            data-name="{{ s.sponsor_name }}"
+                            data-location="{{ s.location }}"
+                            data-pledged="{{ s.amount_pledged }}"
+                            data-received="{{ s.amount_received }}"
+                            data-date="{{ s.date_received|default:'' }}"
+                            data-status="{{ s.status }}"
+                            data-logo="{% if s.logo %}{{ s.logo.url }}{% endif %}"
+                            style="background:#eff6ff;color:#2563eb;border:none;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;transition:all 0.2s;">
+                            <ion-icon name="eye-outline"></ion-icon>
+                        </button>
+                        <button type="button" onclick="editSponsor(this)" title="Edit"
+                            data-id="{{ s.id }}"
+                            data-name="{{ s.sponsor_name }}"
+                            data-location="{{ s.location }}"
+                            data-pledged="{{ s.amount_pledged }}"
+                            data-received="{{ s.amount_received }}"
+                            data-date="{{ s.date_received|default:'' }}"
+                            data-status="{{ s.status }}"
+                            data-logo="{% if s.logo %}{{ s.logo.url }}{% endif %}"
+                            style="background:#fff7ed;color:#ea580c;border:none;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;transition:all 0.2s;">
+                            <ion-icon name="create-outline"></ion-icon>
+                        </button>
+                        <form method="POST" action="{% url 'delete_sponsorship' s.id %}" style="display:inline;" onsubmit="return confirmDeleteSponsor(event, '{{ s.sponsor_name }}');">
+                            {% csrf_token %}
+                            <button type="submit" title="Delete"
+                                style="background:#fef2f2;color:#dc2626;border:none;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;transition:all 0.2s;">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </button>
+                        </form>
+                    </div>
+                </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">No sponsorships tracked.</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:#9ca3af;">No sponsorships tracked.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
+<!-- View Sponsorship Modal -->
+<div id="viewSponsorModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:18px;max-width:560px;width:92%;padding:32px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:slideIn 0.25s ease;">
+        <button onclick="closeViewModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-outline"></ion-icon></button>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px;">
+            <div id="viewLogo" style="width:60px;height:60px;border-radius:12px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f9fafb;flex-shrink:0;">
+                <span style="color:#d1d5db;font-size:24px;"><ion-icon name="image-outline"></ion-icon></span>
+            </div>
+            <div>
+                <h3 id="viewName" style="margin:0;font-size:20px;font-weight:800;color:#111827;"></h3>
+                <p id="viewLocation" style="margin:4px 0 0;font-size:13px;color:#6b7280;"></p>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div style="background:#f0fdf4;border-radius:12px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Amount Pledged</div>
+                <div id="viewPledged" style="font-size:22px;font-weight:900;color:#111827;"></div>
+            </div>
+            <div style="background:#ecfdf5;border-radius:12px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Amount Received</div>
+                <div id="viewReceived" style="font-size:22px;font-weight:900;color:#059669;"></div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Date Received</div>
+                <div id="viewDate" style="font-size:15px;font-weight:700;color:#374151;"></div>
+            </div>
+            <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Status</div>
+                <div id="viewStatus" style="font-size:15px;font-weight:700;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% elif sub == 'transactions' %}
 <div id="txForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;">Process Transaction</h3>
         <button type="button" onclick="closeForm('txForm')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
@@ -267,6 +360,7 @@
             <button type="button" class="btn-draft" onclick="closeForm('txForm')" style="margin-left:10px;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
@@ -371,6 +465,96 @@ function openForm(formId) {
 function closeForm(formId) {
     const form = document.getElementById(formId);
     if (form) form.classList.remove('open');
+}
+
+/* ── Sponsorship CRUD ── */
+function openAddSponsor() {
+    // Reset form for new entry
+    document.getElementById('sponsorFormTitle').textContent = 'Add Sponsorship';
+    document.getElementById('sponsorSubmitBtn').textContent = 'Save Sponsorship';
+    document.getElementById('edit_sponsor_id').value = '';
+    document.getElementById('edit_sponsor_name').value = '';
+    document.getElementById('edit_location').value = '';
+    document.getElementById('edit_date_received').value = '';
+    document.getElementById('edit_amount_pledged').value = '0';
+    document.getElementById('edit_amount_received').value = '0';
+    document.getElementById('edit_status').value = 'Pending';
+    document.getElementById('edit_logo_hint').textContent = 'Upload sponsor / institute logo (PNG, JPG, SVG)';
+    openForm('sponsorForm');
+}
+
+function closeSponsorForm() {
+    closeForm('sponsorForm');
+    // Reset to add mode
+    document.getElementById('sponsorFormTitle').textContent = 'Add Sponsorship';
+    document.getElementById('sponsorSubmitBtn').textContent = 'Save Sponsorship';
+    document.getElementById('edit_sponsor_id').value = '';
+}
+
+function editSponsor(btn) {
+    const d = btn.dataset;
+    document.getElementById('sponsorFormTitle').textContent = 'Edit Sponsorship';
+    document.getElementById('sponsorSubmitBtn').textContent = 'Update Sponsorship';
+    document.getElementById('edit_sponsor_id').value = d.id;
+    document.getElementById('edit_sponsor_name').value = d.name;
+    document.getElementById('edit_location').value = d.location || '';
+    document.getElementById('edit_date_received').value = d.date || '';
+    document.getElementById('edit_amount_pledged').value = d.pledged;
+    document.getElementById('edit_amount_received').value = d.received;
+    document.getElementById('edit_status').value = d.status;
+    if (d.logo) {
+        document.getElementById('edit_logo_hint').innerHTML = 'Current logo uploaded. Choose a new file to replace it.';
+    } else {
+        document.getElementById('edit_logo_hint').textContent = 'Upload sponsor / institute logo (PNG, JPG, SVG)';
+    }
+    openForm('sponsorForm');
+}
+
+function viewSponsor(btn) {
+    const d = btn.dataset;
+    document.getElementById('viewName').textContent = d.name;
+    document.getElementById('viewLocation').textContent = d.location || '—';
+    document.getElementById('viewPledged').textContent = '₹' + d.pledged;
+    document.getElementById('viewReceived').textContent = '₹' + d.received;
+    document.getElementById('viewDate').textContent = d.date || '—';
+
+    // Status with color
+    const statusEl = document.getElementById('viewStatus');
+    statusEl.textContent = d.status;
+    if (d.status === 'Received') { statusEl.style.color = '#059669'; }
+    else if (d.status === 'Partial') { statusEl.style.color = '#2563eb'; }
+    else { statusEl.style.color = '#d97706'; }
+
+    // Logo
+    const logoContainer = document.getElementById('viewLogo');
+    if (d.logo) {
+        logoContainer.innerHTML = '<img src="' + d.logo + '" alt="Logo" style="width:100%;height:100%;object-fit:contain;">';
+    } else {
+        logoContainer.innerHTML = '<span style="color:#d1d5db;font-size:24px;"><ion-icon name="image-outline"></ion-icon></span>';
+    }
+
+    const modal = document.getElementById('viewSponsorModal');
+    modal.style.display = 'flex';
+}
+
+function closeViewModal() {
+    document.getElementById('viewSponsorModal').style.display = 'none';
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('viewSponsorModal');
+    if (modal && e.target === modal) {
+        closeViewModal();
+    }
+});
+
+function confirmDeleteSponsor(event, name) {
+    if (!confirm('Are you sure you want to delete the sponsorship from "' + name + '"? This action cannot be undone.')) {
+        event.preventDefault();
+        return false;
+    }
+    return true;
 }
 </script>
 {% endblock %}

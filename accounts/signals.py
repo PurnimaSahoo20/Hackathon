@@ -302,71 +302,320 @@ def handle_spoc_approval(sender, instance, created, **kwargs):
 
 
 def _send_spoc_welcome_email(user, plain_password, invitation):
-    """Send branded welcome email to newly approved SPOC."""
+    """Send branded welcome email to newly approved SPOC and Institution Head."""
     try:
-        subject = "Welcome to HackNexus — Your SPOC Account is Ready"
+        event_name = invitation.hackathon.name if invitation.hackathon else "HackNexus"
+        org_name = invitation.hackathon.organization_name if invitation.hackathon else "HackNexus Secretariat"
+        institution_head_name = invitation.institution_head_name or "Head of Institution"
+        institution_head_email = invitation.institution_head_email
+        institution_name = invitation.institution_name or "Your Institution"
+        spoc_name = user.get_full_name() or user.username
+        spoc_email = user.email
+        
+        dashboard_url = "https://hackathon.okcl.org/accounts/"
+        website = "https://hackathon.okcl.org/"
+        support_email = "support@hacknexus.com"
+        support_number = "+91 99999 99999"
+        
+        event_admin_name = invitation.approved_by.get_full_name() if invitation.approved_by else "Event Administrator"
 
-        plain_body = (
-            f"Hello {user.get_full_name() or user.username},\n\n"
-            f"Your SPOC account has been approved.\n\n"
-            f"Login credentials:\n"
-            f"  Username (Email) : {user.email}\n"
-            f"  Password : {plain_password}\n\n"
-            f"Institution: {invitation.institution_name}\n\n"
-            f"Please login at: http://127.0.0.1:8000/accounts/\n\n"
-            f"Change your password after first login.\n\n"
-            f"— HackNexus Team"
-        )
+        subject = f"Institution Registration Confirmed – Dashboard Access & Next Steps for {event_name}"
+
+        # To: Institution Head Email, CC: SPOC Email
+        to_list = [institution_head_email] if institution_head_email else [spoc_email]
+        cc_list = [spoc_email] if institution_head_email and spoc_email != institution_head_email else []
+
+        plain_body = f"""Dear Prof./Dr./Mr./Ms. {institution_head_name},
+
+Greetings!
+
+We are pleased to inform you that {institution_name} has been successfully registered to participate in {event_name}.
+
+Thank you for your interest in fostering innovation, creativity, and problem-solving among your students. We sincerely appreciate your institution's participation in this prestigious event.
+
+As nominated by your institution, {spoc_name} has been registered as the Institutional Single Point of Contact (SPOC) and will coordinate all event-related activities on behalf of your institution.
+
+--------------------------------------------------
+Dashboard Access Credentials
+--------------------------------------------------
+Institution: {institution_name}
+Institution SPOC: {spoc_name}
+Dashboard URL: {dashboard_url}
+Username: {user.email}
+Temporary Password: {plain_password}
+
+For security reasons, the SPOC is requested to change the password upon first login.
+
+--------------------------------------------------
+Next Course of Action
+--------------------------------------------------
+The Institutional SPOC is requested to complete the following activities:
+
+Phase 1 – Dashboard Setup
+• Log in to the Institution Dashboard.
+• Change the default password.
+• Verify institution profile details.
+• Update institutional logo (if applicable).
+• Complete SPOC profile.
+
+Phase 2 – Student Mobilization
+• Publicize {event_name} among students.
+• Encourage participation across all eligible departments.
+• Organize awareness sessions, if required.
+• Share the student registration link with all eligible students.
+
+Phase 3 – Student Registration Monitoring
+Through the dashboard, the SPOC can:
+• Monitor student registrations.
+• View department-wise participation.
+• Track team formation.
+• Review participation statistics.
+• Receive event notifications.
+
+Phase 4 – Event Coordination
+The SPOC shall:
+• Serve as the official communication link between the institution and the Event Secretariat.
+• Disseminate important announcements and timelines.
+• Coordinate internal mentoring and support for participating teams.
+• Ensure timely submission of ideas/projects as per the event schedule.
+• Facilitate participation during evaluation rounds and final presentations.
+
+--------------------------------------------------
+Roles & Responsibilities of the Institutional SPOC
+--------------------------------------------------
+The nominated SPOC shall be responsible for:
+• Acting as the official coordinator for {event_name}.
+• Managing the Institution Dashboard.
+• Promoting the event within the institution.
+• Assisting students during registration.
+• Monitoring student participation and team formation.
+• Communicating important dates and guidelines.
+• Coordinating with faculty mentors and departmental heads.
+• Ensuring timely completion of all event milestones.
+• Responding to communications from the organizing committee.
+• Supporting students throughout the Hackathon/Ideathon journey.
+
+--------------------------------------------------
+Dashboard Features
+--------------------------------------------------
+The Institution Dashboard provides access to:
+• Institution Profile
+• Student Registration Status
+• Team Formation
+• Faculty Mentor Assignment
+• Event Calendar
+• Notifications & Announcements
+• Submission Status
+• Evaluation Progress
+• Certificates & Reports
+• Participation Analytics
+
+--------------------------------------------------
+Important Dates
+--------------------------------------------------
+Please refer to the Event Calendar available in the dashboard for:
+• Student Registration Deadline
+• Team Formation Timeline
+• Problem Statement Release
+• Idea Submission Deadline
+• Mentoring Sessions
+• Evaluation Schedule
+• Grand Finale
+• Award Ceremony
+
+--------------------------------------------------
+For any technical or operational assistance, please contact:
+Event Helpdesk
+Email: {support_email}
+Mobile: {support_number}
+Website: {website}
+
+--------------------------------------------------
+We thank {institution_name} for joining {event_name} and look forward to your enthusiastic participation. We are confident that your institution will play a significant role in nurturing innovation and empowering students to develop impactful solutions to real-world challenges.
+
+We wish your faculty members and students every success in the event.
+
+With best regards,
+
+{event_admin_name}
+Event Administrator
+{event_name}
+{org_name}
+"""
 
         html_body = f"""
-        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
-                    padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
-            <h2 style="color:#ea580c;margin-bottom:4px;">Welcome to HackNexus 🎉</h2>
-            <p style="color:#6b7280;font-size:13px;margin-top:0;">
-                Your SPOC account has been approved by the administrator.
-            </p>
-            <hr style="border:none;border-top:1px solid #f3f4f6;margin:20px 0;">
-            <p style="color:#374151;">Hello <strong>{user.get_full_name() or user.username}</strong>,</p>
-            <p style="color:#374151;">You've been approved as the SPOC for
-                <strong>{invitation.institution_name}</strong>.
-                Here are your login credentials:
-            </p>
-            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;
-                        padding:20px;margin:20px 0;">
-                <table style="width:100%;border-collapse:collapse;">
-                    <tr>
-                        <td style="padding:8px 0;color:#6b7280;font-size:13px;width:110px;">Username</td>
-                        <td style="padding:8px 0;font-weight:800;color:#111827;font-family:monospace;">{user.email}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding:8px 0;color:#6b7280;font-size:13px;">Password</td>
-                        <td style="padding:8px 0;font-weight:800;color:#ea580c;font-family:monospace;font-size:15px;">{plain_password}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding:8px 0;color:#6b7280;font-size:13px;">Role</td>
-                        <td style="padding:8px 0;font-weight:700;color:#374151;">SPOC</td>
-                    </tr>
-                </table>
-            </div>
-            <a href="http://127.0.0.1:8000/accounts/"
-               style="background:#ea580c;color:white;padding:12px 24px;
-                      border-radius:8px;text-decoration:none;font-weight:700;
-                      display:inline-block;margin-top:8px;">
-                Login to HackNexus →
-            </a>
-            <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0;">
-            <p style="color:#9ca3af;font-size:12px;">
-                Please change your password after your first login.<br>
-                Institution: {invitation.institution_name}
-            </p>
-        </div>
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 20px; background-color: #f9f9f9;">
+            <table cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #dddddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <!-- Header -->
+                <tr>
+                    <td style="background: linear-gradient(135deg, #ea580c, #d97706); padding: 30px; text-align: center; color: #ffffff;">
+                        <h1 style="margin: 0; font-size: 24px; font-weight: bold;">{event_name}</h1>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Institution Registration Confirmed</p>
+                    </td>
+                </tr>
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 30px;">
+                        <p style="margin-top: 0;">Dear Prof./Dr./Mr./Ms. <strong>{institution_head_name}</strong>,</p>
+                        <p>Greetings!</p>
+                        <p>We are pleased to inform you that <strong>{institution_name}</strong> has been successfully registered to participate in <strong>{event_name}</strong>.</p>
+                        <p>Thank you for your interest in fostering innovation, creativity, and problem-solving among your students. We sincerely appreciate your institution's participation in this prestigious event.</p>
+                        <p>As nominated by your institution, <strong>{spoc_name}</strong> has been registered as the Institutional Single Point of Contact (SPOC) and will coordinate all event-related activities on behalf of your institution.</p>
+                        
+                        <!-- Credentials Box -->
+                        <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                            <h3 style="margin-top: 0; color: #ea580c; border-bottom: 1px solid #ffedd5; padding-bottom: 8px;">Dashboard Access Credentials</h3>
+                            <table cellpadding="4" cellspacing="0" width="100%" style="font-size: 14px;">
+                                <tr>
+                                    <td width="35%"><strong>Institution:</strong></td>
+                                    <td>{institution_name}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Institution SPOC:</strong></td>
+                                    <td>{spoc_name}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Dashboard URL:</strong></td>
+                                    <td><a href="{dashboard_url}" style="color: #ea580c; text-decoration: underline;">{dashboard_url}</a></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Username:</strong></td>
+                                    <td><code style="background: #ffedd5; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{user.email}</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Temporary Password:</strong></td>
+                                    <td><code style="background: #ffedd5; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{plain_password}</code></td>
+                                </tr>
+                            </table>
+                            <p style="margin-bottom: 0; font-size: 13px; color: #666666; font-style: italic; margin-top: 12px;">For security reasons, the SPOC is requested to change the password upon first login.</p>
+                        </div>
+                        
+                        <!-- Next Steps -->
+                        <h3 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 5px; margin-top: 30px;">Next Course of Action</h3>
+                        <p>The Institutional SPOC is requested to complete the following activities:</p>
+                        
+                        <h4 style="color: #111827; margin-bottom: 8px;">Phase 1 – Dashboard Setup</h4>
+                        <ul style="margin-top: 0; padding-left: 20px;">
+                            <li>Log in to the Institution Dashboard.</li>
+                            <li>Change the default password.</li>
+                            <li>Verify institution profile details.</li>
+                            <li>Update institutional logo (if applicable).</li>
+                            <li>Complete SPOC profile.</li>
+                        </ul>
+                        
+                        <h4 style="color: #111827; margin-bottom: 8px;">Phase 2 – Student Mobilization</h4>
+                        <ul style="margin-top: 0; padding-left: 20px;">
+                            <li>Publicize {event_name} among students.</li>
+                            <li>Encourage participation across all eligible departments.</li>
+                            <li>Organize awareness sessions, if required.</li>
+                            <li>Share the student registration link with all eligible students.</li>
+                        </ul>
+                        
+                        <h4 style="color: #111827; margin-bottom: 8px;">Phase 3 – Student Registration Monitoring</h4>
+                        <p style="margin-bottom: 5px;">Through the dashboard, the SPOC can:</p>
+                        <ul style="margin-top: 0; padding-left: 20px;">
+                            <li>Monitor student registrations.</li>
+                            <li>View department-wise participation.</li>
+                            <li>Track team formation.</li>
+                            <li>Review participation statistics.</li>
+                            <li>Receive event notifications.</li>
+                        </ul>
+                        
+                        <h4 style="color: #111827; margin-bottom: 8px;">Phase 4 – Event Coordination</h4>
+                        <p style="margin-bottom: 5px;">The SPOC shall:</p>
+                        <ul style="margin-top: 0; padding-left: 20px;">
+                            <li>Serve as the official communication link between the institution and the Event Secretariat.</li>
+                            <li>Disseminate important announcements and timelines.</li>
+                            <li>Coordinate internal mentoring and support for participating teams.</li>
+                            <li>Ensure timely submission of ideas/projects as per the event schedule.</li>
+                            <li>Facilitate participation during evaluation rounds and final presentations.</li>
+                        </ul>
+                        
+                        <!-- Roles and Responsibilities -->
+                        <h3 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 5px; margin-top: 30px;">Roles & Responsibilities of the Institutional SPOC</h3>
+                        <p>The nominated SPOC shall be responsible for:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Acting as the official coordinator for {event_name}.</li>
+                            <li>Managing the Institution Dashboard.</li>
+                            <li>Promoting the event within the institution.</li>
+                            <li>Assisting students during registration.</li>
+                            <li>Monitoring student participation and team formation.</li>
+                            <li>Communicating important dates and guidelines.</li>
+                            <li>Coordinating with faculty mentors and departmental heads.</li>
+                            <li>Ensuring timely completion of all event milestones.</li>
+                            <li>Responding to communications from the organizing committee.</li>
+                            <li>Supporting students throughout the Hackathon/Ideathon journey.</li>
+                        </ul>
+                        
+                        <!-- Dashboard Features -->
+                        <h3 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 5px; margin-top: 30px;">Dashboard Features</h3>
+                        <p>The Institution Dashboard provides access to:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Institution Profile</li>
+                            <li>Student Registration Status</li>
+                            <li>Team Formation</li>
+                            <li>Faculty Mentor Assignment</li>
+                            <li>Event Calendar</li>
+                            <li>Notifications & Announcements</li>
+                            <li>Submission Status</li>
+                            <li>Evaluation Progress</li>
+                            <li>Certificates & Reports</li>
+                            <li>Participation Analytics</li>
+                        </ul>
+                        
+                        <!-- Important Dates -->
+                        <h3 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 5px; margin-top: 30px;">Important Dates</h3>
+                        <p>Please refer to the Event Calendar available in the dashboard for:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Student Registration Deadline</li>
+                            <li>Team Formation Timeline</li>
+                            <li>Problem Statement Release</li>
+                            <li>Idea Submission Deadline</li>
+                            <li>Mentoring Sessions</li>
+                            <li>Evaluation Schedule</li>
+                            <li>Grand Finale</li>
+                            <li>Award Ceremony</li>
+                        </ul>
+                        
+                        <!-- Helpdesk Box -->
+                        <table cellpadding="15" cellspacing="0" width="100%" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin: 25px 0; font-size: 14px;">
+                            <tr>
+                                <td>
+                                    <h4 style="margin: 0 0 10px 0; color: #166534;">Event Helpdesk</h4>
+                                    <p style="margin: 0; line-height: 1.8;">
+                                        📧 <strong>Email:</strong> <a href="mailto:{support_email}" style="color: #166534; text-decoration: underline;">{support_email}</a><br>
+                                        📞 <strong>Mobile:</strong> {support_number}<br>
+                                        🌐 <strong>Website:</strong> <a href="{website}" style="color: #166534; text-decoration: underline;">{website}</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <p>We thank <strong>{institution_name}</strong> for joining <strong>{event_name}</strong> and look forward to your enthusiastic participation. We are confident that your institution will play a significant role in nurturing innovation and empowering students to develop impactful solutions to real-world challenges.</p>
+                        <p>We wish your faculty members and students every success in the event.</p>
+                        
+                        <!-- Signature -->
+                        <p style="margin-top: 35px; border-top: 1px solid #eeeeee; padding-top: 15px;">
+                            With best regards,<br><br>
+                            <strong>{event_admin_name}</strong><br>
+                            Event Administrator<br>
+                            {event_name}<br>
+                            {org_name}
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
         """
 
         msg = EmailMultiAlternatives(
             subject=subject,
             body=plain_body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[user.email],
+            to=to_list,
+            cc=cc_list,
         )
         msg.attach_alternative(html_body, "text/html")
         msg.send(fail_silently=False)
@@ -376,7 +625,7 @@ def _send_spoc_welcome_email(user, plain_password, invitation):
             f"Welcome email failed for SPOC {user.email}: {exc}",
             exc_info=True
         )
-        
+
 @receiver(post_save, sender='features.TeamRegistration')
 def handle_team_approval(sender, instance, created, **kwargs):
     """
@@ -577,7 +826,7 @@ def _send_team_approval_email(registration, team):
                 You can now log into HackNexus and access your team dashboard to:
                 add/remove members, select your problem statement, and submit your work.
             </p>
-            <a href="http://127.0.0.1:8000/accounts/"
+            <a href="https://hackathon.okcl.org/accounts/"
                style="background:#059669;color:white;padding:12px 24px;border-radius:8px;
                       text-decoration:none;font-weight:700;display:inline-block;margin-top:8px;">
                 Go to Dashboard →

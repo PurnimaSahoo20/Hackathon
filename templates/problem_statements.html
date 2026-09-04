@@ -7,7 +7,7 @@
     <title>{% if active_hackathon %}{{ active_hackathon.name }}{% else %}HackNexus{% endif %} | Problem Statements
     </title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Rajdhani:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
         :root {
@@ -24,9 +24,9 @@
             --shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
             --shadow-soft: 0 12px 30px rgba(234, 88, 12, 0.08);
             --radius: 24px;
-            --head: 'Exo 2', sans-serif;
-            --body: 'Rajdhani', sans-serif;
-            --mono: 'Space Mono', monospace;
+            --head: 'Poppins', sans-serif;
+            --body: 'Inter', sans-serif;
+            --mono: 'Poppins', sans-serif;
         }
 
         * {
@@ -619,14 +619,32 @@
                     {% if active_hackathon %}{{ active_hackathon.name }}{% else %}HackNexus{% endif %}
                 </a>
             </div>
+            <a href="{% url 'team_landing' %}" style="
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 24px;
+                background: linear-gradient(135deg, #ea580c, #f97316);
+                color: #fff;
+                font-family: var(--mono);
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                border-radius: 999px;
+                text-decoration: none;
+                box-shadow: 0 4px 16px rgba(234, 88, 12, 0.35);
+                transition: all 0.2s ease;
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(234, 88, 12, 0.5)'"
+               onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 16px rgba(234, 88, 12, 0.35)'"
+            >🚀 Register Now</a>
         </div>
 
         <section class="hero">
             <span class="hero-kicker">Problem Statement Library</span>
-            <h1>Browse published challenges, then open the PDF or podcast for each one.</h1>
+            <h1>Explore published challenges</h1>
             <p>
-                Every statement below expands inline. Use the buttons inside each item to view the problem PDF and
-                any published podcast resources linked to that statement.
+                Expand each problem statement to view more details.
             </p>
             <div class="hero-stats">
                 <div class="stat-pill"><strong>{{ total_problem_statements }}</strong> Published Statements</div>
@@ -677,7 +695,7 @@
                             <a href="{{ problem.pdf_url }}" target="_blank" rel="noopener noreferrer"
                                 class="resource-btn primary">View</a>
                             {% else %}
-                            <span class="resource-btn disabled">PDF not uploaded yet</span>
+                            <span class="resource-btn disabled">Document will be available soon</span>
                             {% endif %}
 
                             {% if problem.podcasts %}
@@ -687,7 +705,7 @@
                             </a>
                             {% endfor %}
                             {% else %}
-                            <span class="resource-btn disabled">No podcast published yet</span>
+                            <span class="resource-btn disabled">Wait for the related podcast</span>
                             {% endif %}
                         </div>
                     </div>

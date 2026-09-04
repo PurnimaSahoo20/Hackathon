@@ -10,11 +10,22 @@
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: #fffbf7; margin: 0; padding: 32px 16px; }
-        .container { max-width: 720px; margin: 0 auto; }
-        .brand { text-align: center; margin-bottom: 32px; }
-        .brand h1 { font-size: 28px; font-weight: 900; color: #ea580c; margin: 0 0 4px; }
-        .brand p  { color: #6b7280; font-size: 14px; margin: 0; }
+        body { font-family: 'Outfit', sans-serif; background: #fffbf7; margin: 0; padding: 0; }
+        .page-header {
+            display: flex; align-items: center; justify-content: center;
+            padding: 18px 28px; background: linear-gradient(135deg, #fff8f0, #fffbf7);
+            border-bottom: 1px solid #fed7aa; position: relative;
+        }
+        .page-header .brand-name {
+            position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+            font-size: 16px; font-weight: 900; color: #ea580c; letter-spacing: -0.01em;
+        }
+        .page-header .event-title {
+            font-size: 20px; font-weight: 900; color: #1e293b; text-align: center;
+        }
+        .page-header .event-title span { color: #ea580c; }
+        .form-subtitle { text-align: center; font-size: 13px; color: #6b7280; margin: 0; padding: 6px 0 0; }
+        .container { max-width: 720px; margin: 0 auto; padding: 24px 16px 32px; }
         .card { background: #fff; border-radius: 20px; border: 1px solid #f3f4f6; padding: 36px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
         .section-title { font-size: 15px; font-weight: 800; color: #ea580c; border-left: 4px solid #ea580c; padding-left: 12px; margin: 28px 0 16px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -34,15 +45,24 @@
         .info-box p { margin: 0; font-size: 13px; color: #1e40af; font-weight: 600; }
         .warning-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
         .warning-box p { margin: 0; font-size: 13px; color: #991b1b; font-weight: 600; }
-        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; gap: 6px; padding: 14px 16px; }
+            .page-header .brand-name { position: static; transform: none; }
+            .page-header .event-title { font-size: 17px; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="brand">
-        <h1>HackNexus</h1>
-        <p>SPOC Registration Form</p>
+<div class="page-header">
+    <div class="brand-name">HackNexus</div>
+    <div class="event-title">
+        {% if invitation.hackathon %}<span>{{ invitation.hackathon.name }}</span>{% else %}SPOC Registration{% endif %}
     </div>
+</div>
+<p class="form-subtitle">SPOC Registration Form</p>
+
+<div class="container">
 
     {% if messages %}
     {% for m in messages %}
@@ -71,11 +91,11 @@
 
             <div class="section-title" style="margin-top:0;">Personal Information</div>
             <div class="form-row">
-                <div class="fg"><label>First Name *</label><input type="text" name="first_name" required placeholder="e.g. Ramesh" value="{{ invitation.first_name }}"></div>
-                <div class="fg"><label>Last Name *</label><input type="text" name="last_name" required placeholder="e.g. Kumar" value="{{ invitation.last_name }}"></div>
+                <div class="fg"><label>First Name *</label><input type="text" name="first_name" required minlength="2" placeholder="e.g. Ramesh" value="{{ invitation.first_name }}"></div>
+                <div class="fg"><label>Last Name *</label><input type="text" name="last_name" required minlength="2" placeholder="e.g. Kumar" value="{{ invitation.last_name }}"></div>
             </div>
             <div class="form-row">
-                <div class="fg"><label>Phone Number *</label><input type="tel" name="phone_number" required placeholder="+91 9XXXXXXXXX" value="{{ invitation.phone_number }}"></div>
+                <div class="fg"><label>Phone Number *</label><input type="tel" name="phone_number" required pattern="^\+91\s[6-9]\d{9}$" title="Please enter a valid 10-digit Indian mobile number prefixed with +91 (e.g. +91 9876543210)" placeholder="+91 9XXXXXXXXX" value="{% if invitation.phone_number %}{{ invitation.phone_number }}{% else %}+91 {% endif %}"></div>
                 <div class="fg">
                     <label>Gender</label>
                     <select name="gender">
@@ -98,18 +118,18 @@
 
             <div class="section-title">Institution Details</div>
             <div class="form-row">
-                <div class="fg"><label>Institution Name *</label><input type="text" name="institution_name" required placeholder="e.g. BPUT Rourkela" value="{{ invitation.institution_name }}"></div>
+                <div class="fg"><label>Institution Name *</label><input type="text" name="institution_name" required minlength="3" placeholder="e.g. BPUT Rourkela" value="{{ invitation.institution_name }}"></div>
                 <div class="fg"><label>Institution Email *</label><input type="email" name="institution_email" required placeholder="info@institution.edu" value="{{ invitation.institution_email }}"></div>
             </div>
-            <div class="fg"><label>Institution Address *</label><textarea name="institution_address" rows="2" required placeholder="Full address...">{{ invitation.institution_address }}</textarea></div>
+            <div class="fg"><label>Institution Address *</label><textarea name="institution_address" rows="2" required minlength="10" placeholder="Full address...">{{ invitation.institution_address }}</textarea></div>
             <div class="form-row">
-                <div class="fg"><label>Location / City *</label><input type="text" name="institution_location" required placeholder="e.g. Bhubaneswar, Odisha" value="{{ invitation.institution_location }}"></div>
-                <div class="fg"><label>Contact Number</label><input type="tel" name="institution_contact" placeholder="Office contact" value="{{ invitation.institution_contact }}"></div>
+                <div class="fg"><label>Location / City *</label><input type="text" name="institution_location" required minlength="3" placeholder="e.g. Bhubaneswar, Odisha" value="{% if invitation.institution_location %}{{ invitation.institution_location }}{% elif invitation.city or invitation.state %}{{ invitation.city }}{% if invitation.city and invitation.state %}, {% endif %}{{ invitation.state }}{% endif %}"></div>
+                <div class="fg"><label>Contact Number</label><input type="tel" name="institution_contact" pattern="^\+91\s\d{10}$" title="Please enter a valid 10-digit contact number prefixed with +91 (e.g. +91 6742500000)" placeholder="Office contact" value="{% if invitation.institution_contact %}{{ invitation.institution_contact }}{% else %}+91 {% endif %}"></div>
             </div>
 
             <div class="section-title">Institution Head Details</div>
             <div class="form-row">
-                <div class="fg"><label>Head / Principal Name *</label><input type="text" name="institution_head_name" required placeholder="e.g. Dr. A.K. Panda" value="{{ invitation.institution_head_name }}"></div>
+                <div class="fg"><label>Head / Principal Name *</label><input type="text" name="institution_head_name" required minlength="2" placeholder="e.g. Dr. A.K. Panda" value="{{ invitation.institution_head_name }}"></div>
                 <div class="fg"><label>Head Email *</label><input type="email" name="institution_head_email" required placeholder="principal@institution.edu" value="{{ invitation.institution_head_email }}"></div>
             </div>
 
@@ -131,5 +151,128 @@
         After submission, you will receive your login credentials by email upon approval.
     </p>
 </div>
+
+<!-- Submit Loader Overlay -->
+<div id="submit-loader-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); backdrop-filter:blur(6px); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px;">
+    <div style="background:rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 32px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5); backdrop-filter: blur(12px);">
+        <div style="color:#ffffff; font-family:'Outfit', sans-serif; font-size:18px; font-weight:700; letter-spacing:0.02em; margin-bottom: 8px;">Submitting SPOC Registration...</div>
+        <div style="color:rgba(255,255,255,0.6); font-family:'Outfit', sans-serif; font-size:13px; margin-bottom: 24px;">Please wait while we verify and process your details.</div>
+        
+        <!-- Progress Bar Track -->
+        <div style="width: 100%; height: 12px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; overflow: hidden; position: relative; margin-bottom: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+            <!-- Progress Bar Fill -->
+            <div id="submit-progress-bar" style="width: 1%; height: 100%; background: linear-gradient(90deg, #f97316, #ea580c); border-radius: 9999px; transition: width 0.2s ease-out; position: relative; box-shadow: 0 0 12px rgba(234, 88, 12, 0.5);">
+                <!-- Animated stripes overlay -->
+                <div class="progress-shine" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); background-size: 40px 40px; animation: progress-stripes 1s linear infinite;"></div>
+            </div>
+        </div>
+
+        <!-- Progress Percentage -->
+        <div style="display: flex; justify-content: space-between; align-items: center; color: rgba(255, 255, 255, 0.8); font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;">
+            <span>Processing...</span>
+            <span id="submit-progress-percent">1%</span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes progress-stripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 0; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ── DOB Adult Constraint ──
+    const dobInput = document.querySelector('input[name="date_of_birth"]');
+    if (dobInput) {
+        const today = new Date();
+        const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+        const maxDateStr = eighteenYearsAgo.toISOString().split('T')[0];
+        dobInput.max = maxDateStr;
+    }
+
+    // ── Phone Input Formatter ──
+    const phoneInputs = document.querySelectorAll('input[type="tel"]');
+    phoneInputs.forEach(input => {
+        // Enforce prefix on type
+        input.addEventListener('input', function() {
+            let val = this.value;
+            if (!val.startsWith('+91')) {
+                if (val.startsWith('91')) {
+                    val = '+' + val;
+                } else {
+                    val = '+91 ' + val.replace(/^\+?9?1?\s*/, '');
+                }
+            }
+            
+            if (val.startsWith('+91') && val.charAt(3) !== ' ') {
+                val = '+91 ' + val.substring(3);
+            }
+            
+            const prefix = val.substring(0, 4);
+            let rest = val.substring(4).replace(/\D/g, '');
+            if (rest.length > 10) {
+                rest = rest.substring(0, 10);
+            }
+            this.value = prefix + rest;
+        });
+
+        // Clear if only "+91 " remains when leaving focus
+        input.addEventListener('blur', function() {
+            if (this.value.trim() === '+91') {
+                this.value = '';
+            }
+        });
+    });
+
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Clean up optional phone field before validation if it only contains the prefix
+            phoneInputs.forEach(input => {
+                if (input.value.trim() === '+91') {
+                    input.value = '';
+                }
+            });
+
+            if (form.checkValidity()) {
+                const overlay = document.getElementById('submit-loader-overlay');
+                const progressBar = document.getElementById('submit-progress-bar');
+                const progressPercent = document.getElementById('submit-progress-percent');
+                
+                overlay.style.display = 'flex';
+                
+                let width = 1;
+                progressBar.style.width = width + '%';
+                progressPercent.textContent = Math.floor(width) + '%';
+                
+                const interval = setInterval(function() {
+                    if (width < 30) {
+                        width += Math.random() * 4 + 2;
+                    } else if (width < 60) {
+                        width += Math.random() * 2 + 1;
+                    } else if (width < 85) {
+                        width += Math.random() * 1 + 0.3;
+                    } else if (width < 98) {
+                        width += Math.random() * 0.2 + 0.05;
+                    } else if (width < 99.5) {
+                        width += Math.random() * 0.02 + 0.005;
+                    }
+                    
+                    if (width > 99.9) {
+                        width = 99.9;
+                        clearInterval(interval);
+                    }
+                    
+                    progressBar.style.width = width + '%';
+                    progressPercent.textContent = Math.floor(width) + '%';
+                }, 150);
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>

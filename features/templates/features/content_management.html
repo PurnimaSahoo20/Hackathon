@@ -70,6 +70,63 @@
     .inner-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
     .inner-tab{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none;color:#64748b;background:#f8fafc;border:1px solid #e5e7eb;}
     .inner-tab.active{background:#fff7ed;color:#c2410c;border-color:#fdba74;}
+
+    /* Modal layout overrides: 2 fields per row, wider modal */
+    #podcastForm .modal-box,
+    #docForm .modal-box {
+        max-width: 720px !important;
+    }
+    #podcastForm .form-row,
+    #podcastForm .form-row-3,
+    #docForm .form-row,
+    #docForm .form-row-3 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 14px !important;
+    }
+
+    /* Compact landing page placement checkboxes in one line */
+    #podcastForm .placement-grid,
+    #docForm .placement-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin-top: 8px;
+    }
+    #podcastForm .placement-option,
+    #docForm .placement-option {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 14px !important;
+        border: 1px solid #fcd34d;
+        border-radius: 9px !important;
+        background: #fff;
+        cursor: pointer;
+        transition: all .2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        white-space: nowrap !important;
+        flex: 0 0 auto !important;
+        justify-content: center !important;
+        height: auto !important;
+    }
+    #podcastForm .placement-option input,
+    #docForm .placement-option input {
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        accent-color: #ea580c;
+        transform: scale(1.05);
+    }
+    #podcastForm .placement-option strong,
+    #docForm .placement-option strong {
+        display: inline-block !important;
+        font-size: 13px !important;
+        color: #111827;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+    }
 </style>
 {% endblock %}
 
@@ -96,6 +153,7 @@
     <a href="?sub=podcasts&podcast_type=expert_talk" class="inner-tab {% if podcast_type == 'expert_talk' %}active{% endif %}">Expert Talks</a>
 </div>
 <div id="podcastForm" class="slide-form {% if edit_podcast_obj %}open{% endif %}">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;" id="podcastFormTitle">
             {% if edit_podcast_obj %}Edit {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}{% else %}Upload New {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}{% endif %}
@@ -162,10 +220,7 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_podcast_obj and value in edit_podcast_obj.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Show this podcast in the {{ label|lower }} area.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
@@ -204,12 +259,13 @@
             <button type="button" onclick="closeForm('podcastForm')" class="btn-draft" style="margin-left:auto;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
     <div class="card-header">
         <h2 class="section-title">{% if podcast_type == 'expert_talk' %}Expert Talks & Resources{% else %}Podcasts & Audio/Video Resources{% endif %}</h2>
-        <button class="btn" onclick="openForm('podcastForm', 'Upload New {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}')">
+        <button class="btn" onclick="{% if edit_podcast_obj %}window.location.href='?sub=podcasts&podcast_type={{ podcast_type }}&open_form=podcastForm'{% else %}openForm('podcastForm', 'Upload New {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}'){% endif %}">
             <ion-icon name="add-outline"></ion-icon> Add {% if podcast_type == 'expert_talk' %}Expert Talk{% else %}Podcast{% endif %}
         </button>
     </div>
@@ -312,6 +368,7 @@
 {% elif sub == 'docs' %}
 <!-- DOCUMENTATION TAB CONTENT -->
 <div id="docForm" class="slide-form {% if edit_doc_obj %}open{% endif %}">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h3 style="margin:0;color:#ea580c;font-weight:800;font-size:18px;" id="docFormTitle">
             {% if edit_doc_obj %}Edit Documentation{% else %}Upload Documentation{% endif %}
@@ -373,10 +430,7 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_doc_obj and value in edit_doc_obj.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Display this document in the {{ label|lower }} area.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
@@ -403,12 +457,13 @@
             <button type="button" onclick="closeForm('docForm')" class="btn-draft" style="margin-left:auto;">Cancel</button>
         </div>
     </form>
+  </div>
 </div>
 
 <div class="card">
     <div class="card-header">
         <h2 class="section-title">Documentation & Video Resources</h2>
-        <button class="btn" onclick="openForm('docForm', 'Upload Documentation')">
+        <button class="btn" onclick="{% if edit_doc_obj %}window.location.href='?sub=docs&open_form=docForm'{% else %}openForm('docForm', 'Upload Documentation'){% endif %}">
             <ion-icon name="add-outline"></ion-icon> Add Resource
         </button>
     </div>
@@ -468,11 +523,27 @@ function closeForm(formId) {
     const form = document.getElementById(formId);
     if (form) form.classList.remove('open');
 }
-{% if edit_podcast_obj %}
-document.addEventListener('DOMContentLoaded', () => openForm('podcastForm'));
-{% endif %}
-{% if edit_doc_obj %}
-document.addEventListener('DOMContentLoaded', () => openForm('docForm'));
-{% endif %}
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const openFormId = urlParams.get('open_form');
+    if (openFormId) {
+        if (openFormId === 'podcastForm') {
+            openForm('podcastForm', 'Upload New {% if podcast_type == "expert_talk" %}Expert Talk{% else %}Podcast{% endif %}');
+        } else if (openFormId === 'docForm') {
+            openForm('docForm', 'Upload Documentation');
+        }
+        // Remove open_form from browser address bar history silently
+        urlParams.delete('open_form');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+    
+    {% if edit_podcast_obj %}
+    if (!openFormId) openForm('podcastForm');
+    {% endif %}
+    {% if edit_doc_obj %}
+    if (!openFormId) openForm('docForm');
+    {% endif %}
+});
 </script>
 {% endblock %}

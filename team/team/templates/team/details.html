@@ -1,52 +1,338 @@
 {% extends "team/base.html" %}
 {% block title %}Team Details{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Modal Overlay Custom & Sections */
+.modal-overlay-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+.modal-overlay-custom.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.modal-overlay-custom .form-wrap-card {
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 850px;
+    margin: 0;
+    transform: scale(0.96);
+    transition: transform 0.25s ease;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.modal-overlay-custom.active .form-wrap-card {
+    transform: scale(1);
+}
+.form-section-card {
+    background: rgba(248, 250, 252, 0.65);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Modern Form Containers */
+.form-wrap-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto 28px;
+}
+
+.form-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--muted);
+    transition: all 0.2s ease;
+}
+.form-close-btn:hover {
+    color: #dc2626;
+    transform: scale(1.08);
+}
+
+.form-header-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+    border-bottom: 1px solid rgba(251, 146, 60, 0.15);
+    padding-bottom: 12px;
+}
+
+.form-section-divider {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: var(--font-mono);
+    margin: 28px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.form-section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(251, 146, 60, 0.15);
+}
+
+/* Grid Layouts for Fields */
+.fields-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.fields-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+.fields-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.field {
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.field input, .field select, .field textarea {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
+}
+
+.field input:disabled {
+    background: rgba(241, 245, 249, 0.6);
+    color: #64748b;
+    border-color: rgba(148, 163, 184, 0.15);
+    cursor: not-allowed;
+}
+
+.field-tip {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+/* File Upload Modern Wrapper */
+.modern-upload-box {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px dashed var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.modern-upload-box:hover {
+    border-color: var(--accent);
+    background: #fff;
+}
+.modern-upload-box input[type="file"] {
+    border: none;
+    padding: 0;
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+}
+.modern-upload-box input[type="file"]:focus {
+    box-shadow: none;
+}
+
+.file-preview-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+    background: rgba(234, 88, 12, 0.08);
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(234, 88, 12, 0.15);
+    width: fit-content;
+    margin-top: 4px;
+    transition: all 0.2s ease;
+}
+.file-preview-badge:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.tshirt-guide-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(234, 88, 12, 0.05);
+    border: 1.5px dashed rgba(234, 88, 12, 0.3);
+    border-radius: 12px;
+    padding: 9px 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    height: 42px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+.tshirt-guide-box:hover {
+    background: rgba(234, 88, 12, 0.12);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12);
+}
+
+@media(max-width: 768px) {
+    .fields-grid-3, .fields-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}
+
 {% block content %}
 <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
     <div>
         <div class="page-title">Team Details</div>
         <div class="page-subtitle">Manage your team members and leader details.</div>
     </div>
-    <div style="display:flex; gap:12px;">
-        <button type="button" class="section-btn" onclick="document.getElementById('team-info-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
-            {% if can_edit_registration %}
-            <ion-icon name="create-outline" style="font-size:16px;"></ion-icon> Edit Team Info
-            {% else %}
-            <ion-icon name="eye-outline" style="font-size:16px;"></ion-icon> View Team Info
-            {% endif %}
-        </button>
-    </div>
+
 </div>
 
-<!-- Current Members List (Moved to top) -->
+<!-- Current Members List -->
 <div class="section">
     <div class="section-header">
         <div class="section-title">Current Members ({{ members|length|add:1 }} total)</div>
         {% if can_edit_registration %}
-        <button type="button" class="section-btn primary" onclick="document.getElementById('add-member-form-wrap').style.display='block'" style="display:flex; align-items:center; gap:6px;">
-            <ion-icon name="add-outline" style="font-size:16px;"></ion-icon> Add Member
-        </button>
+            {% if not max_size_reached %}
+            <button type="button" class="section-btn primary" onclick="openModal('add-member-form-wrap')" style="display:flex; align-items:center; gap:6px;">
+                <ion-icon name="add-outline" style="font-size:16px;"></ion-icon> Add Member
+            </button>
+            {% else %}
+            <span style="font-size: 12px; color: #dc2626; font-weight: bold; background: rgba(220, 38, 38, 0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.15); display: flex; align-items: center; gap: 4px;">
+                <ion-icon name="warning-outline" style="font-size:15px;"></ion-icon> Max team size reached ({{ reg.hackathon.max_team_size|default:4 }} members)
+            </span>
+            {% endif %}
         {% endif %}
     </div>
-    {% if not can_edit_registration %}
-    <div class="info-box" style="background:rgba(220,38,38,0.07);border-color:rgba(220,38,38,0.2);margin-bottom:18px">
-        <strong style="color:#dc2626">Registration deadline passed.</strong> These details are now final for SPOC review.
+    
+    {% if has_submitted_mod %}
+    <div class="info-box" style="background:rgba(37, 99, 235, 0.07);border-color:rgba(37, 99, 235, 0.2);margin-bottom:18px">
+        <strong style="color:#2563eb">📝 Modifications Submitted!</strong> Your edits have been locked and submitted. Pending final review and approval by the SPOC.
     </div>
+    {% endif %}
+
+    {% if not can_edit_registration %}
+        {% if reg.status == 'approved' %}
+        {% if not has_submitted_mod %}
+        <div class="info-box" style="background:rgba(124, 58, 237, 0.07);border-color:rgba(124, 58, 237, 0.2);margin-bottom:18px">
+            <strong style="color:var(--spoc)">🔒 Registration Locked.</strong> Your team has been approved by the SPOC. To make any changes, please submit a modification request below.
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="info-box" style="background:rgba(220,38,38,0.07);border-color:rgba(220,38,38,0.2);margin-bottom:18px">
+            <strong style="color:#dc2626">Registration deadline passed.</strong> These details are now final for SPOC review.
+        </div>
+        {% endif %}
+    {% elif has_approved_mod %}
+    <div class="info-box" style="background:rgba(16, 185, 129, 0.07);border-color:rgba(16, 185, 129, 0.2);margin-bottom:18px">
+        <strong style="color:#059669">🔓 Modification Approved!</strong> You can now edit your details, members, or mentor. Once you are done making changes, click the lock button below.
+    </div>
+    <form method="POST" action="{% url 'team_complete_modification' %}" style="margin-bottom: 18px;">
+        {% csrf_token %}
+        <button type="submit" class="section-btn primary" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.15); display: flex; align-items: center; gap: 6px;">
+            <ion-icon name="lock-closed-outline" style="font-size:16px;"></ion-icon> Lock & Submit Changes to SPOC
+        </button>
+    </form>
     {% elif registration_deadline %}
     <div class="info-box" style="margin-bottom:18px">
         <strong>Edit window open.</strong> You can update team details until {{ registration_deadline|date:"M j, Y" }}.
     </div>
     {% endif %}
+    
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Gender</th><th>DOB</th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Gender</th><th>DOB</th><th>Actions</th></tr></thead>
             <tbody>
                 <tr>
-                    <td><strong>{{ request.user.get_full_name|default:request.user.username }} <span style="color:#f97316;font-size:11px">(You)</span></strong></td>
+                    <td>
+                        <strong>
+                            {{ request.user.first_name }} 
+                            {% if leader_details.middle_name %}{{ leader_details.middle_name }} {% endif %}
+                            {{ request.user.last_name|default:request.user.username }}
+                            <span style="color:#f97316;font-size:11px">(You)</span>
+                        </strong>
+                    </td>
                     <td>{{ request.user.email }}</td>
                     <td>{{ request.user.phone_number|default:"—" }}</td>
                     <td><span class="badge badge-amber">{{ leader_details.role_in_team|default:"Team Lead" }}</span></td>
                     <td>{{ request.user.gender|default:"—" }}</td>
                     <td>{% if request.user.date_of_birth %}{{ request.user.date_of_birth|date:"d M Y" }}{% else %}—{% endif %}</td>
+                    <td>
+                        <button type="button" class="section-btn" onclick="openModal('team-info-form-wrap')" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:4px;">
+                            {% if can_edit_registration %}
+                            <ion-icon name="create-outline" style="font-size:14px;"></ion-icon> Edit
+                            {% else %}
+                            <ion-icon name="eye-outline" style="font-size:14px;"></ion-icon> View
+                            {% endif %}
+                        </button>
+                    </td>
                 </tr>
                 {% for m in members %}
                 <tr>
@@ -56,182 +342,941 @@
                     <td><span class="badge badge-blue">{{ m.role_in_team|default:m.role|default:"Member" }}</span></td>
                     <td>{{ m.gender|default:"—" }}</td>
                     <td>{{ m.date_of_birth|default:"—" }}</td>
+                    <td style="display:flex; gap:8px; align-items:center;">
+                        {% if can_edit_registration %}
+                        <button type="button" class="section-btn" onclick="openEditMember({{ forloop.counter0 }})" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:4px;">
+                            <ion-icon name="create-outline" style="font-size:14px;"></ion-icon> Edit
+                        </button>
+                        <button type="button" class="section-btn" onclick="confirmRemoveMember({{ forloop.counter0 }}, '{{ m.name|escapejs }}')" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:4px;background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.2);color:#dc2626">
+                            <ion-icon name="trash-outline" style="font-size:14px;"></ion-icon> Remove
+                        </button>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No members added yet. Add your first member above.</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">No members added yet. Add your first member above.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Team Info Form (Hidden by default) -->
-<div id="team-info-form-wrap" class="table-wrap" style="display:none; padding:24px;margin-bottom:24px; position:relative;">
-    <button type="button" onclick="document.getElementById('team-info-form-wrap').style.display='none'" style="position:absolute; top:20px; right:20px; background:none; border:none; cursor:pointer; font-size:24px; color:var(--muted); transition:color 0.2s;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--muted)'">
-        <ion-icon name="close-outline"></ion-icon>
-    </button>
-    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Team Information & Team Lead Details</div>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset {% if not can_edit_registration %}disabled{% endif %} style="border:0;padding:0;margin:0">
-        <div class="two-grid">
-            <div class="field">
-                <label>Team Name</label>
-                <input type="text" name="team_name" value="{{ reg.team_name }}" required>
-            </div>
-            <div class="field">
-                <label>Team Lead Role</label>
-                <input type="text" name="leader_role_in_team" value="{{ leader_details.role_in_team|default:'Team Lead' }}">
-            </div>
-            <div class="field">
-                <label>Select Problem Statement</label>
-                <select name="problem_statement">
-                    <option value="">— Select Problem Statement —</option>
-                    {% for ps in problem_statements %}
-                    <option value="{{ ps.id }}" {% if reg.problem_statement_id == ps.id %}selected{% endif %}>{{ ps.title }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="field">
-                <label>Institution</label>
-                <select name="institution" required>
-                    <option value="">— Select Approved Institution —</option>
-                    {% for inst in institutions %}
-                    <option value="{{ inst.id }}" {% if reg.institution_id == inst.id %}selected{% endif %}>{{ inst.name }}</option>
-                    {% endfor %}
-                </select>
-                <div style="font-size:12px;color:var(--muted);margin-top:6px">This college selection decides which SPOC receives your team after mentor acceptance.</div>
-            </div>
-        </div>
+<!-- Team Info & Team Lead Form -->
+<div id="team-info-form-wrap" class="modal-overlay-custom" style="display:none;" onclick="if(event.target===this) closeModal('team-info-form-wrap')">
+    <div class="form-wrap-card">
+        <button type="button" class="form-close-btn" onclick="closeModal('team-info-form-wrap')">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        <div class="form-header-title">Team Information & Team Lead Details</div>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset {% if not can_edit_registration %}disabled{% endif %} style="border:0;padding:0;margin:0">
+                
+                <!-- SECTION 1: Team & Project info -->
+                <div class="form-section-divider">General Info</div>
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Team Name</label>
+                        <input type="text" name="team_name" value="{{ reg.team_name }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Team Lead Role</label>
+                        <input type="text" name="leader_role_in_team" value="{{ leader_details.role_in_team|default:'Team Lead' }}" required>
+                    </div>
+                </div>
+                
+                <div class="fields-grid-1">
+                    <div class="field">
+                        <label>Problem Statement</label>
+                        <select name="problem_statement">
+                            <option value="">— Select Problem Statement —</option>
+                            {% for ps in problem_statements %}
+                            <option value="{{ ps.id }}" {% if reg.problem_statement_id == ps.id %}selected{% endif %}>{{ ps.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Institution</label>
+                        <select name="institution" required>
+                            <option value="">— Select Approved Institution —</option>
+                            {% for inst in institutions %}
+                            <option value="{{ inst.id }}" {% if reg.institution_id == inst.id %}selected{% endif %}>{{ inst.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-tip">College selection decides which SPOC receives your registration.</div>
+                    </div>
+                </div>
 
-        <div style="font-size:15px;font-weight:800;margin:12px 0 18px">Team Lead Personal Details</div>
-        <div class="two-grid">
-            <div class="field"><label>First Name</label><input type="text" name="leader_first_name" value="{{ request.user.first_name|default:'' }}"></div>
-            <div class="field"><label>Last Name</label><input type="text" name="leader_last_name" value="{{ request.user.last_name|default:'' }}"></div>
-            <div class="field"><label>Email</label><input type="email" value="{{ request.user.email }}" disabled></div>
-            <div class="field"><label>Phone Number</label><input type="text" name="leader_phone_number" value="{{ request.user.phone_number|default:'' }}"></div>
-            <div class="field"><label>Date of Birth</label><input type="date" name="leader_date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d' }}"></div>
-            <div class="field">
-                <label>Gender</label>
-                <select name="leader_gender">
-                    <option value="">Select Gender</option>
-                    <option value="Male" {% if request.user.gender == 'Male' %}selected{% endif %}>Male</option>
-                    <option value="Female" {% if request.user.gender == 'Female' %}selected{% endif %}>Female</option>
-                    <option value="Other" {% if request.user.gender == 'Other' %}selected{% endif %}>Other</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>Cast</label>
-                <select name="leader_cast">
-                    <option value="">Select Cast</option>
-                    <option value="General" {% if leader_details.cast == 'General' %}selected{% endif %}>General</option>
-                    <option value="OBC" {% if leader_details.cast == 'OBC' %}selected{% endif %}>OBC</option>
-                    <option value="SC" {% if leader_details.cast == 'SC' %}selected{% endif %}>SC</option>
-                    <option value="ST" {% if leader_details.cast == 'ST' %}selected{% endif %}>ST</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>T-Shirt Size</label>
-                <select name="leader_tshirt_size">
-                    <option value="">Select Size</option>
-                    <option value="S" {% if leader_details.tshirt_size == 'S' %}selected{% endif %}>S</option>
-                    <option value="M" {% if leader_details.tshirt_size == 'M' %}selected{% endif %}>M</option>
-                    <option value="L" {% if leader_details.tshirt_size == 'L' %}selected{% endif %}>L</option>
-                    <option value="XL" {% if leader_details.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
-                    <option value="XXL" {% if leader_details.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
-                </select>
-            </div>
-            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="leader_aadhaar_number" value="{{ leader_details.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX"></div>
-            <div class="field"><label>Bank Account Number</label><input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number"></div>
-            <div class="field"><label>IFSC Code</label><input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234"></div>
-            <div class="field"><label>Bank Name</label><input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name"></div>
-            <div class="field">
-                <label>Aadhaar Proof</label>
-                <input type="file" name="leader_aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png">
-                {% if leader_details.aadhaar_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
-            </div>
-            <div class="field">
-                <label>College ID Proof</label>
-                <input type="file" name="leader_college_id_proof" accept=".pdf,.jpg,.jpeg,.png">
-                {% if leader_details.college_id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.college_id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
-            </div>
-            <div class="field">
-                <label>ID Proof (Upload)</label>
-                <input type="file" name="leader_id_proof" accept=".pdf,.jpg,.jpeg,.png">
-                {% if leader_details.id_proof %}<div style="margin-top:6px"><a href="/media/{{ leader_details.id_proof }}" target="_blank" class="section-btn">View Current</a></div>{% endif %}
-            </div>
-        </div>
-        </fieldset>
+                <!-- SECTION 2: Personal details -->
+                <div class="form-section-divider">Team Lead Identity details</div>
+                
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Passport Size Photo</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_photo" accept=".jpg,.jpeg,.png">
+                            <div class="field-tip">JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if leader_details.photo %}
+                            <a href="/media/{{ leader_details.photo }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="image-outline"></ion-icon> View Photo
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>College ID Proof</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_college_id_proof" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if leader_details.college_id_proof %}
+                            <a href="/media/{{ leader_details.college_id_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View ID
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
-        {% if can_edit_registration %}
-        <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Save Team Lead Details</button>
-        {% else %}
-        <button type="button" class="section-btn" style="width:100%;padding:12px;opacity:.65;cursor:not-allowed">Editing Locked</button>
-        {% endif %}
-    </form>
+                <div class="fields-grid-3">
+                    <div class="field">
+                        <label>First Name</label>
+                        <input type="text" name="leader_first_name" value="{{ request.user.first_name|default:'' }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Middle Name</label>
+                        <input type="text" name="leader_middle_name" value="{{ leader_details.middle_name|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Last Name</label>
+                        <input type="text" name="leader_last_name" value="{{ request.user.last_name|default:'' }}" required>
+                    </div>
+                </div>
+
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Email Address</label>
+                        <input type="email" value="{{ request.user.email }}" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Phone Number</label>
+                        <input type="text" name="leader_phone_number" value="{{ request.user.phone_number|default:'' }}" required>
+                        <div class="field-tip">Must be a valid 10-digit mobile number.</div>
+                    </div>
+                    <div class="field">
+                        <label>Date of Birth</label>
+                        <input type="date" name="leader_date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Gender</label>
+                        <select name="leader_gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if request.user.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if request.user.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if request.user.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Cast Category</label>
+                        <select name="leader_cast" required>
+                            <option value="">Select Cast</option>
+                            <option value="General" {% if leader_details.cast == 'General' %}selected{% endif %}>General</option>
+                            <option value="OBC" {% if leader_details.cast == 'OBC' %}selected{% endif %}>OBC</option>
+                            <option value="SC" {% if leader_details.cast == 'SC' %}selected{% endif %}>SC</option>
+                            <option value="ST" {% if leader_details.cast == 'ST' %}selected{% endif %}>ST</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>T-Shirt Size</label>
+                        <select name="leader_tshirt_size" required>
+                            <option value="">Select Size</option>
+                            <option value="S" {% if leader_details.tshirt_size == 'S' %}selected{% endif %}>S</option>
+                            <option value="M" {% if leader_details.tshirt_size == 'M' %}selected{% endif %}>M</option>
+                            <option value="L" {% if leader_details.tshirt_size == 'L' %}selected{% endif %}>L</option>
+                            <option value="XL" {% if leader_details.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
+                            <option value="XXL" {% if leader_details.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Size Guideline (PDF)</label>
+                        <a href="{% url 'tshirt_size_guideline_pdf' %}" target="_blank" onclick="event.preventDefault(); openModal('tshirt-guide-modal');" class="tshirt-guide-box">
+                            <ion-icon name="document-text-outline" style="font-size: 20px; color: var(--accent);"></ion-icon>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">T-Shirt Size Guideline (PDF)</div>
+                                <div style="font-size: 10px; color: var(--muted);">Click to view size chart</div>
+                            </div>
+                            <ion-icon name="open-outline" style="font-size: 15px; color: var(--accent); flex-shrink: 0;"></ion-icon>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Side by side Aadhaar No and Aadhaar Proof -->
+                <div class="form-section-divider">Aadhaar details</div>
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Aadhaar Card Number</label>
+                        <input type="text" name="leader_aadhaar_number" value="{{ leader_details.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX" required>
+                        <div class="field-tip">Must be exactly 12 digits.</div>
+                    </div>
+                    <div class="field">
+                        <label>Aadhaar Proof Document</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if leader_details.aadhaar_proof %}
+                            <a href="/media/{{ leader_details.aadhaar_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Aadhaar
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Bank info -->
+                <div class="form-section-divider">Bank Account details</div>
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:20px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div>
+                        <div style="font-weight:800;font-size:13px;color:#1e40af;">Bank details locked</div>
+                        <div style="font-size:12px;color:#3b82f6;margin-top:2px;">Bank details will be unlocked after your team qualifies for the final round. You'll receive an email reminder when it's time to fill these in.</div>
+                    </div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Prize Money Recipient (Account Holder Name)</label>
+                        <input type="text" name="leader_bank_holder_name" value="{{ leader_details.bank_holder_name|default:'' }}" placeholder="Full name of account holder" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number" disabled>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Prize Money Recipient (Account Holder Name) *</label>
+                        <input type="text" name="leader_bank_holder_name" value="{{ leader_details.bank_holder_name|default:'' }}" placeholder="Full name of account holder" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Account Number *</label>
+                        <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number" required>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code *</label>
+                        <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name *</label>
+                        <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page *</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_passbook_proof" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if leader_details.passbook_proof %}
+                            <a href="/media/{{ leader_details.passbook_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Passbook
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </fieldset>
+
+            <div style="margin-top:24px">
+                {% if can_edit_registration %}
+                <button type="submit" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px">Save Team Lead Details</button>
+                {% if reg.status == 'rejected' %}
+                <button type="submit" name="action_resubmit" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #ea580c, #f97316);margin-top:10px;border:none;">Save & Resubmit Registration</button>
+                {% elif reg.status == 'approved' and has_approved_mod %}
+                <button type="submit" name="action_submit_modification" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #10b981, #059669);margin-top:10px;border:none;">Save & Submit Modification</button>
+                {% endif %}
+                {% else %}
+                <button type="button" class="section-btn" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;opacity:.65;cursor:not-allowed">Editing Locked</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
 </div>
 
-<!-- Add Member Form (Hidden by default) -->
+<!-- Add Member Form -->
 {% if can_edit_registration %}
-<div id="add-member-form-wrap" class="table-wrap" style="display:none; padding:24px;margin-bottom:24px; position:relative;">
-    <button type="button" onclick="document.getElementById('add-member-form-wrap').style.display='none'" style="position:absolute; top:20px; right:20px; background:none; border:none; cursor:pointer; font-size:24px; color:var(--muted); transition:color 0.2s;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--muted)'">
-        <ion-icon name="close-outline"></ion-icon>
-    </button>
-    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Add Team Member</div>
-    <form method="POST" action="{% url 'team_add_member' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="two-grid">
-            <div class="field"><label>First Name</label><input type="text" name="first_name" placeholder="First name"></div>
-            <div class="field"><label>Last Name</label><input type="text" name="last_name" placeholder="Last name"></div>
-            <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="member@email.com"></div>
-            <div class="field"><label>Phone Number</label><input type="text" name="phone_number" placeholder="Phone number"></div>
-            <div class="field"><label>Role in Team</label>
-                <select name="role">
-                    <option>Member</option>
-                    <option>Co-Lead</option>
-                    <option>Developer</option>
-                    <option>Designer</option>
-                    <option>Researcher</option>
-                </select>
+<div id="add-member-form-wrap" class="modal-overlay-custom" style="display:none;" onclick="if(event.target===this) closeModal('add-member-form-wrap')">
+    <div class="form-wrap-card">
+        <button type="button" class="form-close-btn" onclick="closeModal('add-member-form-wrap')">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        <div class="form-header-title">Add Team Member</div>
+        
+        <form method="POST" action="{% url 'team_add_member' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- SECTION 1: Personal Info -->
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Member Personal Info</div>
+                
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Passport Size Photo</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="photo" accept=".jpg,.jpeg,.png" required>
+                            <div class="field-tip">JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>College ID Proof</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fields-grid-3">
+                    <div class="field">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" value="{{ add_member_form_data.first_name|default:'' }}" placeholder="First name" required>
+                    </div>
+                    <div class="field">
+                        <label>Middle Name</label>
+                        <input type="text" name="middle_name" value="{{ add_member_form_data.middle_name|default:'' }}" placeholder="Middle name">
+                    </div>
+                    <div class="field">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" value="{{ add_member_form_data.last_name|default:'' }}" placeholder="Last name" required>
+                    </div>
+                </div>
+
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" value="{{ add_member_form_data.email|default:'' }}" required placeholder="member@email.com">
+                        <div class="field-tip">Must be a unique valid email address.</div>
+                    </div>
+                    <div class="field">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" value="{{ add_member_form_data.phone_number|default:'' }}" placeholder="Phone number" required>
+                        <div class="field-tip">Must be a 10-digit mobile number.</div>
+                    </div>
+                    <div class="field">
+                        <label>Role in Team</label>
+                        <select name="role">
+                            <option {% if add_member_form_data.role == 'Member' %}selected{% endif %}>Member</option>
+                            <option {% if add_member_form_data.role == 'Co-Lead' %}selected{% endif %}>Co-Lead</option>
+                            <option {% if add_member_form_data.role == 'Developer' %}selected{% endif %}>Developer</option>
+                            <option {% if add_member_form_data.role == 'Designer' %}selected{% endif %}>Designer</option>
+                            <option {% if add_member_form_data.role == 'Researcher' %}selected{% endif %}>Researcher</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Date of Birth</label>
+                        <input type="date" name="date_of_birth" value="{{ add_member_form_data.date_of_birth|default:'' }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Gender</label>
+                        <select name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if add_member_form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if add_member_form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if add_member_form_data.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Cast Category</label>
+                        <select name="cast" required>
+                            <option value="">Select Cast</option>
+                            <option value="General" {% if add_member_form_data.cast == 'General' %}selected{% endif %}>General</option>
+                            <option value="OBC" {% if add_member_form_data.cast == 'OBC' %}selected{% endif %}>OBC</option>
+                            <option value="SC" {% if add_member_form_data.cast == 'SC' %}selected{% endif %}>SC</option>
+                            <option value="ST" {% if add_member_form_data.cast == 'ST' %}selected{% endif %}>ST</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>T-Shirt Size</label>
+                        <select name="tshirt_size" required>
+                            <option value="">Select Size</option>
+                            <option value="S" {% if add_member_form_data.tshirt_size == 'S' %}selected{% endif %}>S</option>
+                            <option value="M" {% if add_member_form_data.tshirt_size == 'M' %}selected{% endif %}>M</option>
+                            <option value="L" {% if add_member_form_data.tshirt_size == 'L' %}selected{% endif %}>L</option>
+                            <option value="XL" {% if add_member_form_data.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
+                            <option value="XXL" {% if add_member_form_data.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Size Guideline (PDF)</label>
+                        <a href="{% url 'tshirt_size_guideline_pdf' %}" target="_blank" onclick="event.preventDefault(); openModal('tshirt-guide-modal');" class="tshirt-guide-box">
+                            <ion-icon name="document-text-outline" style="font-size: 20px; color: var(--accent);"></ion-icon>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">T-Shirt Size Guideline (PDF)</div>
+                                <div style="font-size: 10px; color: var(--muted);">Click to view size chart</div>
+                            </div>
+                            <ion-icon name="open-outline" style="font-size: 15px; color: var(--accent); flex-shrink: 0;"></ion-icon>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="field"><label>Date of Birth</label><input type="date" name="date_of_birth"></div>
-            <div class="field"><label>Gender</label>
-                <select name="gender">
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
+
+            <!-- SECTION 2: Aadhaar details side by side -->
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Aadhaar details</div>
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Aadhaar Card Number</label>
+                        <input type="text" name="aadhaar_number" value="{{ add_member_form_data.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX" required>
+                        <div class="field-tip">Must be exactly 12 digits.</div>
+                    </div>
+                    <div class="field">
+                        <label>Aadhaar Proof Document</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="field"><label>Cast</label>
-                <select name="cast">
-                    <option value="">Select Cast</option>
-                    <option value="General">General</option>
-                    <option value="OBC">OBC</option>
-                    <option value="SC">SC</option>
-                    <option value="ST">ST</option>
-                </select>
+
+            <!-- SECTION 3: Bank info -->
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Bank Account details</div>
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:18px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div style="font-size:12px;color:#2563eb;font-weight:600;">Bank details will be unlocked after the team qualifies for the final round.</div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account" placeholder="Account Number" disabled>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc" placeholder="SBIN0001234" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" placeholder="Bank Name" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account" value="{{ add_member_form_data.bank_account|default:'' }}" placeholder="Account Number" required>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc" value="{{ add_member_form_data.ifsc|default:'' }}" placeholder="SBIN0001234" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ add_member_form_data.bank_name|default:'' }}" placeholder="Bank Name" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            <div class="field"><label>T-Shirt Size</label>
-                <select name="tshirt_size">
-                    <option value="">Select Size</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
-                </select>
+
+            <div style="margin-top:24px">
+                <button type="submit" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px">Add Member</button>
+                {% if reg.status == 'rejected' %}
+                <button type="submit" name="action_resubmit" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #ea580c, #f97316);margin-top:10px;border:none;">Add Member & Resubmit</button>
+                {% elif reg.status == 'approved' and has_approved_mod %}
+                <button type="submit" name="action_submit_modification" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #10b981, #059669);margin-top:10px;border:none;">Add Member & Submit Modification</button>
+                {% endif %}
             </div>
-            <div class="field"><label>Aadhaar Card Number</label><input type="text" name="aadhaar_number" placeholder="XXXX-XXXX-XXXX"></div>
-            <div class="field"><label>Bank Account Number</label><input type="text" name="bank_account" placeholder="Account Number"></div>
-            <div class="field"><label>IFSC Code</label><input type="text" name="ifsc" placeholder="SBIN0001234"></div>
-            <div class="field"><label>Bank Name</label><input type="text" name="bank_name" placeholder="Bank Name"></div>
-            <div class="field"><label>Aadhaar Proof</label><input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="field"><label>College ID Proof</label><input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="field"><label>ID Proof (Upload)</label><input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png"></div>
-        </div>
-        <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Add Member</button>
-    </form>
+        </form>
+    </div>
 </div>
 {% endif %}
+
+<!-- Edit Member Forms (one per member, hidden by default) -->
+{% if can_edit_registration %}
+{% for m in members %}
+<div id="edit-member-form-wrap-{{ forloop.counter0 }}" class="modal-overlay-custom" style="display:none;" onclick="if(event.target===this) closeModal('edit-member-form-wrap-{{ forloop.counter0 }}')">
+    <div class="form-wrap-card">
+        <button type="button" class="form-close-btn" onclick="closeModal('edit-member-form-wrap-{{ forloop.counter0 }}')">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        <div class="form-header-title">Edit Team Member — {{ m.name|default:m.email }}</div>
+        
+        <form method="POST" action="{% url 'team_edit_member' forloop.counter0 %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Member Personal Info</div>
+                
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Passport Size Photo</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="photo" accept=".jpg,.jpeg,.png"{% if not m.photo %} required{% endif %}>
+                            <div class="field-tip">JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.photo %}
+                            <a href="/media/{{ m.photo }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="image-outline"></ion-icon> View Photo
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>College ID Proof</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="college_id_proof" accept=".pdf,.jpg,.jpeg,.png"{% if not m.college_id_proof %} required{% endif %}>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.college_id_proof %}
+                            <a href="/media/{{ m.college_id_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View ID
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fields-grid-3">
+                    <div class="field">
+                        <label>First Name *</label>
+                        <input type="text" name="first_name" value="{{ m.first_name|default:'' }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Middle Name</label>
+                        <input type="text" name="middle_name" value="{{ m.middle_name|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Last Name *</label>
+                        <input type="text" name="last_name" value="{{ m.last_name|default:'' }}" required>
+                    </div>
+                </div>
+
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" value="{{ m.email }}" required>
+                        <div class="field-tip">Must be a unique valid email address.</div>
+                    </div>
+                    <div class="field">
+                        <label>Phone Number *</label>
+                        <input type="text" name="phone_number" value="{{ m.phone_number|default:'' }}" required>
+                        <div class="field-tip">Must be a 10-digit mobile number.</div>
+                    </div>
+                    <div class="field">
+                        <label>Role in Team</label>
+                        <select name="role">
+                            <option {% if m.role_in_team == 'Member' or m.role == 'Member' %}selected{% endif %}>Member</option>
+                            <option {% if m.role_in_team == 'Co-Lead' or m.role == 'Co-Lead' %}selected{% endif %}>Co-Lead</option>
+                            <option {% if m.role_in_team == 'Developer' or m.role == 'Developer' %}selected{% endif %}>Developer</option>
+                            <option {% if m.role_in_team == 'Designer' or m.role == 'Designer' %}selected{% endif %}>Designer</option>
+                            <option {% if m.role_in_team == 'Researcher' or m.role == 'Researcher' %}selected{% endif %}>Researcher</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Date of Birth *</label>
+                        <input type="date" name="date_of_birth" value="{{ m.date_of_birth|default:'' }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Gender *</label>
+                        <select name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if m.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if m.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if m.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Cast Category *</label>
+                        <select name="cast" required>
+                            <option value="">Select Cast</option>
+                            <option value="General" {% if m.cast == 'General' %}selected{% endif %}>General</option>
+                            <option value="OBC" {% if m.cast == 'OBC' %}selected{% endif %}>OBC</option>
+                            <option value="SC" {% if m.cast == 'SC' %}selected{% endif %}>SC</option>
+                            <option value="ST" {% if m.cast == 'ST' %}selected{% endif %}>ST</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>T-Shirt Size *</label>
+                        <select name="tshirt_size" required>
+                            <option value="">Select Size</option>
+                            <option value="S" {% if m.tshirt_size == 'S' %}selected{% endif %}>S</option>
+                            <option value="M" {% if m.tshirt_size == 'M' %}selected{% endif %}>M</option>
+                            <option value="L" {% if m.tshirt_size == 'L' %}selected{% endif %}>L</option>
+                            <option value="XL" {% if m.tshirt_size == 'XL' %}selected{% endif %}>XL</option>
+                            <option value="XXL" {% if m.tshirt_size == 'XXL' %}selected{% endif %}>XXL</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Size Guideline (PDF)</label>
+                        <a href="{% url 'tshirt_size_guideline_pdf' %}" target="_blank" onclick="event.preventDefault(); openModal('tshirt-guide-modal');" class="tshirt-guide-box">
+                            <ion-icon name="document-text-outline" style="font-size: 20px; color: var(--accent);"></ion-icon>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">T-Shirt Size Guideline (PDF)</div>
+                                <div style="font-size: 10px; color: var(--muted);">Click to view size chart</div>
+                            </div>
+                            <ion-icon name="open-outline" style="font-size: 15px; color: var(--accent); flex-shrink: 0;"></ion-icon>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Aadhaar details</div>
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Aadhaar Card Number *</label>
+                        <input type="text" name="aadhaar_number" value="{{ m.aadhaar_number|default:'' }}" placeholder="XXXX-XXXX-XXXX" required>
+                        <div class="field-tip">Must be exactly 12 digits.</div>
+                    </div>
+                    <div class="field">
+                        <label>Aadhaar Proof Document</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="aadhaar_proof" accept=".pdf,.jpg,.jpeg,.png"{% if not m.aadhaar_proof %} required{% endif %}>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.aadhaar_proof %}
+                            <a href="/media/{{ m.aadhaar_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Aadhaar
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section-card">
+                <div class="form-section-divider" style="margin-top: 0;">Bank Account details</div>
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:18px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div style="font-size:12px;color:#2563eb;font-weight:600;">Bank details will be unlocked after the team qualifies for the final round.</div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account" value="{{ m.bank_account|default:'' }}" placeholder="Account Number" disabled>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc" value="{{ m.ifsc|default:'' }}" placeholder="SBIN0001234" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ m.bank_name|default:'' }}" placeholder="Bank Name" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.passbook_proof %}
+                            <a href="/media/{{ m.passbook_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Passbook
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Bank Account Number *</label>
+                        <input type="text" name="bank_account" value="{{ m.bank_account|default:'' }}" placeholder="Account Number" required>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code *</label>
+                        <input type="text" name="ifsc" value="{{ m.ifsc|default:'' }}" placeholder="SBIN0001234" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name *</label>
+                        <input type="text" name="bank_name" value="{{ m.bank_name|default:'' }}" placeholder="Bank Name" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png"{% if not m.passbook_proof %} required{% endif %}>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.passbook_proof %}
+                            <a href="/media/{{ m.passbook_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Passbook
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="margin-top:24px">
+                <button type="submit" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px">Update Member</button>
+                {% if reg.status == 'rejected' %}
+                <button type="submit" name="action_resubmit" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #ea580c, #f97316);margin-top:10px;border:none;">Update Member & Resubmit</button>
+                {% elif reg.status == 'approved' and has_approved_mod %}
+                <button type="submit" name="action_submit_modification" value="1" class="section-btn primary" style="width:100%;padding:12px 20px;border-radius:12px;font-size:14px;background:linear-gradient(135deg, #10b981, #059669);margin-top:10px;border:none;">Update Member & Submit Modification</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if reg.status == 'approved' and not has_approved_mod and not has_submitted_mod %}
+<!-- Toggle Button for Request Modification -->
+<button type="button" id="btn-show-mod-form" class="section-btn" onclick="openModal('request-modification-form-wrap')" style="display:flex; align-items:center; gap:6px; margin-top:16px;">
+    <ion-icon name="create-outline" style="font-size:16px;"></ion-icon> Request Registration Modification
+</button>
+
+<!-- Request Modification Modal -->
+<div id="request-modification-form-wrap" class="modal-overlay-custom" style="display:none;" onclick="if(event.target===this) closeModal('request-modification-form-wrap')">
+    <div class="form-wrap-card" style="max-width: 550px; width: 100%;">
+        <button type="button" class="form-close-btn" onclick="closeModal('request-modification-form-wrap')">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        <div class="form-header-title">Request Registration Modification</div>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+            Describe the composition or detail changes you want to make (e.g. member replacement, name corrections, or mentor update) along with the reason.
+        </p>
+        <form method="POST" action="{% url 'team_request_modification' %}">
+            {% csrf_token %}
+            <div class="field">
+                <label>Requested Composition/Detail Changes (required)</label>
+                <textarea name="requested_change" rows="3" placeholder="e.g. Replace member John Doe with Jane Smith due to scheduling conflict." required style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 13px;"></textarea>
+            </div>
+            <div class="field" style="margin-top: 14px;">
+                <label>Reason for Modification (required)</label>
+                <textarea name="reason" rows="2" placeholder="Describe the reason for this change." required style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 13px;"></textarea>
+            </div>
+            <button type="submit" class="section-btn primary" style="margin-top: 16px; width: 100%; padding: 12px; font-size: 13px;">
+                Submit Modification Request
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if mod_requests %}
+<div class="section" style="margin-top: 28px; margin-bottom: 24px;">
+    <div class="section-header"><div class="section-title">✏️ Modification Requests History</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Requested Change</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mod in mod_requests %}
+                <tr>
+                    <td><strong>{{ mod.requested_change }}</strong></td>
+                    <td>{{ mod.reason }}</td>
+                    <td>
+                        {% if mod.status == 'pending' %}
+                        <span class="badge badge-amber">⏳ Pending</span>
+                        {% elif mod.status == 'approved' %}
+                        <span class="badge badge-green">✓ Approved</span>
+                        {% elif mod.status == 'rejected' %}
+                        <span class="badge badge-red">✗ Rejected: {{ mod.rejection_reason }}</span>
+                        {% else %}
+                        <span class="badge badge-blue">✓ Resolved</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--muted); font-family:monospace">{{ mod.requested_at|date:"M j, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if can_edit_registration %}
+<form id="remove-member-form" method="POST" action="" style="display:none;">
+    {% csrf_token %}
+</form>
+{% endif %}
+
+<script>
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'flex';
+        // Force reflow
+        modal.offsetHeight;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 250);
+        
+        // Remove overflow:hidden only if no active overlay modals exist
+        setTimeout(() => {
+            if (!document.querySelector('.modal-overlay-custom.active')) {
+                document.body.style.overflow = '';
+            }
+        }, 300);
+    }
+}
+
+// Auto-open forms based on query parameters or context variable
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Auto-open leader form
+    if (params.has('show_leader') || '{{ show_leader_form|default:"false" }}' === 'True') {
+        openModal('team-info-form-wrap');
+    }
+    
+    // Auto-open add member form
+    if (params.has('show_add_member')) {
+        openModal('add-member-form-wrap');
+    }
+    
+    // Auto-open edit member form
+    if (params.has('show_edit_member')) {
+        const idx = params.get('show_edit_member');
+        openModal('edit-member-form-wrap-' + idx);
+    }
+});
+
+function openEditMember(index) {
+    openModal('edit-member-form-wrap-' + index);
+}
+
+function confirmRemoveMember(index, name) {
+    if (confirm("Are you sure you want to remove " + (name ? name : "this member") + " from the team?")) {
+        const form = document.getElementById('remove-member-form');
+        let url = "{% url 'team_remove_member' 999 %}".replace('999', index);
+        form.action = url;
+        form.submit();
+    }
+}
+</script>
+
+<!-- T-Shirt Size Guideline Modal -->
+<div id="tshirt-guide-modal" class="modal-overlay-custom" style="display:none;" onclick="if(event.target===this) closeModal('tshirt-guide-modal')">
+    <div class="form-wrap-card" style="max-width: 700px; width: 92%; padding: 28px;">
+        <button type="button" class="form-close-btn" onclick="closeModal('tshirt-guide-modal')">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(251, 146, 60, 0.2); padding-bottom: 14px; padding-right: 30px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: rgba(234, 88, 12, 0.1); color: var(--accent); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <ion-icon name="shirt-outline"></ion-icon>
+                </div>
+                <div>
+                    <div style="font-size: 17px; font-weight: 800; color: var(--text);">T-Shirt Size Guidelines</div>
+                    <div style="font-size: 11px; color: var(--muted);">Official Size Chart for Participants</div>
+                </div>
+            </div>
+            <a href="{% url 'tshirt_size_guideline_pdf' %}" target="_blank" class="file-preview-badge" style="margin-top:0; font-size:12px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 700; text-decoration: none;">
+                <ion-icon name="document-text-outline" style="font-size:16px;"></ion-icon> Open PDF Document
+            </a>
+        </div>
+
+        <!-- Size Chart Table -->
+        <div style="overflow-x: auto; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); font-size: 13px;">
+                <thead>
+                    <tr style="background: var(--accent); color: #fff; text-align: center; font-weight: 700;">
+                        <th style="padding: 12px 14px;">Size</th>
+                        <th style="padding: 12px 14px;">Chest (Inches)</th>
+                        <th style="padding: 12px 14px;">Length (Inches)</th>
+                        <th style="padding: 12px 14px;">Shoulder (Inches)</th>
+                        <th style="padding: 12px 14px;">Recommended Fit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #fff; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px; font-weight: 700; color: var(--accent);">S (Small)</td>
+                        <td style="padding: 10px;">36"</td>
+                        <td style="padding: 10px;">26"</td>
+                        <td style="padding: 10px;">16.5"</td>
+                        <td style="padding: 10px; color: #475569;">34" - 36"</td>
+                    </tr>
+                    <tr style="background: #f8fafc; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px; font-weight: 700; color: var(--accent);">M (Medium)</td>
+                        <td style="padding: 10px;">38"</td>
+                        <td style="padding: 10px;">27"</td>
+                        <td style="padding: 10px;">17.5"</td>
+                        <td style="padding: 10px; color: #475569;">37" - 39"</td>
+                    </tr>
+                    <tr style="background: #fff; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px; font-weight: 700; color: var(--accent);">L (Large)</td>
+                        <td style="padding: 10px;">40"</td>
+                        <td style="padding: 10px;">28"</td>
+                        <td style="padding: 10px;">18.5"</td>
+                        <td style="padding: 10px; color: #475569;">40" - 42"</td>
+                    </tr>
+                    <tr style="background: #f8fafc; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px; font-weight: 700; color: var(--accent);">XL (Extra Large)</td>
+                        <td style="padding: 10px;">42"</td>
+                        <td style="padding: 10px;">29"</td>
+                        <td style="padding: 10px;">19.5"</td>
+                        <td style="padding: 10px; color: #475569;">43" - 45"</td>
+                    </tr>
+                    <tr style="background: #fff; text-align: center;">
+                        <td style="padding: 10px; font-weight: 700; color: var(--accent);">XXL (Double XL)</td>
+                        <td style="padding: 10px;">44"</td>
+                        <td style="padding: 10px;">30"</td>
+                        <td style="padding: 10px;">20.5"</td>
+                        <td style="padding: 10px; color: #475569;">46" - 48"</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Measurement Tips Box -->
+        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 16px; font-size: 12px; color: #9a3412;">
+            <div style="font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <ion-icon name="information-circle-outline" style="font-size: 18px;"></ion-icon> Tips for accurate measurement:
+            </div>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; color: #7c2d12;">
+                <li><strong>Chest:</strong> Measure around the fullest part of your chest, keeping tape horizontally level.</li>
+                <li><strong>Length:</strong> Measure from highest point of shoulder down to bottom hem.</li>
+                <li>If you prefer a relaxed or looser fit, we recommend selecting one size larger.</li>
+            </ul>
+        </div>
+    </div>
+</div>
 {% endblock %}

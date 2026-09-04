@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Suspended - HackNexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <style>
+        :root {
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --dark: #0f172a;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.08), transparent 30%), 
+                        radial-gradient(circle at top right, rgba(244, 63, 94, 0.06), transparent 25%), 
+                        #fafafb;
+            color: var(--dark);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .suspended-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: var(--radius-lg);
+            padding: 48px 32px;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.08);
+            border-top: 6px solid var(--danger);
+        }
+
+        .icon-wrap {
+            width: 80px;
+            height: 80px;
+            background: #fef2f2;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 40px;
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 15px;
+            color: var(--gray-600);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .info-pill {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 28px;
+            font-size: 13px;
+            color: var(--gray-700);
+            text-align: left;
+            display: grid;
+            gap: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: var(--gray-600);
+        }
+
+        .info-value {
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: var(--gray-700);
+        }
+
+        .btn-outline:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="suspended-card">
+        <div class="icon-wrap">
+            <ion-icon name="ban-outline"></ion-icon>
+        </div>
+        
+        <h1>Dashboard Suspended</h1>
+        <p>Your team dashboard has been suspended because your team did not meet the required cutoff scores to qualify for the next round of the hackathon.</p>
+        
+        <div class="info-pill">
+            <div class="info-row">
+                <span class="info-label">Team Name:</span>
+                <span class="info-value">{{ team.team_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Hackathon:</span>
+                <span class="info-value">{{ team.hackathon.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Current Status:</span>
+                <span class="info-value" style="color:var(--danger)">Suspended (Not Qualified)</span>
+            </div>
+        </div>
+
+        <a href="{% url 'team_logout' %}" class="btn btn-danger">
+            <ion-icon name="log-out-outline" style="font-size: 16px;"></ion-icon>
+            Log Out Account
+        </a>
+    </div>
+
+</body>
+</html>

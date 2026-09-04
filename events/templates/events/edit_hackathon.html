@@ -5,223 +5,990 @@
 
 {% block extra_css %}
 <style>
-    .form-card { background: white; border: 2px solid #fcd34d; border-radius: 16px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 24px; }
-    .form-section-title { font-size: 16px; font-weight: 800; color: #ea580c; border-left: 4px solid #ea580c; padding-left: 12px; margin: 32px 0 16px 0; }
-    
-    input, select, textarea { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: white; }
-    input:focus { border-color: #ea580c; }
-    label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; }
-    
-    .round-row { padding: 20px; background: #fffbf7; border: 1px solid #fed7aa; border-radius: 12px; margin-bottom: 16px; }
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 780px;
+        max-height: 90vh; /* Set constraint */
+        margin: 0 auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        border: 2px solid #fed7aa;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .form-card form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(5px);
+        z-index: 10000;
+        display: flex !important; /* Force open on edit page */
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* Header & Step progress */
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1.5px solid #fed7aa;
+        background: linear-gradient(135deg, #fff7ed, #fff);
+    }
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: #ea580c;
+    }
+    .step-progress-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .step-dots {
+        display: flex;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all 0.25s;
+    }
+    .step-dot.active {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+    }
+    .step-dot.completed {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+    }
+
+    /* Modal Body */
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        background: #fafafa;
+    }
+
+    /* Steps panes */
+    .form-step-pane {
+        display: none;
+    }
+    .form-step-pane.active {
+        display: block;
+    }
+
+    /* Compact Forms grid with equal sizes */
+    .form-grid-compact {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .form-group-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-compact.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-group-compact label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 2px;
+    }
+    .form-group-compact input,
+    .form-group-compact select,
+    .form-group-compact textarea {
+        padding: 10px 12px;
+        font-size: 13.5px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s;
+        height: 40px; /* Force same height */
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .form-group-compact textarea {
+        height: 80px;
+        resize: none;
+    }
+    .form-group-compact input[type="file"] {
+        padding: 7px 10px;
+    }
+    .form-group-compact input:focus,
+    .form-group-compact select:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+    }
+
+    /* Section Title */
+    .step-section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ea580c;
+        margin: 0 0 14px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1.5px solid #fed7aa;
+        padding-bottom: 6px;
+    }
+
+    /* Modal Footer */
+    .modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1.5px solid #fed7aa;
+        background: #fff;
+    }
+    .footer-buttons-left {
+        display: flex;
+        gap: 12px;
+    }
+    .footer-buttons-right {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* Navigation buttons styling */
+    .btn-step-prev {
+        padding: 9px 18px;
+        border: 1.5px solid #cbd5e1;
+        background: #fff;
+        color: #475569;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-prev:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .btn-step-next {
+        padding: 9px 22px;
+        border: 1.5px solid #ea580c;
+        background: #ea580c;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-next:hover {
+        background: #d97706;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="margin-bottom: 24px;">
-    <a href="{% url 'superadmin_dashboard' %}?tab=events" style="text-decoration: none; color: #6b7280; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+    <a href="{% url 'superadmin_dashboard' %}?tab=events"
+        style="text-decoration: none; color: #6b7280; font-weight: 700; display: flex; align-items: center; gap: 8px;">
         <ion-icon name="arrow-back-outline"></ion-icon> Back to Events
     </a>
 </div>
 
-<div class="form-card">
-    <h1 style="margin: 0 0 32px 0; font-size: 28px; font-weight: 900;">Edit Hackathon Event</h1>
-
-    <form action="{% url 'edit_hackathon' hackathon.id %}" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <div class="form-section-title" style="margin-top:0;">Basic Information</div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Hackathon Name</label>
-                <input type="text" name="name" value="{{ hackathon.name }}" required>
+<div class="modal-overlay">
+    <div class="form-card">
+        <!-- header -->
+        <div class="modal-header">
+            <h2>Edit Hackathon Event</h2>
+            <div class="step-progress-wrapper">
+                <div class="step-dots">
+                    <span class="step-dot active" data-step="1">1</span>
+                    <span class="step-dot" data-step="2">2</span>
+                    <span class="step-dot" data-step="3">3</span>
+                    <span class="step-dot" data-step="4">4</span>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Organization Name</label>
-                <input type="text" name="organization_name" value="{{ hackathon.organization_name }}" required>
+            <a href="{% url 'superadmin_dashboard' %}?tab=events" class="close-modal" style="text-decoration:none;"><ion-icon name="close-circle-outline"></ion-icon></a>
+        </div>
+
+        <form action="{% url 'edit_hackathon' hackathon.id %}" method="POST" enctype="multipart/form-data" id="editHackathonFormElement">
+            {% csrf_token %}
+            
+            <!-- body -->
+            <div class="modal-body">
+                <!-- STEP 1: Basic Information & Media -->
+                <div class="form-step-pane active" data-step="1">
+                    <div class="step-section-title">Basic Information</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Hackathon Name</label>
+                            <input type="text" name="name" value="{{ hackathon.name }}" required>
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Organization Name</label>
+                            <input type="text" name="organization_name" value="{{ hackathon.organization_name }}" required>
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Organization Logo (Leave empty to keep current)</label>
+                            <input type="file" name="organization_logo" accept="image/*">
+                            {% if hackathon.organization_logo %}
+                            <small style="color:#059669; margin-top:2px;">Current: {{ hackathon.organization_logo.name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="step-section-title" style="margin-top: 20px;">Branding &amp; Media</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Upload logos and banner images. Leave empty to keep current files.</p>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Event Logo <small style="color:#9ca3af;">(Navbar Right)</small></label>
+                            <input type="file" name="event_logo" accept="image/*">
+                            {% if hackathon.event_logo %}
+                            <small style="color:#059669; margin-top:2px;">Current: {{ hackathon.event_logo.name }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Platform Logo (HackNexus) <small style="color:#9ca3af;">(Navbar Left)</small></label>
+                            <input type="file" name="platform_logo" accept="image/*">
+                            {% if hackathon.platform_logo %}
+                            <small style="color:#059669; margin-top:2px;">Current: {{ hackathon.platform_logo.name }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="form-group-compact full-width">
+                            <label>Hero Banner Images <small style="color:#9ca3af;">(Hero Background – multiple banners for carousel)</small></label>
+
+                        {% if existing_banners %}
+                        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:nowrap;">
+                            {% for banner in existing_banners %}
+                            <div id="banner-card-{{ banner.id }}" style="position:relative; width:80px; height:55px; border:1px solid #e2e8f0; border-radius:6px; overflow:hidden; background:#fafafa; flex-shrink:0;">
+                                <img src="{{ banner.image.url }}" alt="Banner {{ forloop.counter }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                <button type="button" onclick="markBannerForDeletion('{{ banner.id }}')"
+                                    style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(239,68,68,0.9); color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; box-shadow:0 1px 4px rgba(0,0,0,0.15);"
+                                    title="Remove Banner">
+                                    <ion-icon name="close-outline"></ion-icon>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div id="bannersDeleteContainer"></div>
+                        {% endif %}
+
+                        <div id="heroBannerUploads" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:8px;">
+                            <div class="banner-upload-item" style="display:flex; gap:8px; align-items:center; width:100%;">
+                                <input type="file" name="hero_banners" accept="image/*" style="flex:1; height:40px;">
+                            </div>
+                        </div>
+                        <button type="button" onclick="addBannerInput()"
+                            style="padding:6px 12px; border:1px dashed #ea580c; background:transparent; color:#ea580c; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:4px; max-width: 160px; height: auto;">
+                            + Add Another Banner
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Organization Logo (Leave empty to keep current)</label>
-                <input type="file" name="organization_logo" accept="image/*">
+
+            <!-- STEP 2: General Configuration & Domains -->
+            <div class="form-step-pane" data-step="2">
+                <div class="step-section-title">Team Configuration</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="form-group-compact">
+                        <label>Min Team Size</label>
+                        <input type="number" name="min_team_size" value="{{ hackathon.min_team_size|default:1 }}" min="1">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Max Team Size</label>
+                        <input type="number" name="max_team_size" value="{{ hackathon.max_team_size|default:4 }}" min="1">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Mentors / Team</label>
+                        <input type="number" name="number_of_mentors" value="{{ hackathon.number_of_mentors|default:0 }}" min="0">
+                    </div>
+                </div>
+
+                <div class="step-section-title" style="margin-top: 24px;">Problem Statement Domains</div>
+                <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Define the domains/tracks for problem statements.</p>
+                <div class="form-grid-compact">
+                    <div class="form-group-compact">
+                        <label>Number of Domains</label>
+                        <input type="number" name="num_domains" id="editNumDomainsInput" value="{{ existing_domains|length }}" min="0" max="20" oninput="updateEditDomainFields(this)">
+                    </div>
+                </div>
+                <div id="editDomainsContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+                    {% for domain in existing_domains %}
+                    <div class="form-group-compact">
+                        <label style="font-size:11px;">Domain {{ forloop.counter }} Name</label>
+                        <input type="text" name="domain_{{ forloop.counter }}_name" value="{{ domain.name }}" required placeholder="e.g. Agriculture, Healthcare">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- STEP 3: Timeline & Approval -->
+            <div class="form-step-pane" data-step="3">
+                <div class="step-section-title">Approval & Status</div>
+                <div class="form-grid-compact">
+                    <div class="form-group-compact">
+                        <label>Approval Date</label>
+                        <input type="date" name="approval_date" value="{{ hackathon.approval_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Approval Letter (PDF)</label>
+                        <input type="file" name="approval_letter" accept=".pdf">
+                        {% if hackathon.approval_letter %}
+                        <small style="color:#059669; margin-top:2px;">Current: {{ hackathon.approval_letter.name }}</small>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="status" value="{{ hackathon.status }}">
+                </div>
+
+                <div class="step-section-title" style="margin-top: 24px;">Key Timeline</div>
+                <div class="form-grid-compact">
+                    <div class="form-group-compact">
+                        <label>Poster Launch</label>
+                        <input type="date" name="poster_launching_date" id="e_poster_launch" value="{{ hackathon.poster_launching_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Website Launch</label>
+                        <input type="date" name="website_launching_date" id="e_web_launch" value="{{ hackathon.website_launching_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Registration Open</label>
+                        <input type="date" name="registration_open" id="e_reg_open" value="{{ hackathon.registration_open|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Registration Close</label>
+                        <input type="date" name="registration_close" id="e_reg_close" value="{{ hackathon.registration_close|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: Round-wise Configuration -->
+            <div class="form-step-pane" data-step="4">
+                <div class="step-section-title">Round Management</div>
+                <div class="form-grid-compact" style="margin-bottom:16px;">
+                    <div class="form-group-compact">
+                        <label>Total Number of Rounds</label>
+                        <input type="number" name="number_of_rounds" id="num-rounds-input" value="{{ hackathon.number_of_rounds }}" min="1" max="5">
+                    </div>
+                </div>
+
+                <div id="rounds-container">
+                    <!-- ROUND 1 -->
+                    <div class="round-row" data-round="1" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if hackathon.number_of_rounds < 1 %}display:none;{% endif %}">
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round 1 Name</label>
+                                <input type="text" name="round_1_name" value="{{ hackathon.round_1_name }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_1_is_enabled" {% if hackathon.round_1_is_enabled %}checked{% endif %} style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_1_start_date" id="e_r1_start" value="{{ hackathon.round_1_start_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_1_end_date" id="e_r1_end" value="{{ hackathon.round_1_end_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_1_type" id="e_r1_type" onchange="toggleVenueEdit(1)">
+                                    <option value="Online" {% if hackathon.round_1_type == 'Online' %}selected{% endif %}>🌐 Online</option>
+                                    <option value="Offline" {% if hackathon.round_1_type == 'Offline' %}selected{% endif %}>🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="e_r1_venue_grp" style="display:{% if hackathon.round_1_type == 'Offline' %}block{% else %}none{% endif %};">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_1_venue" value="{{ hackathon.round_1_venue|default:'' }}" placeholder="Enter venue location" {% if hackathon.round_1_type == 'Offline' %}required{% endif %}>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_1_num_params" value="{{ round_params.1.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 1)">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round 1 Total Marks</label>
+                                    <input type="number" name="round_1_total_marks" value="{{ hackathon.round_1_total_marks|default:'100.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(1)">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_1_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;" {% if round_params.1.has_others %}checked{% endif %}>
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                            <div id="round_1_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;">
+                                {% for p in round_params.1.params %}
+                                <div style="grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                                    <div class="form-grid-compact" style="grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;">
+                                        <div class="form-group-compact">
+                                            <label>Parameter {{ forloop.counter }} Name</label>
+                                            <input type="text" name="round_1_param_{{ forloop.counter }}_name" value="{{ p.name }}" required placeholder="e.g. Innovation">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <label>Total Marks</label>
+                                            <input type="number" name="round_1_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.max_marks|default:'0.00' }}" required oninput="validateMarkingTotals(1)">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <button type="button" onclick="addSubParam(1, {{ forloop.counter }})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                                        </div>
+                                    </div>
+                                    <!-- Sub-parameters -->
+                                    <div style="margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;">
+                                        <div id="round_1_param_{{ forloop.counter }}_subs_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+                                            {% for sub in p.sub_parameters.all %}
+                                            <div style="display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                                                <div style="flex:2; min-width:0;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub {{ forloop.counter }} Name</label>
+                                                    <input type="text" name="round_1_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_name" value="{{ sub.name }}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                                                </div>
+                                                <div style="width:65px;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                                                    <input type="number" name="round_1_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_cutoff" value="{{ sub.cutoff_score|default:'0.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(1)" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="{{ forloop.parentloop.counter }}">
+                                                </div>
+                                                <button type="button" onclick="removeSubParam(this, 1, {{ forloop.parentloop.counter }})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="round_1_param_{{ forloop.counter }}_num_subs" value="{{ p.sub_parameters.count }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_1_num_jury" value="{{ jury_configs.1.num_jury|default:0 }}" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_1_num_experts" value="{{ jury_configs.1.num_experts|default:0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROUND 2 -->
+                    <div class="round-row" data-round="2" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if hackathon.number_of_rounds < 2 %}display:none;{% endif %}">
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round 2 Name</label>
+                                <input type="text" name="round_2_name" value="{{ hackathon.round_2_name }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_2_is_enabled" {% if hackathon.round_2_is_enabled %}checked{% endif %} style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_2_start_date" id="e_r2_start" value="{{ hackathon.round_2_start_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_2_end_date" id="e_r2_end" value="{{ hackathon.round_2_end_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_2_type" id="e_r2_type" onchange="toggleVenueEdit(2)">
+                                    <option value="Online" {% if hackathon.round_2_type == 'Online' %}selected{% endif %}>🌐 Online</option>
+                                    <option value="Offline" {% if hackathon.round_2_type == 'Offline' %}selected{% endif %}>🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="e_r2_venue_grp" style="display:{% if hackathon.round_2_type == 'Offline' %}block{% else %}none{% endif %};">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_2_venue" value="{{ hackathon.round_2_venue|default:'' }}" placeholder="Enter venue location" {% if hackathon.round_2_type == 'Offline' %}required{% endif %}>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_2_num_params" value="{{ round_params.2.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 2)">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round 2 Total Marks</label>
+                                    <input type="number" name="round_2_total_marks" value="{{ hackathon.round_2_total_marks|default:'100.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(2)">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_2_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;" {% if round_params.2.has_others %}checked{% endif %}>
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                            <div id="round_2_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;">
+                                {% for p in round_params.2.params %}
+                                <div style="grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                                    <div class="form-grid-compact" style="grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;">
+                                        <div class="form-group-compact">
+                                            <label>Parameter {{ forloop.counter }} Name</label>
+                                            <input type="text" name="round_2_param_{{ forloop.counter }}_name" value="{{ p.name }}" required placeholder="e.g. Innovation">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <label>Total Marks</label>
+                                            <input type="number" name="round_2_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.max_marks|default:'0.00' }}" required oninput="validateMarkingTotals(2)">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <button type="button" onclick="addSubParam(2, {{ forloop.counter }})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                                        </div>
+                                    </div>
+                                    <!-- Sub-parameters -->
+                                    <div style="margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;">
+                                        <div id="round_2_param_{{ forloop.counter }}_subs_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+                                            {% for sub in p.sub_parameters.all %}
+                                            <div style="display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                                                <div style="flex:2; min-width:0;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub {{ forloop.counter }} Name</label>
+                                                    <input type="text" name="round_2_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_name" value="{{ sub.name }}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                                                </div>
+                                                <div style="width:65px;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                                                    <input type="number" name="round_2_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_cutoff" value="{{ sub.cutoff_score|default:'0.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(2)" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="{{ forloop.parentloop.counter }}">
+                                                </div>
+                                                <button type="button" onclick="removeSubParam(this, 2, {{ forloop.parentloop.counter }})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="round_2_param_{{ forloop.counter }}_num_subs" value="{{ p.sub_parameters.count }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_2_num_jury" value="{{ jury_configs.2.num_jury|default:0 }}" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_2_num_experts" value="{{ jury_configs.2.num_experts|default:0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROUND 3 -->
+                    <div class="round-row" data-round="3" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if hackathon.number_of_rounds < 3 %}display:none;{% endif %}">
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round 3 Name</label>
+                                <input type="text" name="round_3_name" value="{{ hackathon.round_3_name }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_3_is_enabled" {% if hackathon.round_3_is_enabled %}checked{% endif %} style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_3_start_date" id="e_r3_start" value="{{ hackathon.round_3_start_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_3_end_date" id="e_r3_end" value="{{ hackathon.round_3_end_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_3_type" id="e_r3_type" onchange="toggleVenueEdit(3)">
+                                    <option value="Online" {% if hackathon.round_3_type == 'Online' %}selected{% endif %}>🌐 Online</option>
+                                    <option value="Offline" {% if hackathon.round_3_type == 'Offline' %}selected{% endif %}>🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="e_r3_venue_grp" style="display:{% if hackathon.round_3_type == 'Offline' %}block{% else %}none{% endif %};">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_3_venue" value="{{ hackathon.round_3_venue|default:'' }}" placeholder="Enter venue location" {% if hackathon.round_3_type == 'Offline' %}required{% endif %}>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_3_num_params" value="{{ round_params.3.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 3)">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round 3 Total Marks</label>
+                                    <input type="number" name="round_3_total_marks" value="{{ hackathon.round_3_total_marks|default:'100.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(3)">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_3_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;" {% if round_params.3.has_others %}checked{% endif %}>
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                            <div id="round_3_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;">
+                                {% for p in round_params.3.params %}
+                                <div style="grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                                    <div class="form-grid-compact" style="grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;">
+                                        <div class="form-group-compact">
+                                            <label>Parameter {{ forloop.counter }} Name</label>
+                                            <input type="text" name="round_3_param_{{ forloop.counter }}_name" value="{{ p.name }}" required placeholder="e.g. Innovation">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <label>Total Marks</label>
+                                            <input type="number" name="round_3_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.max_marks|default:'0.00' }}" required oninput="validateMarkingTotals(3)">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <button type="button" onclick="addSubParam(3, {{ forloop.counter }})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                                        </div>
+                                    </div>
+                                    <!-- Sub-parameters -->
+                                    <div style="margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;">
+                                        <div id="round_3_param_{{ forloop.counter }}_subs_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+                                            {% for sub in p.sub_parameters.all %}
+                                            <div style="display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                                                <div style="flex:2; min-width:0;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub {{ forloop.counter }} Name</label>
+                                                    <input type="text" name="round_3_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_name" value="{{ sub.name }}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                                                </div>
+                                                <div style="width:65px;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                                                    <input type="number" name="round_3_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_cutoff" value="{{ sub.cutoff_score|default:'0.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(3)" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="{{ forloop.parentloop.counter }}">
+                                                </div>
+                                                <button type="button" onclick="removeSubParam(this, 3, {{ forloop.parentloop.counter }})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="round_3_param_{{ forloop.counter }}_num_subs" value="{{ p.sub_parameters.count }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_3_num_jury" value="{{ jury_configs.3.num_jury|default:0 }}" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_3_num_experts" value="{{ jury_configs.3.num_experts|default:0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROUND 4 -->
+                    <div class="round-row" data-round="4" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if hackathon.number_of_rounds < 4 %}display:none;{% endif %}">
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round 4 Name</label>
+                                <input type="text" name="round_4_name" value="{{ hackathon.round_4_name }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_4_is_enabled" {% if hackathon.round_4_is_enabled %}checked{% endif %} style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_4_start_date" id="e_r4_start" value="{{ hackathon.round_4_start_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_4_end_date" id="e_r4_end" value="{{ hackathon.round_4_end_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_4_type" id="e_r4_type" onchange="toggleVenueEdit(4)">
+                                    <option value="Online" {% if hackathon.round_4_type == 'Online' %}selected{% endif %}>🌐 Online</option>
+                                    <option value="Offline" {% if hackathon.round_4_type == 'Offline' %}selected{% endif %}>🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="e_r4_venue_grp" style="display:{% if hackathon.round_4_type == 'Offline' %}block{% else %}none{% endif %};">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_4_venue" value="{{ hackathon.round_4_venue|default:'' }}" placeholder="Enter venue location" {% if hackathon.round_4_type == 'Offline' %}required{% endif %}>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_4_num_params" value="{{ round_params.4.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 4)">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round 4 Total Marks</label>
+                                    <input type="number" name="round_4_total_marks" value="{{ hackathon.round_4_total_marks|default:'100.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(4)">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_4_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;" {% if round_params.4.has_others %}checked{% endif %}>
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                            <div id="round_4_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;">
+                                {% for p in round_params.4.params %}
+                                <div style="grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                                    <div class="form-grid-compact" style="grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;">
+                                        <div class="form-group-compact">
+                                            <label>Parameter {{ forloop.counter }} Name</label>
+                                            <input type="text" name="round_4_param_{{ forloop.counter }}_name" value="{{ p.name }}" required placeholder="e.g. Innovation">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <label>Total Marks</label>
+                                            <input type="number" name="round_4_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.max_marks|default:'0.00' }}" required oninput="validateMarkingTotals(4)">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <button type="button" onclick="addSubParam(4, {{ forloop.counter }})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                                        </div>
+                                    </div>
+                                    <!-- Sub-parameters -->
+                                    <div style="margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;">
+                                        <div id="round_4_param_{{ forloop.counter }}_subs_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+                                            {% for sub in p.sub_parameters.all %}
+                                            <div style="display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                                                <div style="flex:2; min-width:0;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub {{ forloop.counter }} Name</label>
+                                                    <input type="text" name="round_4_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_name" value="{{ sub.name }}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                                                </div>
+                                                <div style="width:65px;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                                                    <input type="number" name="round_4_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_cutoff" value="{{ sub.cutoff_score|default:'0.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(4)" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="{{ forloop.parentloop.counter }}">
+                                                </div>
+                                                <button type="button" onclick="removeSubParam(this, 4, {{ forloop.parentloop.counter }})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="round_4_param_{{ forloop.counter }}_num_subs" value="{{ p.sub_parameters.count }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_4_num_jury" value="{{ jury_configs.4.num_jury|default:0 }}" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_4_num_experts" value="{{ jury_configs.4.num_experts|default:0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROUND 5 -->
+                    <div class="round-row" data-round="5" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if hackathon.number_of_rounds < 5 %}display:none;{% endif %}">
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round 5 Name</label>
+                                <input type="text" name="round_5_name" value="{{ hackathon.round_5_name }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_5_is_enabled" {% if hackathon.round_5_is_enabled %}checked{% endif %} style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_5_start_date" id="e_r5_start" value="{{ hackathon.round_5_start_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_5_end_date" id="e_r5_end" value="{{ hackathon.round_5_end_date|date:'Y-m-d' }}" onchange="chainDates_edit()">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_5_type" id="e_r5_type" onchange="toggleVenueEdit(5)">
+                                    <option value="Online" {% if hackathon.round_5_type == 'Online' %}selected{% endif %}>🌐 Online</option>
+                                    <option value="Offline" {% if hackathon.round_5_type == 'Offline' %}selected{% endif %}>🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="e_r5_venue_grp" style="display:{% if hackathon.round_5_type == 'Offline' %}block{% else %}none{% endif %};">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_5_venue" value="{{ hackathon.round_5_venue|default:'' }}" placeholder="Enter venue location" {% if hackathon.round_5_type == 'Offline' %}required{% endif %}>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_5_num_params" value="{{ round_params.5.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 5)">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round 5 Total Marks</label>
+                                    <input type="number" name="round_5_total_marks" value="{{ hackathon.round_5_total_marks|default:'100.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(5)">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_5_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;" {% if round_params.5.has_others %}checked{% endif %}>
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                            <div id="round_5_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;">
+                                {% for p in round_params.5.params %}
+                                <div style="grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                                    <div class="form-grid-compact" style="grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;">
+                                        <div class="form-group-compact">
+                                            <label>Parameter {{ forloop.counter }} Name</label>
+                                            <input type="text" name="round_5_param_{{ forloop.counter }}_name" value="{{ p.name }}" required placeholder="e.g. Innovation">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <label>Total Marks</label>
+                                            <input type="number" name="round_5_param_{{ forloop.counter }}_cutoff" step="0.01" min="0" value="{{ p.max_marks|default:'0.00' }}" required oninput="validateMarkingTotals(5)">
+                                        </div>
+                                        <div class="form-group-compact">
+                                            <button type="button" onclick="addSubParam(5, {{ forloop.counter }})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                                        </div>
+                                    </div>
+                                    <!-- Sub-parameters -->
+                                    <div style="margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;">
+                                        <div id="round_5_param_{{ forloop.counter }}_subs_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+                                            {% for sub in p.sub_parameters.all %}
+                                            <div style="display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                                                <div style="flex:2; min-width:0;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub {{ forloop.counter }} Name</label>
+                                                    <input type="text" name="round_5_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_name" value="{{ sub.name }}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                                                </div>
+                                                <div style="width:65px;">
+                                                    <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                                                    <input type="number" name="round_5_param_{{ forloop.parentloop.counter }}_sub_{{ forloop.counter }}_cutoff" value="{{ sub.cutoff_score|default:'0.00' }}" step="0.01" min="0" oninput="validateMarkingTotals(5)" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="{{ forloop.parentloop.counter }}">
+                                                </div>
+                                                <button type="button" onclick="removeSubParam(this, 5, {{ forloop.parentloop.counter }})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="round_5_param_{{ forloop.counter }}_num_subs" value="{{ p.sub_parameters.count }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_5_num_jury" value="{{ jury_configs.5.num_jury|default:0 }}" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_5_num_experts" value="{{ jury_configs.5.num_experts|default:0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="form-section-title">Approval & Timeline</div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Approval Date</label>
-                <input type="date" name="approval_date" value="{{ hackathon.approval_date|date:'Y-m-d' }}">
+        <!-- footer -->
+        <div class="modal-footer">
+            <div class="footer-buttons-left">
+                <button type="button" class="btn-step-prev" style="display:none;">Back</button>
             </div>
-            <div class="form-group">
-                <label>Approval Letter (PDF)</label>
-                <input type="file" name="approval_letter" accept=".pdf">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status" id="status-select">
-                    <option value="Draft">Draft</option>
-                    <option value="Live">Live</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-grid">
-            <div class="form-group"><label>Poster Launch</label><input type="date" name="poster_launching_date" value="{{ hackathon.poster_launching_date|date:'Y-m-d' }}"></div>
-            <div class="form-group"><label>Website Launch</label><input type="date" name="website_launching_date" value="{{ hackathon.website_launching_date|date:'Y-m-d' }}"></div>
-            <div class="form-group"><label>Registration Open</label><input type="date" name="registration_open" value="{{ hackathon.registration_open|date:'Y-m-d' }}"></div>
-            <div class="form-group"><label>Registration Close</label><input type="date" name="registration_close" value="{{ hackathon.registration_close|date:'Y-m-d' }}"></div>
-        </div>
-
-        <div class="form-section-title">Round Management</div>
-        <div class="form-group" style="margin-bottom: 24px;">
-            <label>Total Number of Rounds</label>
-            <input type="number" name="number_of_rounds" id="num-rounds-input" value="{{ hackathon.number_of_rounds }}" min="1" max="5">
-        </div>
-
-        <div id="rounds-container">
-            <div class="round-row" data-round="1">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
-                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 1 Details</div>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_1_is_enabled" {% if hackathon.round_1_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
-                </div>
-                <div class="form-group"><label>Round 1 Name</label><input type="text" name="round_1_name" value="{{ hackathon.round_1_name }}"></div>
-                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_1_start_date" value="{{ hackathon.round_1_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_1_end_date" value="{{ hackathon.round_1_end_date|date:'Y-m-d' }}"></div></div>
-                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_1_num_params" value="{{ round_params.1.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 1)">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_1_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.1.has_others|yesno:'checked,' }}> Include 'Others' Option
-                        </label>
-                    </div>
-                    <div id="round_1_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                        {% for p in round_params.1.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_1_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
-                        </div>
-                        {% endfor %}
-                    </div>
+            <div class="footer-buttons-right">
+                <button type="button" class="btn-step-next">Next Step</button>
+                <div class="submit-group" style="display:none; gap:10px;">
+                    <a href="{% url 'superadmin_dashboard' %}?tab=events" class="btn-step-prev" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Cancel</a>
+                    <button type="submit" class="btn-step-next">Save Changes</button>
                 </div>
             </div>
-            <div class="round-row" data-round="2">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
-                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 2 Details</div>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_2_is_enabled" {% if hackathon.round_2_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
-                </div>
-                <div class="form-group"><label>Round 2 Name</label><input type="text" name="round_2_name" value="{{ hackathon.round_2_name }}"></div>
-                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_2_start_date" value="{{ hackathon.round_2_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_2_end_date" value="{{ hackathon.round_2_end_date|date:'Y-m-d' }}"></div></div>
-                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_2_num_params" value="{{ round_params.2.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 2)">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_2_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.2.has_others|yesno:'checked,' }}> Include 'Others' Option
-                        </label>
-                    </div>
-                    <div id="round_2_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                        {% for p in round_params.2.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_2_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="round-row" data-round="3">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
-                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 3 Details</div>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_3_is_enabled" {% if hackathon.round_3_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
-                </div>
-                <div class="form-group"><label>Round 3 Name</label><input type="text" name="round_3_name" value="{{ hackathon.round_3_name }}"></div>
-                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_3_start_date" value="{{ hackathon.round_3_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_3_end_date" value="{{ hackathon.round_3_end_date|date:'Y-m-d' }}"></div></div>
-                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_3_num_params" value="{{ round_params.3.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 3)">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_3_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.3.has_others|yesno:'checked,' }}> Include 'Others' Option
-                        </label>
-                    </div>
-                    <div id="round_3_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                        {% for p in round_params.3.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_3_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="round-row" data-round="4">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
-                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 4 Details</div>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_4_is_enabled" {% if hackathon.round_4_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
-                </div>
-                <div class="form-group"><label>Round 4 Name</label><input type="text" name="round_4_name" value="{{ hackathon.round_4_name }}"></div>
-                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_4_start_date" value="{{ hackathon.round_4_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_4_end_date" value="{{ hackathon.round_4_end_date|date:'Y-m-d' }}"></div></div>
-                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_4_num_params" value="{{ round_params.4.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 4)">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_4_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.4.has_others|yesno:'checked,' }}> Include 'Others' Option
-                        </label>
-                    </div>
-                    <div id="round_4_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                        {% for p in round_params.4.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_4_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="round-row" data-round="5">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
-                    <div style="font-weight: 800; color: #ea580c; font-size: 14px;">Round 5 Details</div>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c;"><input type="checkbox" name="round_5_is_enabled" {% if hackathon.round_5_is_enabled %}checked{% endif %} style="width:16px; height:16px;"> Active</label>
-                </div>
-                <div class="form-group"><label>Round 5 Name</label><input type="text" name="round_5_name" value="{{ hackathon.round_5_name }}"></div>
-                <div class="form-grid"><div class="form-group"><label>Start Date</label><input type="date" name="round_5_start_date" value="{{ hackathon.round_5_start_date|date:'Y-m-d' }}"></div><div class="form-group"><label>End Date</label><input type="date" name="round_5_end_date" value="{{ hackathon.round_5_end_date|date:'Y-m-d' }}"></div></div>
-                <div style="width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_5_num_params" value="{{ round_params.5.count|default:0 }}" min="0" oninput="updateMarkingParams(this, 5)">
-                        </div>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_5_has_others" style="width:16px; height:16px; accent-color:#ea580c;" {{ round_params.5.has_others|yesno:'checked,' }}> Include 'Others' Option
-                        </label>
-                    </div>
-                    <div id="round_5_params_container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-                        {% for p in round_params.5.params %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:11px;">Parameter {{ forloop.counter }}</label>
-                            <input type="text" name="round_5_param_{{ forloop.counter }}_name" value="{{ p.name }}" required>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="actions" style="margin-top: 40px; display: flex; gap: 16px;">
-            <a href="{% url 'superadmin_dashboard' %}?tab=events" style="flex: 1; text-align: center; text-decoration: none; padding: 14px; border-radius: 8px; background: #e5e7eb; color: #374151; font-weight: 700;">Cancel</a>
-            <button type="submit" style="flex: 2; padding: 14px; border-radius: 8px; background: #ea580c; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 16px;">Save Changes</button>
         </div>
     </form>
+</div>
 </div>
 {% endblock %}
 
@@ -244,26 +1011,410 @@
 
         numRoundsInput.addEventListener('input', updateRounds);
         updateRounds();
+
+        // Run validation on load for each round
+        for (let r = 1; r <= 5; r++) {
+            validateMarkingTotals(r);
+        }
+
+        // Add input listener on form for auto validation
+        const form = document.getElementById('editHackathonFormElement');
+        if (form) {
+            form.addEventListener('input', (e) => {
+                if (e.target.name && (e.target.name.includes('_total_marks') || e.target.name.includes('_cutoff'))) {
+                    const match = e.target.name.match(/round_(\d+)_/);
+                    if (match) {
+                        validateMarkingTotals(parseInt(match[1]));
+                    }
+                }
+            });
+        }
     });
+
+    function validateMarkingTotals(roundNum) {
+        const totalMarkInput = document.querySelector(`input[name="round_${roundNum}_total_marks"]`);
+        if (!totalMarkInput) return;
+
+        const roundTotal = parseFloat(totalMarkInput.value) || 0;
+        
+        // Find all parameter cutoff inputs for this round
+        const paramCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        let paramsSum = 0;
+        paramCutoffInputs.forEach(input => {
+            paramsSum += parseFloat(input.value) || 0;
+        });
+
+        const isRoundEqual = (roundTotal.toFixed(2) === paramsSum.toFixed(2) && roundTotal > 0);
+
+        // Apply color styling to round total mark input and parameter mark inputs
+        const roundInputsToStyle = [totalMarkInput, ...Array.from(paramCutoffInputs)];
+        roundInputsToStyle.forEach(input => {
+            if (isRoundEqual) {
+                input.style.border = '2px solid #10b981';
+                input.style.backgroundColor = '#ecfdf5';
+                input.style.color = '#065f46';
+            } else {
+                input.style.border = '2px solid #ef4444';
+                input.style.backgroundColor = '#fef2f2';
+                input.style.color = '#991b1b';
+            }
+        });
+
+        // Validate each parameter's total marks vs sum of its sub-parameters
+        const numParamsInput = document.querySelector(`input[name="round_${roundNum}_num_params"]`);
+        const numParams = numParamsInput ? parseInt(numParamsInput.value) || 0 : paramCutoffInputs.length;
+
+        for (let j = 1; j <= numParams; j++) {
+            const paramInput = document.querySelector(`input[name="round_${roundNum}_param_${j}_cutoff"]`);
+            if (!paramInput) continue;
+
+            const paramTotal = parseFloat(paramInput.value) || 0;
+            
+            // Find sub-parameter cutoff inputs under this parameter
+            const subCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            
+            if (subCutoffInputs.length > 0) {
+                let subsSum = 0;
+                subCutoffInputs.forEach(input => {
+                    subsSum += parseFloat(input.value) || 0;
+                });
+
+                const isParamEqual = (paramTotal.toFixed(2) === subsSum.toFixed(2));
+
+                const subInputsToStyle = [paramInput, ...Array.from(subCutoffInputs)];
+                subInputsToStyle.forEach(input => {
+                    const isFullyValid = isRoundEqual && isParamEqual;
+                    if (isFullyValid) {
+                        input.style.border = '2px solid #10b981';
+                        input.style.backgroundColor = '#ecfdf5';
+                        input.style.color = '#065f46';
+                    } else {
+                        input.style.border = '2px solid #ef4444';
+                        input.style.backgroundColor = '#fef2f2';
+                        input.style.color = '#991b1b';
+                    }
+                });
+            }
+        }
+    }
 
     function updateMarkingParams(inputElem, roundNum) {
         const count = parseInt(inputElem.value) || 0;
         const container = document.getElementById(`round_${roundNum}_params_container`);
         if (!container) return;
-        
-        const existingInputs = container.querySelectorAll('input[type="text"]');
-        const values = Array.from(existingInputs).map(input => input.value);
-        
+
+        // Preserve existing values
+        const existingNames = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_name"]:not([name*="_sub_"])`);
+        const existingCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        const nameValues = Array.from(existingNames).map(input => input.value);
+        const cutoffValues = Array.from(existingCutoffs).map(input => input.value);
+
+        // Preserve existing sub-params per parameter
+        const existingSubs = {};
+        for (let j = 1; j <= nameValues.length; j++) {
+            const subInputs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_name"]`);
+            const subCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            existingSubs[j] = Array.from(subInputs).map((input, idx) => ({
+                name: input.value,
+                cutoff: subCutoffs[idx] ? subCutoffs[idx].value : '0.00'
+            }));
+        }
+
         container.innerHTML = '';
         for (let j = 1; j <= count; j++) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 8px; background: #f8fafc;';
+
+            const nameVal = nameValues[j - 1] ? `value="${nameValues[j - 1]}"` : '';
+            const cutoffVal = cutoffValues[j - 1] ? `value="${cutoffValues[j - 1]}"` : 'value="0.00"';
+
+            const paramRow = document.createElement('div');
+            paramRow.className = 'form-grid-compact';
+            paramRow.style.cssText = 'grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;';
+            paramRow.innerHTML = `
+                <div class="form-group-compact">
+                    <label>Parameter ${j} Name</label>
+                    <input type="text" name="round_${roundNum}_param_${j}_name" required ${nameVal} placeholder="e.g. Innovation">
+                </div>
+                <div class="form-group-compact">
+                    <label>Total Marks</label>
+                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" ${cutoffVal} required oninput="validateMarkingTotals(${roundNum})">
+                </div>
+                <div class="form-group-compact">
+                    <button type="button" onclick="addSubParam(${roundNum}, ${j})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                </div>
+            `;
+            wrapper.appendChild(paramRow);
+
+            // Sub-parameters section
+            const subSection = document.createElement('div');
+            subSection.style.cssText = 'margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;';
+
+            const subContainer = document.createElement('div');
+            subContainer.id = `round_${roundNum}_param_${j}_subs_container`;
+            subContainer.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;';
+
+            // Restore existing sub-params
+            const subs = existingSubs[j] || [];
+            subs.forEach((sub, idx) => {
+                const k = idx + 1;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+                row.innerHTML = `
+                    <div style="flex:2; min-width:0;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                        <input type="text" name="round_${roundNum}_param_${j}_sub_${k}_name" value="${sub.name}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                    </div>
+                    <div style="width:65px;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                        <input type="number" name="round_${roundNum}_param_${j}_sub_${k}_cutoff" value="${sub.cutoff}" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${j}">
+                    </div>
+                    <button type="button" onclick="removeSubParam(this, ${roundNum}, ${j})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                `;
+                subContainer.appendChild(row);
+            });
+
+            const subCounter = document.createElement('input');
+            subCounter.type = 'hidden';
+            subCounter.name = `round_${roundNum}_param_${j}_num_subs`;
+            subCounter.value = subs.length.toString();
+
+            subSection.appendChild(subContainer);
+            subSection.appendChild(subCounter);
+            wrapper.appendChild(subSection);
+
+            container.appendChild(wrapper);
+        }
+        validateMarkingTotals(roundNum);
+    }
+
+    function addSubParam(roundNum, paramIdx) {
+        const container = document.getElementById(`round_${roundNum}_param_${paramIdx}_subs_container`);
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        if (!container || !counter) return;
+
+        const currentCount = parseInt(counter.value) || 0;
+        const k = currentCount + 1;
+        counter.value = k;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+        row.innerHTML = `
+            <div style="flex:2; min-width:0;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                <input type="text" name="round_${roundNum}_param_${paramIdx}_sub_${k}_name" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+            </div>
+            <div style="width:65px;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                <input type="number" name="round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff" value="0.00" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${paramIdx}">
+            </div>
+            <button type="button" onclick="removeSubParam(this, ${roundNum}, ${paramIdx})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+        `;
+        container.appendChild(row);
+        validateMarkingTotals(roundNum);
+    }
+
+    function removeSubParam(btn, roundNum, paramIdx) {
+        const row = btn.parentElement;
+        const container = row.parentElement;
+        row.remove();
+
+        // Re-index remaining sub-params
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        const rows = container.querySelectorAll(':scope > div');
+        rows.forEach((r, idx) => {
+            const k = idx + 1;
+            const label = r.querySelector('label');
+            if (label) label.textContent = `Sub ${k} Name`;
+            const nameInput = r.querySelector('input[name*="_name"]');
+            if (nameInput) nameInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_name`;
+            const cutoffInput = r.querySelector('input[name*="_cutoff"]');
+            if (cutoffInput) cutoffInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff`;
+        });
+        if (counter) counter.value = rows.length;
+        validateMarkingTotals(roundNum);
+    }
+
+    // ── Dynamic Problem Statement Domain Fields (Edit form) ──
+    function updateEditDomainFields(inputElem) {
+        const count = parseInt(inputElem.value) || 0;
+        const container = document.getElementById('editDomainsContainer');
+        if (!container) return;
+
+        const existingInputs = container.querySelectorAll('input[type="text"]');
+        const values = Array.from(existingInputs).map(input => input.value);
+
+        container.innerHTML = '';
+        for (let d = 1; d <= count; d++) {
             const div = document.createElement('div');
             div.className = 'form-group';
             div.style.marginBottom = '0';
-            const val = values[j-1] ? `value="${values[j-1]}"` : '';
-            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
-                             <input type="text" name="round_${roundNum}_param_${j}_name" required ${val} placeholder="e.g. Innovation">`;
+            const val = values[d - 1] ? `value="${values[d - 1]}"` : '';
+            div.innerHTML = `<label style="font-size:11px;">Domain ${d} Name</label>
+                             <input type="text" name="domain_${d}_name" required ${val} placeholder="e.g. Agriculture, Healthcare">`;
             container.appendChild(div);
         }
     }
+
+    // ── Toggle venue field based on mode ──
+    function toggleVenueEdit(roundNum) {
+        const prefix = 'e_r' + roundNum;
+        const sel = document.getElementById(prefix + '_type');
+        const grp = document.getElementById(prefix + '_venue_grp');
+        if (!sel || !grp) return;
+        if (sel.value === 'Offline') {
+            grp.style.display = '';
+            const inp = grp.querySelector('input');
+            if (inp) inp.required = true;
+        } else {
+            grp.style.display = 'none';
+            const inp = grp.querySelector('input');
+            if (inp) inp.required = false;
+        }
+    }
+
+    function chainDates_edit() {
+        const ids = [
+            'e_poster_launch',
+            'e_web_launch',
+            'e_reg_open',
+            'e_reg_close',
+            'e_r1_start', 'e_r1_end',
+            'e_r2_start', 'e_r2_end',
+            'e_r3_start', 'e_r3_end',
+            'e_r4_start', 'e_r4_end',
+            'e_r5_start', 'e_r5_end'
+        ];
+        let prev = null;
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (prev) el.min = prev;
+            if (el.value) prev = el.value;
+        });
+    }
+
+    function addBannerInput() {
+        const container = document.getElementById('heroBannerUploads');
+        if (!container) return;
+        
+        const div = document.createElement('div');
+        div.className = 'banner-upload-item';
+        div.style.display = 'flex';
+        div.style.gap = '8px';
+        div.style.alignItems = 'center';
+        div.style.width = '100%';
+        
+        div.innerHTML = `
+            <input type="file" name="hero_banners" accept="image/*" style="flex:1; height:40px;">
+            <button type="button" onclick="this.parentElement.remove()" 
+                style="background:#ef4444; color:#fff; border:none; height:40px; width:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"
+                title="Remove input">
+                <ion-icon name="trash-outline" style="font-size:16px;"></ion-icon>
+            </button>
+        `;
+        container.appendChild(div);
+    }
+
+    function markBannerForDeletion(bannerId) {
+        const card = document.getElementById(`banner-card-${bannerId}`);
+        if (card) {
+            card.remove();
+        }
+        
+        const container = document.getElementById('bannersDeleteContainer');
+        if (container) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'delete_banner';
+            input.value = bannerId;
+            container.appendChild(input);
+        }
+    }
+
+    function initMultiStepForm(formId) {
+        const formEl = document.getElementById(formId);
+        if (!formEl) return;
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const stepPanes = formEl.querySelectorAll('.form-step-pane');
+        const parentCard = formEl.closest('.form-card') || formEl;
+        const stepDots = parentCard.querySelectorAll('.step-dot');
+        const prevBtn = formEl.querySelector('.btn-step-prev');
+        const nextBtn = formEl.querySelector('.btn-step-next');
+        const submitGroup = formEl.querySelector('.submit-group');
+        
+        function updateFormUI() {
+            // Update panes
+            stepPanes.forEach(pane => {
+                pane.classList.toggle('active', parseInt(pane.dataset.step) === currentStep);
+            });
+            
+            // Update dots
+            stepDots.forEach(dot => {
+                const stepNum = parseInt(dot.dataset.step);
+                dot.classList.toggle('active', stepNum === currentStep);
+                dot.classList.toggle('completed', stepNum < currentStep);
+            });
+            
+            // Update buttons
+            if (prevBtn) {
+                prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+            }
+            if (currentStep === totalSteps) {
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (submitGroup) submitGroup.style.display = 'flex';
+            } else {
+                if (nextBtn) nextBtn.style.display = 'block';
+                if (submitGroup) submitGroup.style.display = 'none';
+            }
+        }
+        
+        if (nextBtn) {
+            nextBtn.onclick = function() {
+                // Perform validation on current step inputs before moving forward
+                const activePane = formEl.querySelector('.form-step-pane.active');
+                const inputs = activePane.querySelectorAll('input[required], select[required]');
+                let valid = true;
+                inputs.forEach(input => {
+                    if (!input.value) {
+                        input.reportValidity();
+                        valid = false;
+                    }
+                });
+                if (!valid) return;
+                
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        if (prevBtn) {
+            prevBtn.onclick = function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        // Initialize UI
+        updateFormUI();
+    }
+
+    // Init venue toggles, date chaining, and multi-step form on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        for (var i = 1; i <= 5; i++) {
+            toggleVenueEdit(i);
+        }
+        chainDates_edit();
+        initMultiStepForm('editHackathonFormElement');
+    });
 </script>
 {% endblock %}

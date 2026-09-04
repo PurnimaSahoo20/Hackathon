@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}SPOC & College Management — HackNexus{% endblock %}
+{% block title %}Institute & College Management — HackNexus{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -75,7 +75,7 @@
 
 {% block content %}
 <div style="margin-bottom:24px;">
-    <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">SPOC & College Management</h1>
+    <h1 style="font-size:28px;font-weight:900;margin:0 0 4px;color:#111827;">Institute & College Management</h1>
     <p style="color:#6b7280;font-size:14px;margin:0;">Invite, review, approve, and manage SPOCs and institutions</p>
 </div>
 
@@ -96,8 +96,9 @@
 <!-- INVITATIONS TAB CONTENT -->
 {% if not readonly_mode %}
 <div id="inviteForm" class="slide-form">
+  <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-        <h3 style="margin:0;color:#ea580c;font-weight:800;">Send SPOC Invitation</h3>
+        <h3 style="margin:0;color:#ea580c;font-weight:800;">Send Institute Invitation</h3>
         <button type="button" onclick="document.getElementById('inviteForm').classList.remove('open')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;"><ion-icon name="close-circle-outline"></ion-icon></button>
     </div>
     <div class="invite-toggle">
@@ -110,7 +111,7 @@
             {% csrf_token %}
             <div class="form-row">
                 <div class="fg">
-                    <label>SPOC Email Address *</label>
+                    <label>Institute Email Address *</label>
                     <input type="email" name="email" placeholder="e.g. principal@college.edu" required>
                 </div>
                 <div class="fg">
@@ -119,6 +120,22 @@
                         <option value="">-- Select Hackathon --</option>
                         {% for h in hackathons %}<option value="{{ h.id }}">{{ h.name }}</option>{% endfor %}
                     </select>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 12px;">
+                <div class="fg" style="flex: 1 1 100%;">
+                    <label>Institution Name *</label>
+                    <input type="text" name="institution_name" placeholder="e.g. Biju Patnaik University of Technology" required>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 12px; margin-bottom: 16px;">
+                <div class="fg">
+                    <label>City *</label>
+                    <input type="text" name="city" placeholder="e.g. Rourkela" required>
+                </div>
+                <div class="fg">
+                    <label>State *</label>
+                    <input type="text" name="state" placeholder="e.g. Odisha" required>
                 </div>
             </div>
             <div style="display:flex;gap:12px;">
@@ -147,11 +164,12 @@
             </form>
             <div class="upload-note">
                 <strong>CSV format</strong>
-                Use a column like <code>email</code>, <code>spoc_email</code>, or keep one email per row.
+                Use columns like <code>email</code> (or <code>spoc_email</code>), <code>institution_name</code>, <code>city</code>, and <code>state</code>.
                 Duplicate, already invited, already approved, or invalid emails will be skipped and shown in the status message.
             </div>
         </div>
     </div>
+  </div>
 </div>
 {% endif %}
 
@@ -165,7 +183,7 @@
             </form>
             {% if not readonly_mode %}
             <button class="btn" onclick="document.getElementById('inviteForm').classList.toggle('open')">
-                <ion-icon name="add-outline"></ion-icon> Invite SPOC
+                <ion-icon name="add-outline"></ion-icon> Invite Institute
             </button>
             {% endif %}
         </div>
@@ -176,7 +194,12 @@
             {% for inv in invitations %}
             <tr>
                 <td><strong>{{ inv.email }}</strong></td>
-                <td>{{ inv.institution_name|default:"—" }}</td>
+                <td>
+                    {{ inv.institution_name|default:"—" }}
+                    {% if inv.city or inv.state %}
+                    <br><small style="color:#64748b; font-size: 11px;">{{ inv.city }}{% if inv.city and inv.state %}, {% endif %}{{ inv.state }}</small>
+                    {% endif %}
+                </td>
                 <td><span class="badge {% if inv.status == 'invited' %}b-invited{% elif inv.status == 'pending' %}b-pending{% elif inv.status == 'approved' %}b-approved{% elif inv.status == 'suspended' %}b-suspended{% else %}b-rejected{% endif %}">{{ inv.get_status_display }}</span></td>
                 <td>
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -195,7 +218,15 @@
                         <form method="POST" action="{% url 'approve_spoc_invitation' inv.id %}" style="display:inline;">{% csrf_token %}<button class="btn-sm btn-approve">Approve</button></form>
                         <button class="btn-sm btn-reject" onclick="openRejectModal({{ inv.id }},'{{ inv.email }}')">Reject</button>
                         {% elif inv.status == 'approved' and inv.created_user and inv.created_user.spoc_profile %}
-                        <a href="{% url 'view_spoc' inv.created_user.spoc_profile.id %}" class="btn-sm btn-approve">Profile</a>
+                            {% if not readonly_mode %}
+                            <form method="POST" action="{% url 'suspend_spoc' inv.created_user.spoc_profile.id %}?sub=invitations" style="display:inline;"
+                                  onsubmit="return confirm('{% if inv.created_user.is_active %}Suspend{% else %}Reactivate{% endif %} {{ inv.created_user.email }}?')">
+                                {% csrf_token %}
+                                <button class="btn-icon danger" title="{% if inv.created_user.is_active %}Suspend SPOC{% else %}Reactivate SPOC{% endif %}" type="submit">
+                                    <ion-icon name="{% if inv.created_user.is_active %}ban-outline{% else %}checkmark-circle-outline{% endif %}"></ion-icon>
+                                </button>
+                            </form>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </td>

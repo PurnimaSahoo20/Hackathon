@@ -81,6 +81,91 @@
         background:rgba(255,247,237,.6);
     }
     @media (max-width:900px){.detail-grid{grid-template-columns:1fr;}.meta-grid{grid-template-columns:1fr;}}
+
+    /* Slide-form modal styles overrides */
+    #creativeForm .modal-box,
+    #testimonialForm .modal-box,
+    #newsForm .modal-box,
+    #galleryForm .modal-box,
+    #voiceForm .modal-box,
+    #feedForm .modal-box,
+    #faqForm .modal-box {
+        max-width: 680px !important;
+    }
+    .fg label {
+        display: block !important;
+        font-size: 12.5px !important;
+        font-weight: 700 !important;
+        color: #374151 !important;
+        margin-bottom: 6px !important;
+        text-align: left !important;
+    }
+    #creativeForm .form-grid,
+    #testimonialForm .form-grid,
+    #newsForm .form-grid,
+    #galleryForm .form-grid,
+    #voiceForm .form-grid,
+    #feedForm .form-grid,
+    #faqForm .form-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 14px !important;
+    }
+    
+    /* Compact landing page placement checkboxes in one line */
+    #creativeForm .placement-grid,
+    #testimonialForm .placement-grid,
+    #newsForm .placement-grid,
+    #galleryForm .placement-grid,
+    #voiceForm .placement-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin-top: 8px;
+    }
+    #creativeForm .placement-option,
+    #testimonialForm .placement-option,
+    #newsForm .placement-option,
+    #galleryForm .placement-option,
+    #voiceForm .placement-option {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 14px !important;
+        border: 1px solid #fcd34d;
+        border-radius: 9px !important;
+        background: #fff;
+        cursor: pointer;
+        transition: all .2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        white-space: nowrap !important;
+        flex: 0 0 auto !important;
+        justify-content: center !important;
+        height: auto !important;
+    }
+    #creativeForm .placement-option input,
+    #testimonialForm .placement-option input,
+    #newsForm .placement-option input,
+    #galleryForm .placement-option input,
+    #voiceForm .placement-option input {
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        accent-color: #ea580c;
+        transform: scale(1.05);
+    }
+    #creativeForm .placement-option strong,
+    #testimonialForm .placement-option strong,
+    #newsForm .placement-option strong,
+    #galleryForm .placement-option strong,
+    #voiceForm .placement-option strong {
+        display: inline-block !important;
+        font-size: 13px !important;
+        color: #111827;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+    }
 </style>
 {% endblock %}
 
@@ -109,10 +194,13 @@
     <a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'news-press-release' %}active{% endif %}">News & Press Release</a>
     <a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'media-gallery' %}active{% endif %}">Media Gallery</a>
     <a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'feeds' %}active{% endif %}">Feeds</a>
+    <a href="?focus=faq{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="sub-tab {% if focus == 'faq' %}active{% endif %}">FAQ</a>
 </div>
 
 {% if focus == 'creative-elements' %}
-<div class="card">
+<div id="creativeForm" class="slide-form {% if edit_creative %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_creative %}window.location.href='?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('creativeForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
     <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_creative %}Edit{% else %}Upload{% endif %} Creative Element</h2>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
@@ -122,8 +210,14 @@
         <input type="hidden" name="asset_kind" value="creative">
         <input type="hidden" name="creative_id" value="{% if edit_creative %}{{ edit_creative.asset.id }}{% endif %}">
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="Creative element title" value="{% if edit_creative %}{{ edit_creative.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="file" name="file" {% if not edit_creative %}required{% endif %}></div>
+            <div class="fg">
+                <label>Creative Element Title *</label>
+                <input name="title" placeholder="Creative element title" value="{% if edit_creative %}{{ edit_creative.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>File Upload *</label>
+                <input type="file" name="file" {% if not edit_creative %}required{% endif %}>
+            </div>
         </div>
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
@@ -131,28 +225,37 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_creative and value in edit_creative.asset.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Show this creative element in the {{ label|lower }} section.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
             <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Pick one or more places where this asset should appear.</small>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">Publish</button>
-            {% if edit_creative %}<a href="?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_creative %}
+            <a href="?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('creativeForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% else %}
     <p style="color:#9ca3af;">Choose a hackathon to manage creative elements.</p>
     {% endif %}
+  </div>
 </div>
 
 <div class="card">
-    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Creative Element Library</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">Creative Element Library</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_creative %}window.location.href='?focus=creative-elements{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=creativeForm'{% else %}openForm('creativeForm', 'Upload Creative Element'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add Creative Element
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -189,8 +292,12 @@
         <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=team" class="inner-tab {% if testimonial_kind == 'team' %}active{% endif %}">Team Members</a>
         <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind=vip" class="inner-tab {% if testimonial_kind == 'vip' %}active{% endif %}">VIP</a>
     </div>
+</div>
 
-    <h3 style="margin:18px 0 14px;font-size:16px;font-weight:800;">{% if edit_testimonial %}Edit{% else %}Upload{% endif %} {{ testimonial_kind|title }} Testimonial</h3>
+<div id="testimonialForm" class="slide-form {% if edit_testimonial %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_testimonial %}window.location.href='?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}'{% else %}closeForm('testimonialForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
+    <h3 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_testimonial %}Edit{% else %}Upload{% endif %} {{ testimonial_kind|title }} Testimonial</h3>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
         {% csrf_token %}
@@ -200,8 +307,35 @@
         <input type="hidden" name="testimonial_kind" value="{{ testimonial_kind }}">
         <input type="hidden" name="creative_id" value="{% if edit_testimonial %}{{ edit_testimonial.asset.id }}{% endif %}">
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="{{ testimonial_kind|title }} testimonial title" value="{% if edit_testimonial %}{{ edit_testimonial.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="file" name="file" accept="video/*" {% if not edit_testimonial %}required{% endif %}></div>
+            <div class="fg">
+                <label>Testimonial Title *</label>
+                <input name="title" placeholder="{{ testimonial_kind|title }} testimonial title" value="{% if edit_testimonial %}{{ edit_testimonial.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>Video File *</label>
+                <input type="file" name="file" accept="video/*" {% if not edit_testimonial %}required{% endif %}>
+            </div>
+        </div>
+        <div class="form-grid" style="margin-top:10px;">
+            <div class="fg">
+                <label>Thumbnail Image</label>
+                <input type="file" name="profile_image" accept="image/*">
+                {% if edit_testimonial and edit_testimonial.asset.profile_image %}<small style="color:#059669;">Current: {{ edit_testimonial.asset.profile_image.name }}</small>{% endif %}
+            </div>
+            <div class="fg">
+                <label>Speaker / Person Name</label>
+                <input name="speaker_name" placeholder="Speaker / Person Name" value="{% if edit_testimonial %}{{ edit_testimonial.asset.speaker_name }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-grid" style="margin-top:10px;">
+            <div class="fg">
+                <label>Designation</label>
+                <input name="designation" placeholder="Designation (e.g. Professor, CEO)" value="{% if edit_testimonial %}{{ edit_testimonial.asset.designation }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>Institute / Organization</label>
+                <input name="institute_name" placeholder="Institute / Organization" value="{% if edit_testimonial %}{{ edit_testimonial.asset.institute_name }}{% endif %}">
+            </div>
         </div>
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
@@ -209,28 +343,37 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_testimonial and value in edit_testimonial.asset.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Show this testimonial in the {{ label|lower }} section.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
             <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Choose one or more places where this testimonial should appear.</small>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">Publish</button>
-            {% if edit_testimonial %}<a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_testimonial %}
+            <a href="?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('testimonialForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% else %}
     <p style="color:#9ca3af;">Choose a hackathon to upload testimonials.</p>
     {% endif %}
+  </div>
 </div>
 
 <div class="card">
-    <h3 style="margin:0 0 16px;font-size:18px;font-weight:800;">{{ testimonial_kind|title }} Testimonial List</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;font-size:18px;font-weight:800;">{{ testimonial_kind|title }} Testimonial List</h3>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_testimonial %}window.location.href='?focus=testimonials{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&testimonial_kind={{ testimonial_kind }}&open_form=testimonialForm'{% else %}openForm('testimonialForm', 'Upload {{ testimonial_kind|title }} Testimonial'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add Testimonial
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -277,7 +420,9 @@
 {% endif %}
 
 {% elif focus == 'news-press-release' %}
-<div class="card">
+<div id="newsForm" class="slide-form {% if edit_news %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_news %}window.location.href='?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('newsForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
     <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_news %}Edit{% else %}Upload{% endif %} News & Announcement</h2>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_news_press_item' %}" enctype="multipart/form-data">
@@ -298,9 +443,18 @@
             </div>
         </div>
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="News or announcement title" value="{% if edit_news %}{{ edit_news.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="url" name="external_url" placeholder="External URL (optional)" value="{% if edit_news %}{{ edit_news.item.external_url }}{% endif %}"></div>
-            <div class="fg"><input type="file" name="file"></div>
+            <div class="fg">
+                <label>Title *</label>
+                <input name="title" placeholder="News or announcement title" value="{% if edit_news %}{{ edit_news.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>External URL (optional)</label>
+                <input type="url" name="external_url" placeholder="External URL (optional)" value="{% if edit_news %}{{ edit_news.item.external_url }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>File Attachment (optional)</label>
+                <input type="file" name="file">
+            </div>
         </div>
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
@@ -308,26 +462,35 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_news and value in edit_news.item.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Display this update in the {{ label|lower }} section.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
             <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Select the public landing sections that should show this update.</small>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">{% if edit_news_kind == 'announcement' %}Publish Announcement{% else %}Publish News{% endif %}</button>
-            {% if edit_news %}<a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_news %}
+            <a href="?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('newsForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% endif %}
+  </div>
 </div>
 
 <div class="card">
-    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">News & Announcement List</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">News & Announcement List</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_news %}window.location.href='?focus=news-press-release{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=newsForm'{% else %}openForm('newsForm', 'Upload News & Announcement'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add News / Announcement
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -352,7 +515,9 @@
 </div>
 
 {% elif focus == 'media-gallery' %}
-<div class="card">
+<div id="galleryForm" class="slide-form {% if edit_gallery %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_gallery %}window.location.href='?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('galleryForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
     <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_gallery %}Edit{% else %}Upload{% endif %} Media Gallery Photo/Video</h2>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
@@ -362,8 +527,14 @@
         <input type="hidden" name="asset_kind" value="gallery">
         <input type="hidden" name="creative_id" value="{% if edit_gallery %}{{ edit_gallery.asset.id }}{% endif %}">
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="Gallery item title" value="{% if edit_gallery %}{{ edit_gallery.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="file" name="file" accept="image/*,video/*" {% if not edit_gallery %}required{% endif %}></div>
+            <div class="fg">
+                <label>Gallery Item Title *</label>
+                <input name="title" placeholder="Gallery item title" value="{% if edit_gallery %}{{ edit_gallery.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>Media File * (Image or Video)</label>
+                <input type="file" name="file" accept="image/*,video/*" {% if not edit_gallery %}required{% endif %}>
+            </div>
         </div>
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
@@ -371,26 +542,35 @@
                 {% for value, label in landing_section_choices %}
                 <label class="placement-option">
                     <input type="checkbox" name="landing_sections" value="{{ value }}" {% if edit_gallery and value in edit_gallery.asset.landing_sections %}checked{% endif %}>
-                    <div>
-                        <strong>{{ label }}</strong>
-                        <span>Display this gallery item in the {{ label|lower }} section.</span>
-                    </div>
+                    <strong>{{ label }}</strong>
                 </label>
                 {% endfor %}
             </div>
             <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">Choose where the gallery item should appear.</small>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">Publish</button>
-            {% if edit_gallery %}<a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_gallery %}
+            <a href="?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('galleryForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% endif %}
+  </div>
 </div>
 
 <div class="card">
-    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Media Gallery List</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">Media Gallery List</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_gallery %}window.location.href='?focus=media-gallery{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=galleryForm'{% else %}openForm('galleryForm', 'Upload Media Gallery Photo/Video'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add Media
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Title</th><th>Uploaded</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -413,7 +593,9 @@
 </div>
 
 {% elif focus == 'voice-inspiration' %}
-<div class="card">
+<div id="voiceForm" class="slide-form {% if edit_voice_inspiration %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_voice_inspiration %}window.location.href='?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('voiceForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
     <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_voice_inspiration %}Edit{% else %}Upload{% endif %} Voice of Inspiration</h2>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_creative_asset' %}" enctype="multipart/form-data">
@@ -424,12 +606,25 @@
         <input type="hidden" name="creative_id" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.id }}{% endif %}">
         <input type="hidden" name="landing_sections" value="voice-of-inspiration">
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="Name" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.speaker_name|default:edit_voice_inspiration.display_title }}{% endif %}" required></div>
-            <div class="fg"><input name="designation" placeholder="Designation" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.designation }}{% endif %}"></div>
-            <div class="fg"><input name="institute_name" placeholder="Institute / Organization" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.institute_name }}{% endif %}"></div>
-            <div class="fg"><input type="file" name="profile_image" accept="image/*" {% if not edit_voice_inspiration or not edit_voice_inspiration.asset.profile_image %}required{% endif %}></div>
             <div class="fg">
-                <select name="display_priority" style="width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;">
+                <label>Name *</label>
+                <input name="title" placeholder="Name" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.speaker_name|default:edit_voice_inspiration.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>Designation</label>
+                <input name="designation" placeholder="Designation" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.designation }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>Institute / Organization</label>
+                <input name="institute_name" placeholder="Institute / Organization" value="{% if edit_voice_inspiration %}{{ edit_voice_inspiration.asset.institute_name }}{% endif %}">
+            </div>
+            <div class="fg">
+                <label>Profile Image *</label>
+                <input type="file" name="profile_image" accept="image/*" {% if not edit_voice_inspiration or not edit_voice_inspiration.asset.profile_image %}required{% endif %}>
+            </div>
+            <div class="fg">
+                <label>Display Priority</label>
+                <select name="display_priority">
                     <option value="0" {% if not edit_voice_inspiration or edit_voice_inspiration.asset.display_priority == 0 %}selected{% endif %}>No Priority</option>
                     <option value="1" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 1 %}selected{% endif %}>Priority 1 (Highest)</option>
                     <option value="2" {% if edit_voice_inspiration and edit_voice_inspiration.asset.display_priority == 2 %}selected{% endif %}>Priority 2</option>
@@ -450,29 +645,38 @@
         <div class="fg" style="margin-top:14px;">
             <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Landing Page Placement</label>
             <div class="placement-grid">
-                <label class="placement-option" style="grid-column:1 / -1; cursor:default;">
+                <label class="placement-option" style="cursor:default;">
                     <input type="checkbox" checked disabled>
-                    <div>
-                        <strong>Voice of Inspiration</strong>
-                        <span>This item will appear in the Voice of Inspiration section on the landing page.</span>
-                    </div>
+                    <strong>Voice of Inspiration</strong>
                 </label>
             </div>
             <small style="display:block;color:#94a3b8;font-size:11px;margin-top:4px;">This tab is dedicated to items shown in the Voice of Inspiration block.</small>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">Publish</button>
-            {% if edit_voice_inspiration %}<a href="?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_voice_inspiration %}
+            <a href="?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('voiceForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% else %}
     <p style="color:#9ca3af;">Choose a hackathon to manage Voice of Inspiration items.</p>
     {% endif %}
+  </div>
 </div>
 
-    <div class="card">
-    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Voice of Inspiration List</h2>
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">Voice of Inspiration List</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_voice_inspiration %}window.location.href='?focus=voice-inspiration{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=voiceForm'{% else %}openForm('voiceForm', 'Upload Voice of Inspiration'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add Item
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Name</th><th>Designation</th><th>Institute</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -497,7 +701,9 @@
 </div>
 
 {% elif focus == 'feeds' %}
-<div class="card">
+<div id="feedForm" class="slide-form {% if edit_feed %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_feed %}window.location.href='?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('feedForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
     <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_feed %}Edit{% else %}Upload{% endif %} Feed Link</h2>
     {% if active_hackathon %}
     <form method="POST" action="{% url 'save_social_feed_item' %}">
@@ -505,22 +711,46 @@
         <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
         <input type="hidden" name="item_id" value="{% if edit_feed %}{{ edit_feed.item.id }}{% endif %}">
         <div class="form-grid">
-            <div class="fg"><input name="title" placeholder="Feed title" value="{% if edit_feed %}{{ edit_feed.display_title }}{% endif %}" required></div>
-            <div class="fg"><input type="date" name="published_date" value="{% if edit_feed %}{{ edit_feed.published_date }}{% endif %}" required></div>
-            <div class="fg"><select name="platform">{% for value,label in feed_platform_choices %}<option value="{{ value }}" {% if edit_feed and edit_feed.platform == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-            <div class="fg"><input type="url" name="external_url" placeholder="Published URL" value="{% if edit_feed %}{{ edit_feed.item.external_url }}{% endif %}" required></div>
+            <div class="fg">
+                <label>Feed Title *</label>
+                <input name="title" placeholder="Feed title" value="{% if edit_feed %}{{ edit_feed.display_title }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>Published Date *</label>
+                <input type="date" name="published_date" value="{% if edit_feed %}{{ edit_feed.published_date }}{% endif %}" required>
+            </div>
+            <div class="fg">
+                <label>Platform *</label>
+                <select name="platform">{% for value,label in feed_platform_choices %}<option value="{{ value }}" {% if edit_feed and edit_feed.platform == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="fg">
+                <label>Published URL *</label>
+                <input type="url" name="external_url" placeholder="Published URL" value="{% if edit_feed %}{{ edit_feed.item.external_url }}{% endif %}" required>
+            </div>
         </div>
-        <div class="actions" style="margin-top:14px;">
-            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+        <div style="display:flex;gap:12px;margin-top:20px;">
             <button class="btn" name="action" value="publish" type="submit">Publish</button>
-            {% if edit_feed %}<a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite">Cancel Edit</a>{% endif %}
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_feed %}
+            <a href="?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('feedForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
         </div>
     </form>
     {% endif %}
+  </div>
 </div>
 
 <div class="card">
-    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">Feed List</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">Feed List</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_feed %}window.location.href='?focus=feeds{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=feedForm'{% else %}openForm('feedForm', 'Upload Feed Link'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add Feed Link
+        </button>
+        {% endif %}
+    </div>
     <table>
         <thead><tr><th>Title</th><th>Platform</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
@@ -541,5 +771,121 @@
         </tbody>
     </table>
 </div>
+{% elif focus == 'faq' %}
+<div id="faqForm" class="slide-form {% if edit_faq %}open{% endif %}">
+  <div class="modal-box">
+    <button type="button" class="btn-icon" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:24px;color:#94a3b8;" onclick="{% if edit_faq %}window.location.href='?focus=faq{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}'{% else %}closeForm('faqForm'){% endif %}"><ion-icon name="close-outline"></ion-icon></button>
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;">{% if edit_faq %}Edit{% else %}Add{% endif %} FAQ Item</h2>
+    {% if active_hackathon %}
+    <form method="POST" action="{% url 'save_faq_item' %}">
+        {% csrf_token %}
+        <input type="hidden" name="hackathon_id" value="{{ active_hackathon.id }}">
+        <input type="hidden" name="item_id" value="{% if edit_faq %}{{ edit_faq.id }}{% endif %}">
+        <div class="form-grid">
+            <div class="fg" style="grid-column:1/-1;">
+                <label>Question *</label>
+                <input name="question" placeholder="Enter the FAQ question" value="{% if edit_faq %}{{ edit_faq.question }}{% endif %}" required>
+            </div>
+            <div class="fg" style="grid-column:1/-1;">
+                <label>Answer *</label>
+                <textarea name="answer" rows="4" placeholder="Enter the answer" style="width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;resize:vertical;" required>{% if edit_faq %}{{ edit_faq.answer }}{% endif %}</textarea>
+            </div>
+            <div class="fg">
+                <label>Display Order</label>
+                <input type="number" name="display_order" min="0" placeholder="0" value="{% if edit_faq %}{{ edit_faq.display_order }}{% else %}0{% endif %}">
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn" name="action" value="publish" type="submit">Publish</button>
+            <button class="btn-lite" name="action" value="draft" type="submit">Save Draft</button>
+            {% if edit_faq %}
+            <a href="?focus=faq{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}" class="btn-lite" style="margin-left:auto;">Cancel</a>
+            {% else %}
+            <button type="button" class="btn-lite" onclick="closeForm('faqForm')" style="margin-left:auto;">Cancel</button>
+            {% endif %}
+        </div>
+    </form>
+    {% else %}
+    <p style="color:#9ca3af;">Choose a hackathon to manage FAQ items.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:18px;font-weight:800;">FAQ List</h2>
+        {% if active_hackathon %}
+        <button class="btn" onclick="{% if edit_faq %}window.location.href='?focus=faq{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&open_form=faqForm'{% else %}openForm('faqForm', 'Add FAQ Item'){% endif %}">
+            <ion-icon name="add-outline" style="margin-right: 6px;"></ion-icon> Add FAQ
+        </button>
+        {% endif %}
+    </div>
+    <table>
+        <thead><tr><th>Order</th><th>Question</th><th>Answer</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for faq in faq_items %}
+            <tr>
+                <td style="text-align:center;font-weight:700;color:#6b7280;">{{ faq.display_order }}</td>
+                <td style="max-width:240px;">{{ faq.question|truncatewords:15 }}</td>
+                <td style="max-width:280px;color:#6b7280;">{{ faq.answer|truncatewords:20 }}</td>
+                <td>{% if faq.is_suspended %}<span class="badge susp">Suspended</span>{% elif faq.is_published %}<span class="badge pub">Published</span>{% else %}<span class="badge draft">Draft</span>{% endif %}</td>
+                <td class="actions">
+                    <a href="?focus=faq{% if hackathon_filter %}&hackathon={{ hackathon_filter }}{% endif %}&edit_faq={{ faq.id }}" class="btn-lite">Edit</a>
+                    <form method="POST" action="{% url 'toggle_faq_status' faq.id %}" style="display:inline;">{% csrf_token %}<button class="btn-lite" type="submit">{% if faq.is_suspended %}Activate{% else %}Suspend{% endif %}</button></form>
+                    <form method="POST" action="{% url 'delete_faq_item' faq.id %}" style="display:inline;" onsubmit="return confirm('Delete this FAQ?')">{% csrf_token %}<button class="btn-lite" type="submit" style="color:#dc2626;">Delete</button></form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;color:#9ca3af;">No FAQ items added yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openForm(formId, title) {
+    document.querySelectorAll('.slide-form').forEach(f => f.classList.remove('open'));
+    const form = document.getElementById(formId);
+    if (!form) return;
+    if (title) {
+        const h2 = form.querySelector('h2');
+        if (h2) h2.textContent = title;
+        const h3 = form.querySelector('h3');
+        if (h3) h3.textContent = title;
+    }
+    form.classList.add('open');
+}
+function closeForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) form.classList.remove('open');
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const openFormId = urlParams.get('open_form');
+    if (openFormId) {
+        if (openFormId === 'creativeForm') {
+            openForm('creativeForm', 'Upload Creative Element');
+        } else if (openFormId === 'testimonialForm') {
+            openForm('testimonialForm', 'Upload {{ testimonial_kind|title }} Testimonial');
+        } else if (openFormId === 'newsForm') {
+            openForm('newsForm', 'Upload News & Announcement');
+        } else if (openFormId === 'galleryForm') {
+            openForm('galleryForm', 'Upload Media Gallery Photo/Video');
+        } else if (openFormId === 'voiceForm') {
+            openForm('voiceForm', 'Upload Voice of Inspiration');
+        } else if (openFormId === 'feedForm') {
+            openForm('feedForm', 'Upload Feed Link');
+        } else if (openFormId === 'faqForm') {
+            openForm('faqForm', 'Add FAQ Item');
+        }
+        // Remove open_form from browser address bar history silently
+        urlParams.delete('open_form');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+});
+</script>
 {% endblock %}

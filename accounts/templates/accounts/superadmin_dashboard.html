@@ -41,13 +41,13 @@
         background: #fff;
         cursor: pointer;
         transition: all .2s;
-        box-shadow: 0 1px 2px rgba(0,0,0,.03);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
     }
 
     .placement-option:hover {
         border-color: #f97316;
         transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(249,115,22,.08);
+        box-shadow: 0 8px 18px rgba(249, 115, 22, .08);
     }
 
     .placement-option input {
@@ -75,8 +75,243 @@
     .placement-option:has(input:checked) {
         border-color: #f97316;
         background: linear-gradient(180deg, #fff7ed, #fff);
-        box-shadow: 0 10px 22px rgba(249,115,22,.12);
+        box-shadow: 0 10px 22px rgba(249, 115, 22, .12);
     }
+
+    /* ── Modal Overlay and Layout Styles ── */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(5px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    .modal-overlay.open {
+        display: flex !important;
+    }
+    .modal-card {
+        background: #fff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 780px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        border: 2px solid #fed7aa;
+        overflow: hidden;
+        animation: modalPop 0.3s ease-out;
+    }
+    .modal-card form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    @keyframes modalPop {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Header & Step progress */
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1.5px solid #fed7aa;
+        background: linear-gradient(135deg, #fff7ed, #fff);
+    }
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: #ea580c;
+    }
+    .step-progress-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .step-dots {
+        display: flex;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all 0.25s;
+    }
+    .step-dot.active {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+    }
+    .step-dot.completed {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+    }
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+    .close-modal:hover {
+        color: #ef4444;
+    }
+
+    /* Modal Body */
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        background: #fafafa;
+    }
+
+    /* Steps panes */
+    .form-step-pane {
+        display: none;
+    }
+    .form-step-pane.active {
+        display: block;
+    }
+
+    /* Compact Forms grid with equal sizes */
+    .form-grid-compact {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .form-group-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-compact.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-group-compact label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .form-group-compact input,
+    .form-group-compact select,
+    .form-group-compact textarea {
+        padding: 10px 12px;
+        font-size: 13.5px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s;
+        height: 40px; /* Force same height */
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .form-group-compact textarea {
+        height: 80px; /* Allow textarea to be taller but consistent */
+        resize: none;
+    }
+    .form-group-compact input[type="file"] {
+        padding: 7px 10px; /* align text height for files */
+    }
+    .form-group-compact input:focus,
+    .form-group-compact select:focus {
+        border-color: #ea580c;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+    }
+
+    /* Section Title */
+    .step-section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ea580c;
+        margin: 0 0 14px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1.5px solid #fed7aa;
+        padding-bottom: 6px;
+    }
+
+    /* Modal Footer */
+    .modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1.5px solid #fed7aa;
+        background: #fff;
+    }
+    .footer-buttons-left {
+        display: flex;
+        gap: 12px;
+    }
+    .footer-buttons-right {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* Navigation buttons styling */
+    .btn-step-prev {
+        padding: 9px 18px;
+        border: 1.5px solid #cbd5e1;
+        background: #fff;
+        color: #475569;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-prev:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .btn-step-next {
+        padding: 9px 22px;
+        border: 1.5px solid #ea580c;
+        background: #ea580c;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-step-next:hover {
+        background: #d97706;
+    }
+
 
     /* ── User row highlight when editing ── */
     tr.editing-row {
@@ -465,7 +700,7 @@
 <div class="page-header" style="margin-bottom: 32px; display:flex; justify-content:space-between; align-items:center;">
     <div>
         <h1 class="page-title" style="font-size: 32px; margin:0;">{% if live_hackathon %}{{ live_hackathon.name }}{% else %}Super Admin Control{% endif %}</h1>
-        <p style="color: #6b7280; font-weight: 500; margin:4px 0 0;">BPUT Hackathon Platform • HubNexus v2.4</p>
+        <!-- <p style="color: #6b7280; font-weight: 500; margin:4px 0 0;">BPUT Hackathon Platform • HubNexus v2.4</p> -->
     </div>
     <div style="display:flex; gap:8px;">
         {% if live_hackathon %}
@@ -493,7 +728,8 @@
                 users in 30 days</div>
             <div class="analytics-chip"><ion-icon name="git-network-outline"></ion-icon> {{ total_registrations }} total
                 registrations</div>
-            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate }}% evaluation assignment coverage</div>
+            <div class="analytics-chip"><ion-icon name="speedometer-outline"></ion-icon> {{ evaluation_assignment_rate}} 
+                evaluation assignment coverage</div>
         </div>
     </div>
     <div class="analytics-mini-stack">
@@ -513,56 +749,56 @@
 </section>
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="sc-icon-top">🎯</div>
+        <div class="sc-icon-top"><ion-icon name="calendar-outline" style="color: #ea580c; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ events_total }}</div>
-        <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑ {{
-            events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
+        <div class="sc-label">Events</div>{% if events_new_month > 0 %}<div class="sc-trend trend-up">↑
+            {{events_new_month }} new this month</div>{% else %}<div class="sc-trend" style="color:#9ca3af;">0 new this
             month</div>{% endif %}<a href="?tab=events" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🏢</div>
+        <div class="sc-icon-top"><ion-icon name="shield-checkmark-outline" style="color: #3b82f6; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ admins_total }}</div>
         <div class="sc-label">Admins</div>
         <div class="sc-trend trend-neutral">↑ {{ admins_active }} active</div><a href="?tab=admin_mgt"
             class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">⚖️</div>
+        <div class="sc-icon-top"><ion-icon name="ribbon-outline" style="color: #8b5cf6; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ expert_jury_total }}</div>
         <div class="sc-label">Jury / Expert</div>
         <div class="sc-trend trend-neutral">{{ jury_count }} Jury • {{ expert_count }} Expert</div><a
             href="?tab=user_mgt" class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🏫</div>
+        <div class="sc-icon-top"><ion-icon name="school-outline" style="color: #10b981; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ colleges_total }}</div>
         <div class="sc-label">Colleges Onboarded</div>
         <div class="sc-trend trend-up">↑ {{ colleges_new_week }} this week</div><a href="#" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">👥</div>
+        <div class="sc-icon-top"><ion-icon name="people-outline" style="color: #6366f1; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ teams_total }}</div>
         <div class="sc-label">Teams</div>
         <div class="sc-trend trend-up">↑ {{ teams_new_today }} new today</div><a href="#" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">🚀</div>
+        <div class="sc-icon-top"><ion-icon name="briefcase-outline" style="color: #ec4899; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ execs_total }}</div>
         <div class="sc-label">Executives</div>
         <div class="sc-trend trend-neutral">All assigned</div><a href="?tab=exec_mgt" class="sc-plus"><ion-icon
                 name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">📋</div>
+        <div class="sc-icon-top"><ion-icon name="document-text-outline" style="color: #f59e0b; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ ps_total }}</div>
         <div class="sc-label">Problem Statements</div>
         <div class="sc-trend trend-neutral">Multiple domains</div><a href="?tab=problem_statements"
             class="sc-plus"><ion-icon name="add-outline"></ion-icon></a>
     </div>
     <div class="stat-card">
-        <div class="sc-icon-top">📍</div>
+        <div class="sc-icon-top"><ion-icon name="location-outline" style="color: #ef4444; font-size: 28px;"></ion-icon></div>
         <div class="sc-value">{{ venues_total }}</div>
         <div class="sc-label">Venue</div>
         <div class="sc-trend trend-up">{% if venues_total > 0 %}Confirmed{% else %}Pending{% endif %}</div><a href="#"
@@ -769,105 +1005,251 @@
 </div>
 
 {% elif tab == 'events' %}
-<div id="hackathonForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; font-size:22px; font-weight:800;">Create New Hackathon Event</h2>
-            <button onclick="toggleForm('hackathonForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="hackathonForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <!-- header -->
+        <div class="modal-header">
+            <h2>Create New Hackathon Event</h2>
+            <div class="step-progress-wrapper">
+                <div class="step-dots">
+                    <span class="step-dot active" data-step="1">1</span>
+                    <span class="step-dot" data-step="2">2</span>
+                    <span class="step-dot" data-step="3">3</span>
+                    <span class="step-dot" data-step="4">4</span>
+                </div>
+            </div>
+            <button type="button" onclick="toggleForm('hackathonForm')" class="close-modal"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data">
+        
+        <form action="/events/create-hackathon/" method="POST" enctype="multipart/form-data" id="createHackathonFormElement">
             {% csrf_token %}
-            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Hackathon Name</label><input type="text" name="name" required
-                        placeholder="e.g. BPUT Smart Odisha Hackathon"></div>
-                <div class="form-group"><label>Organization Name</label><input type="text" name="organization_name"
-                        required placeholder="e.g. OKCL / BPUT"></div>
-                <div class="form-group"><label>Organization Logo</label><input type="file" name="organization_logo"
-                        accept="image/*"></div>
-            </div>
-            <div class="form-section-title">Approval & Status</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Approval Date</label><input type="date" name="approval_date"></div>
-                <div class="form-group"><label>Approval Letter (PDF)</label><input type="file" name="approval_letter"
-                        accept=".pdf"></div>
-                <div class="form-group">
-                    <label>Event Status</label>
-                    <select name="status" id="eventStatusSelect">
-                        <option value="Draft">Draft (Private)</option>
-                        <option value="Live">Live (Public)</option>
-                        <option value="Completed">Completed</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-section-title">Key Timeline</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Poster Launch Date</label><input type="date"
-                        name="poster_launching_date"></div>
-                <div class="form-group"><label>Website Launch Date</label><input type="date"
-                        name="website_launching_date"></div>
-                <div class="form-group"><label>Registration Opens</label><input type="date" name="registration_open">
-                </div>
-                <div class="form-group"><label>Registration Closes</label><input type="date" name="registration_close">
-                </div>
-            </div>
-            <div class="form-section-title">Team Configurations</div>
-            <div class="form-grid">
-                <div class="form-group"><label>Min Team Size</label><input type="number" name="min_team_size" value="1">
-                </div>
-                <div class="form-group"><label>Max Team Size</label><input type="number" name="max_team_size" value="4">
-                </div>
-                <div class="form-group"><label>Total Members Allowed</label><input type="number"
-                        name="total_team_members" value="4"></div>
-                <div class="form-group"><label>Mentors per Team</label><input type="number" name="number_of_mentors"
-                        value="1"></div>
-            </div>
-            <div class="form-section-title">Rounds</div>
-            <p style="font-size:13px; color:#64748b; margin:-6px 0 14px;">Enabled rounds become active automatically
-                when today falls between their start and end dates. Admins can activate or deactivate rounds later.</p>
-            <div class="form-group" style="margin-bottom:16px;"><label>Total Number of Rounds</label><input
-                    type="number" name="number_of_rounds" value="1" min="1" max="5" style="max-width:200px;"></div>
-            {% for i in "12345" %}
-            <div class="round-row"
-                style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:14px; background:#fffbf7; padding:14px; border-radius:10px; margin-bottom:12px; align-items:end;">
-                <div class="form-group"><label>Round {{ i }} Name</label><input type="text" name="round_{{ i }}_name"
-                        value="Round {{ i }}"></div>
-                <div class="form-group"><label>Start Date</label><input type="date" name="round_{{ i }}_start_date">
-                </div>
-                <div class="form-group"><label>End Date</label><input type="date" name="round_{{ i }}_end_date"></div>
-                <label
-                    style="display:flex; align-items:center; gap:8px; font-weight:800; color:#ea580c; padding-bottom:12px; white-space:nowrap;">
-                    <input type="checkbox" name="round_{{ i }}_is_enabled" checked
-                        style="width:16px; height:16px; accent-color:#ea580c;"> Active
-                </label>
-                <div
-                    style="grid-column: 1 / -1; width: 100%; border-top: 1px dashed #fed7aa; padding-top: 14px; margin-top: 4px;">
-                    <div style="display:flex; gap:14px; align-items:center; margin-bottom: 10px;">
-                        <div class="form-group" style="margin:0; max-width: 250px;">
-                            <label>No. of Marking Parameters</label>
-                            <input type="number" name="round_{{ i }}_num_params" value="0" min="0"
-                                oninput="updateMarkingParams(this, {{ i }})">
+            <!-- body -->
+            <div class="modal-body">
+                <!-- STEP 1: Basic Information & Media -->
+                <div class="form-step-pane active" data-step="1">
+                    <div class="step-section-title">Basic Information</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Hackathon Name</label>
+                            <input type="text" name="name" required placeholder="e.g. BPUT Smart Odisha Hackathon">
                         </div>
-                        <label
-                            style="display:flex; align-items:center; gap:8px; font-weight:700; color:#374151; margin-top: 22px;">
-                            <input type="checkbox" name="round_{{ i }}_has_others"
-                                style="width:16px; height:16px; accent-color:#ea580c;"> Include 'Others' Option
-                        </label>
+                        <div class="form-group-compact">
+                            <label>Organization Name</label>
+                            <input type="text" name="organization_name" required placeholder="e.g. OKCL / BPUT">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Organization Logo</label>
+                            <input type="file" name="organization_logo" accept="image/*">
+                        </div>
                     </div>
-                    <div id="round_{{ i }}_params_container"
-                        style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+                    
+                    <div class="step-section-title" style="margin-top: 20px;">Branding &amp; Media</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Upload logos and banner images for the landing page.</p>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Event Logo <small style="color:#9ca3af;">(Navbar Right)</small></label>
+                            <input type="file" name="event_logo" accept="image/*">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Platform Logo <small style="color:#9ca3af;">(Navbar Left)</small></label>
+                            <input type="file" name="platform_logo" accept="image/*">
+                        </div>
+                        <div class="form-group-compact full-width">
+                            <label>Hero Banner Images <small style="color:#9ca3af;">(Hero Background – multiple banners for carousel)</small></label>
+                            <div id="createHeroBannerUploads" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:8px;">
+                                <div class="banner-upload-item" style="display:flex; gap:8px; align-items:center; width:100%;">
+                                    <input type="file" name="hero_banners" accept="image/*" style="flex:1; height:40px;">
+                                </div>
+                            </div>
+                            <button type="button"
+                                onclick="(function(){ 
+                                    var c = document.getElementById('createHeroBannerUploads'); 
+                                    var d = document.createElement('div'); 
+                                    d.className = 'banner-upload-item'; 
+                                    d.style.display = 'flex'; 
+                                    d.style.gap = '8px'; 
+                                    d.style.alignItems = 'center'; 
+                                    d.style.width = '100%'; 
+                                    d.innerHTML = '<input type=\'file\' name=\'hero_banners\' accept=\'image/*\' style=\'flex:1; height:40px;\'><button type=\'button\' onclick=\'this.parentElement.remove()\' style=\'background:#ef4444; color:#fff; border:none; height:40px; width:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;\' title=\'Remove input\'><ion-icon name=\'trash-outline\' style=\'font-size:16px;\'></ion-icon></button>'; 
+                                    c.appendChild(d); 
+                                })()"
+                                style="padding:6px 12px; border:1px dashed #ea580c; background:transparent; color:#ea580c; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:4px; max-width: 160px; height: auto;">
+                                + Add Another Banner
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                <!-- STEP 2: General Configuration & Domains -->
+                <div class="form-step-pane" data-step="2">
+                    <div class="step-section-title">Team Configuration</div>
+                    <div class="form-grid-compact" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="form-group-compact">
+                            <label>Min Team Size</label>
+                            <input type="number" name="min_team_size" value="1" min="1">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Max Team Size</label>
+                            <input type="number" name="max_team_size" value="4" min="1">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Mentors / Team</label>
+                            <input type="number" name="number_of_mentors" value="1" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="step-section-title" style="margin-top: 24px;">Problem Statement Domains</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Define the domains/tracks for problem statements.</p>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Number of Domains</label>
+                            <input type="number" name="num_domains" id="numDomainsInput" value="0" min="0" max="20" oninput="updateDomainFields(this)">
+                        </div>
+                    </div>
+                    <div id="domainsContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+                    </div>
+                </div>
+
+                <!-- STEP 3: Timeline & Approval -->
+                <div class="form-step-pane" data-step="3">
+                    <div class="step-section-title">Approval & Status</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Approval Date</label>
+                            <input type="date" name="approval_date">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Approval Letter (PDF)</label>
+                            <input type="file" name="approval_letter" accept=".pdf">
+                        </div>
+                        <input type="hidden" name="status" value="Draft">
+                    </div>
+                    
+                    <div class="step-section-title" style="margin-top: 24px;">Key Timeline</div>
+                    <div class="form-grid-compact">
+                        <div class="form-group-compact">
+                            <label>Poster Launch</label>
+                            <input type="date" name="poster_launching_date" id="c_poster_launching_date" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Website Launch</label>
+                            <input type="date" name="website_launching_date" id="c_website_launching_date" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Registration Opens</label>
+                            <input type="date" name="registration_open" id="c_registration_open" onchange="chainDates_create()">
+                        </div>
+                        <div class="form-group-compact">
+                            <label>Registration Closes</label>
+                            <input type="date" name="registration_close" id="c_registration_close" onchange="chainDates_create()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Round-wise Configuration -->
+                <div class="form-step-pane" data-step="4">
+                    <div class="step-section-title">Rounds</div>
+                    <p style="font-size:12px; color:#64748b; margin:-6px 0 14px;">Define start/end dates, mode, and parameters for each round.</p>
+                    <div class="form-grid-compact" style="margin-bottom:16px;">
+                        <div class="form-group-compact">
+                            <label>Total Rounds</label>
+                            <input type="number" name="number_of_rounds" id="c_number_of_rounds" value="1" min="1" max="5" oninput="updateRoundVisibility_create(this.value)">
+                        </div>
+                    </div>
+                    
+                    {% for i in "12345" %}
+                    <div class="create-round-card" id="c_round_card_{{ i }}"
+                        style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; {% if i != '1' %}display:none;{% endif %}">
+                        
+                        <!-- Row 1: Name + Active toggle -->
+                        <div class="form-grid-compact" style="align-items: center; margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Round {{ i }} Name</label>
+                                <input type="text" name="round_{{ i }}_name" value="Round {{ i }}">
+                            </div>
+                            <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                <input type="checkbox" name="round_{{ i }}_is_enabled" checked style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                <label style="margin:0;">Active</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 2: Dates -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Start Date</label>
+                                <input type="date" name="round_{{ i }}_start_date" id="c_round_{{ i }}_start_date" onchange="chainDates_create()">
+                            </div>
+                            <div class="form-group-compact">
+                                <label>End Date</label>
+                                <input type="date" name="round_{{ i }}_end_date" id="c_round_{{ i }}_end_date" onchange="chainDates_create()">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 3: Mode + Venue -->
+                        <div class="form-grid-compact" style="margin-bottom: 12px;">
+                            <div class="form-group-compact">
+                                <label>Mode</label>
+                                <select name="round_{{ i }}_type" id="c_round_{{ i }}_type" onchange="toggleVenue_create('{{ i }}')">
+                                    <option value="Online">🌐 Online</option>
+                                    <option value="Offline">🏢 Offline</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact" id="c_venue_group_{{ i }}" style="display:none;">
+                                <label>Venue <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="round_{{ i }}_venue" id="c_round_{{ i }}_venue" placeholder="Enter venue location">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 4: Marking params -->
+                        <div style="border-top:1px dashed #cbd5e1; padding-top:12px; margin-top:4px;">
+                            <div class="form-grid-compact" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center;">
+                                <div class="form-group-compact">
+                                    <label>No. of Marking Parameters</label>
+                                    <input type="number" name="round_{{ i }}_num_params" value="0" min="0" oninput="updateMarkingParams(this, {{ i }})">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Round {{ i }} Total Marks</label>
+                                    <input type="number" name="round_{{ i }}_total_marks" value="100.00" step="0.01" min="0" oninput="validateMarkingTotals({{ i }})">
+                                </div>
+                                <div class="form-group-compact" style="flex-direction: row; align-items: center; gap: 8px; padding-top: 18px;">
+                                    <input type="checkbox" name="round_{{ i }}_has_others" style="width:16px; height:16px; margin: 0; accent-color:#ea580c;">
+                                    <label style="margin:0;">Include 'Others'</label>
+                                </div>
+                            </div>
+                        <div id="round_{{ i }}_params_container" style="display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;"></div>
+                        </div>
+
+                        <!-- Row 5: Jury & Expert Teams -->
+                        <div style="border-top:1px dashed #cbd5e1; padding-top:12px; margin-top:4px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">👥 Jury & Expert Teams</div>
+                            <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="form-group-compact">
+                                    <label>Jury per Team</label>
+                                    <input type="number" name="round_{{ i }}_num_jury" value="0" min="0">
+                                </div>
+                                <div class="form-group-compact">
+                                    <label>Experts per Team</label>
+                                    <input type="number" name="round_{{ i }}_num_experts" value="0" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            {% endfor %}
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('hackathonForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="button" onclick="saveHackathonAsDraft()" class="draft-btn" style="flex:1;"><ion-icon
-                        name="save-outline"></ion-icon> Save as Draft</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Publish Hackathon Event</button>
+            
+            <!-- footer -->
+            <div class="modal-footer">
+                <div class="footer-buttons-left">
+                    <button type="button" class="btn-step-prev" style="display:none;">Back</button>
+                </div>
+                <div class="footer-buttons-right">
+                    <button type="button" class="btn-step-next">Next Step</button>
+                    <div class="submit-group" style="display:none; gap:10px;">
+                        <button type="button" onclick="saveHackathonAsDraft()" class="btn-step-prev" style="color:#ea580c; border-color:#ea580c;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                        <button type="submit" class="btn-step-next">Publish Event</button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -906,7 +1288,11 @@
                     style="border-bottom:1px solid #eee; {% if h.status == 'Suspended' %}opacity:0.6; background:#f1f5f9;{% endif %}">
                     <td style="padding:14px;"><strong>{{ h.name }}</strong><br><small style="color:#6b7280;">{% if h.round_1_start_date %}{{ h.round_1_start_date|date:"d M Y" }}{% else %}TBD{% endif %}</small></td>
                     <td style="padding:14px;">{{ h.organization_name }}</td>
-                    <td style="padding:14px;"><span class="badge {% if h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">{{ h.status }}</span></td>
+                    <td style="padding:14px;">
+                        <span class="badge {% if h.status == 'Live' %}badge-live{% elif h.status == 'Suspended' %}badge-gray{% else %}badge-amber{% endif %}">
+                            {{ h.status }}
+                        </span>
+                    </td>
                     <td style="padding:14px;">
                         {% if h.active_round %}
                         <strong>{{ h.active_round.name }}</strong><br><small style="color:#059669;">{{ h.active_round.start_date|date:"d M Y" }} to {{ h.active_round.end_date|date:"d M Y" }}</small>
@@ -935,6 +1321,21 @@
                                 style="color:#059669; font-size:20px;"><ion-icon name="eye-outline"></ion-icon></a>
                             <a href="{% url 'edit_hackathon' h.id %}" title="Edit"
                                 style="color:#2563eb; font-size:20px;"><ion-icon name="create-outline"></ion-icon></a>
+                            {% if h.status != 'Live' and h.status != 'Suspended' %}
+                            <button type="button" title="Launch Event" onclick="openLaunchModal('{{ h.id }}', '{{ h.name|escapejs }}')"
+                                style="background:linear-gradient(135deg,#f97316,#ea580c); color:#fff; border:none; cursor:pointer; padding:5px 10px; border-radius:8px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(249,115,22,0.3); transition:all .2s;"
+                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(249,115,22,0.4)';"
+                                onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(249,115,22,0.3)';">
+                                <ion-icon name="rocket-outline" style="font-size:15px;"></ion-icon> Live
+                            </button>
+                            {% elif h.status == 'Live' %}
+                            <button type="button" title="Set to Draft" onclick="setEventToDraft('{{ h.id }}', '{{ h.name|escapejs }}')"
+                                style="background:linear-gradient(135deg,#64748b,#475569); color:#fff; border:none; cursor:pointer; padding:5px 10px; border-radius:8px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(100,116,139,0.3); transition:all .2s;"
+                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(100,116,139,0.4)';"
+                                onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(100,116,139,0.3)';">
+                                <ion-icon name="document-text-outline" style="font-size:15px;"></ion-icon> Draft
+                            </button>
+                            {% endif %}
                             {% if h.status != 'Suspended' %}
                             <form action="{% url 'delete_hackathon' h.id %}" method="POST" style="display:inline;"
                                 onsubmit="return confirm('Suspend this event?')">
@@ -959,77 +1360,221 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     LAUNCH EVENT MODAL
+══════════════════════════════════════════ -->
+<div id="launchModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+    <div style="background:linear-gradient(145deg,#ffffff,#fffbf5); border-radius:24px; padding:0; width:520px; max-width:92vw; box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(249,115,22,0.12); animation:launchModalIn 0.4s cubic-bezier(.16,1,.3,1); overflow:hidden;">
+        <!-- Modal Header -->
+        <div style="background:linear-gradient(135deg,#ea580c,#f97316,#fb923c); padding:28px 32px 24px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(255,255,255,0.08); border-radius:50%;"></div>
+            <div style="position:absolute; bottom:-20px; left:-20px; width:80px; height:80px; background:rgba(255,255,255,0.06); border-radius:50%;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1;">
+                <div>
+                    <div style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.15em; color:rgba(255,255,255,0.8); margin-bottom:6px;">Event Launch Pad</div>
+                    <h2 id="launchModalTitle" style="margin:0; font-size:22px; font-weight:900; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.12);">Launch Event</h2>
+                </div>
+                <button onclick="closeLaunchModal()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center; transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <ion-icon name="close"></ion-icon>
+                </button>
+            </div>
+        </div>
+        <!-- Modal Body -->
+        <div style="padding:32px 32px 28px;">
+            <input type="hidden" id="launchHackathonId" value="">
+            <input type="hidden" id="launchHackathonName" value="">
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:8px;">📅 Launch Date</label>
+                <input type="date" id="launchDate" required style="width:100%; padding:14px 16px; border:2px solid #fed7aa; border-radius:14px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; color:#1e293b; background:#fffbf7; transition:all .2s; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 4px rgba(249,115,22,0.1)';" onblur="this.style.borderColor='#fed7aa';this.style.boxShadow='none';">
+            </div>
+            <div style="margin-bottom:28px;">
+                <label style="display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:8px;">👤 Launched By</label>
+                <input type="text" id="launchPerson" required placeholder="Enter the name of the person launching..." style="width:100%; padding:14px 16px; border:2px solid #fed7aa; border-radius:14px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; color:#1e293b; background:#fffbf7; transition:all .2s; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 4px rgba(249,115,22,0.1)';" onblur="this.style.borderColor='#fed7aa';this.style.boxShadow='none';">
+            </div>
+            <button onclick="openLaunchCeremony()" id="readyToLaunchBtn" style="width:100%; padding:16px; background:linear-gradient(135deg,#ea580c,#f97316); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; font-family:'Outfit',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 24px rgba(249,115,22,0.3); transition:all .3s; letter-spacing:0.02em;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(249,115,22,0.4)';" onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(249,115,22,0.3)';">
+                <ion-icon name="rocket" style="font-size:20px;"></ion-icon>
+                Ready to Launch
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FULLSCREEN LAUNCH CEREMONY
+══════════════════════════════════════════ -->
+<div id="launchCeremony" style="display:none; position:fixed; inset:0; z-index:10000; overflow:hidden;">
+    <!-- Animated Background -->
+    <div id="ceremonyBg" style="position:absolute; inset:0; background:linear-gradient(135deg,#0f0a1a 0%,#1a0e2e 25%,#0d1b2a 50%,#1a0e2e 75%,#0f0a1a 100%); transition:background 1s;"></div>
+    <!-- Stars / Particles -->
+    <canvas id="starsCanvas" style="position:absolute; inset:0; z-index:1;"></canvas>
+    <!-- Content -->
+    <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:40px;">
+        <!-- Close button -->
+        <button onclick="closeLaunchCeremony()" style="position:absolute; top:24px; right:32px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; transition:all .3s; z-index:10;" onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.color='#fff';" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)';">
+            <ion-icon name="close"></ion-icon>
+        </button>
+
+        <!-- Rocket Animation Container -->
+        <div id="rocketContainer" style="margin-bottom:40px; animation:rocketFloat 3s ease-in-out infinite;">
+            <div style="font-size:80px; filter:drop-shadow(0 0 30px rgba(249,115,22,0.5));" id="rocketEmoji">🚀</div>
+        </div>
+
+        <!-- Event Name -->
+        <div id="ceremonyEventName" style="font-family:'Outfit',sans-serif; font-size:42px; font-weight:900; color:#fff; margin-bottom:16px; text-shadow:0 2px 20px rgba(249,115,22,0.3); animation:fadeSlideUp 0.6s 0.2s both;"></div>
+
+        <!-- Event Info Cards -->
+        <div style="display:flex; gap:24px; margin-bottom:48px; flex-wrap:wrap; justify-content:center; animation:fadeSlideUp 0.6s 0.4s both;">
+            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; backdrop-filter:blur(10px);">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:rgba(249,115,22,0.8); margin-bottom:8px;">Launch Date</div>
+                <div id="ceremonyDate" style="font-size:22px; font-weight:800; color:#fff; font-family:'Outfit',sans-serif;"></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; backdrop-filter:blur(10px);">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:rgba(249,115,22,0.8); margin-bottom:8px;">Launched By</div>
+                <div id="ceremonyPerson" style="font-size:22px; font-weight:800; color:#fff; font-family:'Outfit',sans-serif;"></div>
+            </div>
+        </div>
+
+        <!-- Launch Button -->
+        <div id="launchBtnContainer" style="animation:fadeSlideUp 0.6s 0.6s both;">
+            <button id="launchTheEventBtn" onclick="executeEventLaunch()" style="position:relative; padding:20px 64px; background:linear-gradient(135deg,#ea580c,#f97316,#fb923c); color:#fff; border:none; border-radius:20px; font-size:22px; font-weight:900; font-family:'Outfit',sans-serif; cursor:pointer; letter-spacing:0.04em; box-shadow:0 0 40px rgba(249,115,22,0.4),0 0 80px rgba(249,115,22,0.15); transition:all .3s; overflow:hidden;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 0 60px rgba(249,115,22,0.5),0 0 120px rgba(249,115,22,0.2)';" onmouseout="this.style.transform='';this.style.boxShadow='0 0 40px rgba(249,115,22,0.4),0 0 80px rgba(249,115,22,0.15)';">
+                <span style="position:relative; z-index:1; display:flex; align-items:center; gap:12px;">
+                    <ion-icon name="rocket" style="font-size:26px;"></ion-icon>
+                    LAUNCH THE EVENT
+                </span>
+                <div style="position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); animation:shimmer 2.5s infinite;"></div>
+            </button>
+        </div>
+
+        <!-- Success State (hidden initially) -->
+        <div id="launchSuccess" style="display:none; animation:fadeSlideUp 0.6s both;">
+            <div style="font-size:100px; margin-bottom:20px; animation:celebratePop 0.6s cubic-bezier(.16,1,.3,1);">🎉</div>
+            <div style="font-size:36px; font-weight:900; color:#fff; font-family:'Outfit',sans-serif; margin-bottom:12px;">Event Launched Successfully!</div>
+            <div style="font-size:18px; color:rgba(255,255,255,0.6); font-weight:600; margin-bottom:40px;">The event is now live and ready for participants</div>
+            <button onclick="closeLaunchCeremony(); window.location.reload();" style="padding:14px 48px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:14px; font-size:16px; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; transition:all .3s;" onmouseover="this.style.background='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.12)';">
+                Close & Return to Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Launch Modal Animation */
+@keyframes launchModalIn {
+    from { opacity:0; transform:scale(0.9) translateY(20px); }
+    to { opacity:1; transform:scale(1) translateY(0); }
+}
+
+/* Rocket floating animation */
+@keyframes rocketFloat {
+    0%, 100% { transform:translateY(0) rotate(-5deg); }
+    50% { transform:translateY(-15px) rotate(5deg); }
+}
+
+/* Fade slide up */
+@keyframes fadeSlideUp {
+    from { opacity:0; transform:translateY(30px); }
+    to { opacity:1; transform:translateY(0); }
+}
+
+/* Shimmer effect on launch button */
+@keyframes shimmer {
+    0% { transform:translateX(-100%); }
+    100% { transform:translateX(100%); }
+}
+
+/* Celebration pop */
+@keyframes celebratePop {
+    0% { transform:scale(0); opacity:0; }
+    50% { transform:scale(1.3); }
+    100% { transform:scale(1); opacity:1; }
+}
+
+/* Rocket launch animation */
+@keyframes rocketLaunch {
+    0% { transform:translateY(0) rotate(0deg); opacity:1; }
+    30% { transform:translateY(-10px) rotate(-5deg); }
+    100% { transform:translateY(-800px) rotate(0deg); opacity:0; }
+}
+
+/* Confetti animation */
+@keyframes confettiFall {
+    0% { transform:translateY(-100vh) rotate(0deg); opacity:1; }
+    100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+}
+
+.confetti-piece {
+    position:absolute;
+    width:10px;
+    height:10px;
+    top:-10px;
+    animation:confettiFall linear forwards;
+}
+</style>
+
+<!-- ══════════════════════════════════════════
      TAB: ADMIN MANAGEMENT
 ══════════════════════════════════════════ -->
 {% elif tab == 'admin_mgt' %}
 
 <!-- Create form (hidden by default) -->
-<div id="adminForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Administrator</h2>
-            <button onclick="toggleForm('adminForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="adminForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard New Administrator</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('adminForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST" id="onboardAdminForm">
+        <form action="/accounts/create-user/" method="POST" id="onboardAdminForm" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="role" value="{{ admin_role.id }}">
             <input type="hidden" name="status" id="admin_form_status" value="active">
-            <div class="form-section-title" style="margin-top:0;">Basic Information</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
-                        placeholder="e.g. John" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
-                        placeholder="e.g. Doe" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username"
-                        placeholder="e.g. jdoe_admin" required></div>
-                <div class="form-group"><label>Email ID</label><input type="email" name="email"
-                        placeholder="e.g. jdoe@example.com" required></div>
-            </div>
-            <div class="form-group" style="margin-bottom:20px;"><label>Credentials (Password)</label><input
-                    type="password" name="password" required placeholder="••••••••"></div>
-            <div class="form-section-title">Administrative Permissions</div>
-            <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Select the modules this administrator can
-                manage.</p>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Basic Information</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" placeholder="e.g. John" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" placeholder="e.g. Doe" required></div>
+                </div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr); margin-top:0;">
+                    <div class="form-group-compact"><label>Email ID (Username)</label><input type="email" name="email" placeholder="e.g. jdoe@example.com" required></div>
+                    <div class="form-group-compact"><label>Credentials (Password)</label><input type="password" name="password" required placeholder="••••••••"></div>
+                </div>
+                <div class="form-section-title">Administrative Permissions</div>
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Select the modules this administrator can manage.</p>
 
-            <div class="form-group" style="margin-bottom:16px; max-width: 300px;">
-                <label>Admin Role (Auto-selects permissions)</label>
-                <select id="adminTypeSelect" onchange="autoSelectPermissions(this.value)">
-                    <option value="">-- Custom Selection --</option>
-                    <option value="spoc">SPOC & College Mgt</option>
-                    <option value="team">Team & Event Monitor</option>
-                    <option value="problem">Problem Statement & Content Management</option>
-                    <option value="venue">Venue & Logistics Management</option>
-                    <option value="finance">Financial Management</option>
-                    <option value="jury">Jury & Evaluation</option>
-                    <option value="support">Support & Stay Ops</option>
-                    <option value="media">Media & Communications</option>
-                    <option value="results">Results & Awards</option>
-                </select>
-            </div>
+                <div class="form-group-compact" style="margin-bottom:16px; max-width: 300px;">
+                    <label>Admin Role (Auto-selects permissions)</label>
+                    <select id="adminTypeSelect" onchange="autoSelectPermissions(this.value)">
+                        <option value="">-- Custom Selection --</option>
+                        <option value="spoc">SPOC & College Mgt</option>
+                        <option value="team">Team & Event Monitor</option>
+                        <option value="problem">Problem Statement & Content Management</option>
+                        <option value="venue">Venue & Logistics Management</option>
+                        <option value="finance">Financial Management</option>
+                        <option value="jury">Jury & Evaluation</option>
+                        <option value="support">Support & Stay Ops</option>
+                        <option value="media">Media & Communications</option>
+                        <option value="results">Results & Awards</option>
+                    </select>
+                </div>
 
-            <div
-                style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; background:#fffbf7; padding:18px; border-radius:14px; border:1px solid #fed7aa;">
-                {% for perm in all_permissions %}
-                <label
-                    style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px; border-radius:8px;">
-                    <input type="checkbox" name="permissions[]" value="{{ perm.id }}" data-perm-name="{{ perm.name }}"
-                        style="width:16px; height:16px; accent-color:#ea580c; margin-top:2px; flex-shrink:0;">
-                    <div>
-                        <div style="font-size:13px; font-weight:700; color:#374151;">{{ perm.name }}</div>
-                        <div style="font-size:11px; color:#94a3b8;">{{ perm.description }}</div>
-                    </div>
-                </label>
-                {% endfor %}
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; background:#fffbf7; padding:18px; border-radius:14px; border:1px solid #fed7aa;">
+                    {% for perm in all_permissions %}
+                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px; border-radius:8px;">
+                        <input type="checkbox" name="permissions[]" value="{{ perm.id }}" data-perm-name="{{ perm.name }}" style="width:16px; height:16px; accent-color:#ea580c; margin-top:2px; flex-shrink:0;">
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#374151;">{{ perm.name }}</div>
+                            <div style="font-size:11px; color:#94a3b8;">{{ perm.description }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
             </div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('adminForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="button"
-                    onclick="document.getElementById('admin_form_status').value='draft'; document.getElementById('onboardAdminForm').submit();"
-                    class="draft-btn" style="flex:1;"><ion-icon name="save-outline"></ion-icon> Save as Draft</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Configure & Onboard Admin</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('adminForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="button" onclick="document.getElementById('admin_form_status').value='draft'; document.getElementById('onboardAdminForm').submit();" class="btn-step-prev" style="width:auto; display:flex; align-items:center; gap:6px;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Configure & Onboard Admin</button>
+                </div>
             </div>
         </form>
     </div>
@@ -1079,7 +1624,7 @@
                                     style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:800;">DRAFT</span>
                                 {% endif %}
                                 <br>
-                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} • {{ admin.user.email }}</small>
+                                <small style="color:#6b7280; font-family:monospace;">@{{ admin.user.username }} •{{ admin.user.email }}</small>
                             </div>
                         </div>
                     </td>
@@ -1096,7 +1641,7 @@
                         <div style="display:flex; flex-wrap:wrap; gap:4px;">
                             {% for p in admin.permissions.all %}
                             <span class="badge"
-                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{ p.name }}</span>
+                                style="font-size:10px; background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;">{{p.name }}</span>
                             {% empty %}
                             <span style="font-size:11px; color:#9ca3af; font-style:italic;">No permissions</span>
                             {% endfor %}
@@ -1184,41 +1729,43 @@
      TAB: EXECUTIVE MANAGEMENT
 ══════════════════════════════════════════ -->
 {% elif tab == 'exec_mgt' %}
-<div id="execForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard New Executive</h2>
-            <button onclick="toggleForm('execForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="execForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard New Executive</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('execForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST">
+        <form action="/accounts/create-user/" method="POST" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="role"
                 value="{% for r in roles %}{% if r.name == 'Executive' %}{{ r.id }}{% endif %}{% endfor %}">
-            <div class="form-section-title" style="margin-top:0;">Personal Details</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username" required></div>
-                <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label>Password</label><input type="password" name="password" required></div>
-                <div class="form-group">
-                    <label>Assign to Administrator</label>
-                    <select name="assigned_admin_id" required>
-                        <option value="">-- Select Admin --</option>
-                        {% for admin in administrators %}
-                        <option value="{{ admin.id }}">{{ admin.user.get_full_name }} (@{{ admin.user.username }})
-                        </option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Personal Details</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" required></div>
+                    <div class="form-group-compact"><label>Username</label><input type="text" name="username" required></div>
+                    <div class="form-group-compact"><label>Email</label><input type="email" name="email" required></div>
+                </div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>Password</label><input type="password" name="password" required></div>
+                    <div class="form-group-compact">
+                        <label>Assign to Administrator</label>
+                        <select name="assigned_admin_id" required>
+                            <option value="">-- Select Admin --</option>
+                            {% for admin in administrators %}
+                            <option value="{{ admin.id }}">{{ admin.user.get_full_name }} (@{{ admin.user.username }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div style="display:flex; gap:16px; margin-top:20px;">
-                <button type="button" onclick="toggleForm('execForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Onboard Executive</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('execForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Onboard Executive</button>
             </div>
         </form>
     </div>
@@ -1294,48 +1841,47 @@
      TAB: PROBLEM STATEMENTS
 ══════════════════════════════════════════ -->
 {% elif tab == 'problem_statements' %}
-<div id="psForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Define Problem Statement</h2>
-            <button onclick="toggleForm('psForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="psForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Define Problem Statement</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('psForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/events/create-problem-statement/" method="POST" enctype="multipart/form-data">
+        <form action="/events/create-problem-statement/" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="ps_id" value="">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Select Hackathon</label>
-                    <select name="hackathon" required>
-                        <option value="">-- Choose Event --</option>
-                        {% for h in hackathons %}
-                        <option value="{{ h.id }}">{{ h.name }}</option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact">
+                        <label>Select Hackathon</label>
+                        <select name="hackathon" required>
+                            <option value="">-- Choose Event --</option>
+                            {% for h in hackathons %}
+                            <option value="{{ h.id }}">{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Statement Title</label><input type="text" name="title" required placeholder="e.g. AI-driven Traffic Mgt"></div>
+                    <div class="form-group-compact">
+                        <label>Domain</label>
+                        <select name="domain">
+                            {% for choice in DOMAIN_CHOICES %}
+                            <option value="{{ choice }}">{{ choice }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Detailed PDF Reference (Optional)</label><input type="file" name="pdf_file" accept=".pdf" style="padding: 7px 10px; line-height: 24px;"></div>
                 </div>
-                <div class="form-group"><label>Statement Title</label><input type="text" name="title" required
-                        placeholder="e.g. AI-driven Traffic Mgt"></div>
-                <div class="form-group">
-                    <label>Domain</label>
-                    <select name="domain">
-                        {% for choice in DOMAIN_CHOICES %}
-                        <option value="{{ choice }}">{{ choice }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <div class="form-group-compact" style="margin-top:10px;"><label>Brief Description</label><textarea name="description" rows="4" style="height:auto; min-height:100px;"></textarea></div>
             </div>
-            <div class="form-group" style="margin-bottom:16px;"><label>Brief Description</label><textarea
-                    name="description" rows="4"></textarea></div>
-            <div class="form-group"><label>Detailed PDF Reference (Optional)</label><input type="file" name="pdf_file"
-                    accept=".pdf"></div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('psForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
-                    Draft</button>
-                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Publish
-                    Statement</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('psForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" name="action" value="draft" class="btn-step-prev" style="width:auto;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" name="action" value="publish" class="btn-step-next" style="width:auto; min-width:180px;">Publish Statement</button>
+                </div>
             </div>
         </form>
     </div>
@@ -1381,14 +1927,26 @@
                         {% endif %}
                     </td>
                     <td style="padding:14px;">
-                        <a href="{% url 'edit_problem_statement' ps.id %}"
-                            style="color:#2563eb; font-size:20px; margin-right:10px;"><ion-icon
-                                name="create-outline"></ion-icon></a>
-                        <form action="{% url 'delete_problem_statement' ps.id %}" method="POST" style="display:inline;">
-                            {% csrf_token %}<button type="submit"
-                                style="color:#dc2626; font-size:20px; background:none; border:none; cursor:pointer;"><ion-icon
-                                    name="trash-outline"></ion-icon></button>
-                        </form>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <a href="{% url 'edit_problem_statement' ps.id %}"
+                                style="color:#2563eb; font-size:20px;" title="Edit"><ion-icon
+                                    name="create-outline"></ion-icon></a>
+                            {% if ps.is_published %}
+                            <form action="{% url 'delete_problem_statement' ps.id %}" method="POST" style="display:inline;"
+                                onsubmit="return confirm('Suspend this live problem statement?')">
+                                {% csrf_token %}<button type="submit" title="Suspend"
+                                    style="color:#d97706; font-size:20px; background:none; border:none; cursor:pointer; display:flex;"><ion-icon
+                                        name="ban-outline"></ion-icon></button>
+                            </form>
+                            {% else %}
+                            <form action="{% url 'delete_problem_statement' ps.id %}" method="POST" style="display:inline;"
+                                onsubmit="return confirm('Suspend this problem statement?')">
+                                {% csrf_token %}<button type="submit" title="Suspend"
+                                    style="color:#dc2626; font-size:20px; background:none; border:none; cursor:pointer; display:flex;"><ion-icon
+                                        name="trash-outline"></ion-icon></button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -1405,53 +1963,53 @@
      TAB: CREATIVES
 ══════════════════════════════════════════ -->
 {% elif tab == 'creatives' %}
-<div id="creativeForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Upload Creative Material</h2>
-            <button onclick="toggleForm('creativeForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="creativeForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Upload Creative Material</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('creativeForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="{% url 'create_creative_material' %}" method="POST" enctype="multipart/form-data">
+        <form action="{% url 'create_creative_material' %}" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
             <input type="hidden" name="creative_id" value="">
-            <div class="form-grid">
+            
+            <div class="modal-body">
+                <div class="form-grid-compact" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="form-group-compact">
+                        <label>Select Hackathon</label>
+                        <select name="hackathon_id" required>
+                            <option value="">-- Choose Event --</option>
+                            {% for h in hackathons %}
+                            <option value="{{ h.id }}">{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact"><label>Asset Title</label><input type="text" name="title" required placeholder="e.g. Event Header Poster"></div>
+                    <div class="form-group-compact"><label>File Upload (Image/PDF)</label><input type="file" name="file" required style="padding: 7px 10px; line-height: 24px;"></div>
+                </div>
                 <div class="form-group">
-                    <label>Select Hackathon</label>
-                    <select name="hackathon_id" required>
-                        <option value="">-- Choose Event --</option>
-                        {% for h in hackathons %}
-                        <option value="{{ h.id }}">{{ h.name }}</option>
+                    <label>Landing Page Placement</label>
+                    <div class="placement-grid">
+                        {% for value, label in landing_section_choices %}
+                        <label class="placement-option">
+                            <input type="checkbox" name="landing_sections" value="{{ value }}">
+                            <div>
+                                <strong>{{ label }}</strong>
+                                <span>Show this creative asset in the {{ label|lower }} section.</span>
+                            </div>
+                        </label>
                         {% endfor %}
-                    </select>
+                    </div>
+                    <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset should appear.</small>
                 </div>
-            <div class="form-group"><label>Asset Title</label><input type="text" name="title" required
-                        placeholder="e.g. Event Header Poster"></div>
             </div>
-            <div class="form-group"><label>File Upload (Image/PDF)</label><input type="file" name="file" required></div>
-            <div class="form-group">
-                <label>Landing Page Placement</label>
-                <div class="placement-grid">
-                    {% for value, label in landing_section_choices %}
-                    <label class="placement-option">
-                        <input type="checkbox" name="landing_sections" value="{{ value }}">
-                        <div>
-                            <strong>{{ label }}</strong>
-                            <span>Show this creative asset in the {{ label|lower }} section.</span>
-                        </div>
-                    </label>
-                    {% endfor %}
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('creativeForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" name="action" value="draft" class="btn-step-prev" style="width:auto;"><ion-icon name="save-outline"></ion-icon> Save Draft</button>
+                    <button type="submit" name="action" value="publish" class="btn-step-next" style="width:auto; min-width:180px;">Upload & Publish</button>
                 </div>
-                <small style="display:block;color:#6b7280;margin-top:6px;">Pick one or more sections where the asset should appear.</small>
-            </div>
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('creativeForm')" class="draft-btn"
-                    style="flex:1;">Cancel</button>
-                <button type="submit" name="action" value="draft" class="draft-btn" style="flex:1;">Save as
-                    Draft</button>
-                <button type="submit" name="action" value="publish" class="cta-btn-v2" style="flex:2;">Upload &
-                    Publish</button>
             </div>
         </form>
     </div>
@@ -1502,11 +2060,12 @@
                     <td style="padding:14px;">{{ cr.hackathon.name }}</td>
                     <td style="padding:14px; color:#6b7280; font-size:13px;">
                         {% if cr.landing_sections %}
-                            {% for value, label in landing_section_choices %}
-                                {% if value in cr.landing_sections %}<span style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{ label }}</span>{% endif %}
-                            {% endfor %}
+                        {% for value, label in landing_section_choices %}
+                        {% if value in cr.landing_sections %}<span
+                            style="display:inline-block; margin:0 6px 6px 0; padding:4px 10px; border-radius:999px; background:#fff7ed; color:#ea580c; font-weight:700;">{{label }}</span>{% endif %}
+                        {% endfor %}
                         {% else %}
-                            <span style="color:#9ca3af;">Not selected</span>
+                        <span style="color:#9ca3af;">Not selected</span>
                         {% endif %}
                     </td>
                     <td style="padding:14px;">
@@ -1541,47 +2100,44 @@
 {% elif tab == 'user_mgt' %}
 
 <!-- user onboarding form -->
-<div id="userForm" class="hidden-form">
-    <div class="form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h2 style="margin:0; color:#ea580c; font-weight:800;">Onboard Expert/Stakeholder</h2>
-            <button onclick="toggleForm('userForm')"
-                style="background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af;"><ion-icon
-                    name="close-circle-outline"></ion-icon></button>
+<div id="userForm" class="modal-overlay hidden-form">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Onboard Expert/Stakeholder</h2>
+            <button type="button" class="close-modal" onclick="toggleForm('userForm')"><ion-icon name="close-circle-outline"></ion-icon></button>
         </div>
-        <form action="/accounts/create-user/" method="POST" id="onboardUserForm">
+        <form action="/accounts/create-user/" method="POST" id="onboardUserForm" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
             {% csrf_token %}
-            <div class="form-section-title" style="margin-top:0;">Identity Details</div>
-            <div class="form-grid">
-                <div class="form-group"><label>First Name</label><input type="text" name="first_name"
-                        placeholder="e.g. Alice" required></div>
-                <div class="form-group"><label>Last Name</label><input type="text" name="last_name"
-                        placeholder="e.g. Smith" required></div>
-                <div class="form-group"><label>Username</label><input type="text" name="username"
-                        placeholder="e.g. asmith_mentor" required></div>
-                <div class="form-group"><label>Email Address</label><input type="email" name="email"
-                        placeholder="e.g. alice@example.com" required></div>
-            </div>
-
-            <div class="form-grid" style="margin-top: 20px;">
-                <div class="form-group">
-                    <label>Assigned Role</label>
-                    <select name="role" required>
-                        <option value="">-- Select Role --</option>
-                        {% for r in other_roles_list %}
-                        <option value="{{ r.id }}">{{ r.name }}</option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="modal-body">
+                <div class="form-section-title" style="margin-top:0;">Identity Details</div>
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group-compact"><label>First Name</label><input type="text" name="first_name" placeholder="e.g. Alice" required></div>
+                    <div class="form-group-compact"><label>Last Name</label><input type="text" name="last_name" placeholder="e.g. Smith" required></div>
+                    <div class="form-group-compact"><label>Username</label><input type="text" name="username" placeholder="e.g. asmith_mentor" required></div>
+                    <div class="form-group-compact"><label>Email Address</label><input type="email" name="email" placeholder="e.g. alice@example.com" required></div>
                 </div>
-                <div class="form-group">
-                    <label>Credentials (Password)</label>
-                    <input type="password" name="password" required placeholder="••••••••">
+
+                <div class="form-grid-compact" style="grid-template-columns: repeat(2, 1fr); margin-top: 20px;">
+                    <div class="form-group-compact">
+                        <label>Assigned Role</label>
+                        <select name="role" required>
+                            <option value="">-- Select Role --</option>
+                            {% for r in other_roles_list %}
+                            <option value="{{ r.id }}">{{ r.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-compact">
+                        <label>Credentials (Password)</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
                 </div>
             </div>
-
-            <div style="display:flex; gap:16px; margin-top:28px;">
-                <button type="button" onclick="toggleForm('userForm')" class="draft-btn" style="flex:1;">Cancel</button>
-                <button type="submit" class="cta-btn-v2" style="flex:2;">Complete Onboarding</button>
+            
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="toggleForm('userForm')" class="btn-step-prev" style="width:auto; min-width:100px;">Cancel</button>
+                <button type="submit" class="btn-step-next" style="width:auto; min-width:180px;">Complete Onboarding</button>
             </div>
         </form>
     </div>
@@ -1700,12 +2256,10 @@
                         <span class="badge badge-amber">{{ payout.user.role.name|default:"Evaluator" }}</span>
                     </td>
                     <td style="padding:14px;">
-                        {% if payout.bank_account_holder or payout.bank_name or payout.account_number or payout.upi_id
-                        %}
+                        {% if payout.bank_account_holder or payout.bank_name or payout.account_number or payout.upi_id %}
                         <div style="font-size:13px; color:#374151; line-height:1.6;">
                             <strong>{{ payout.bank_account_holder|default:"-" }}</strong><br>
-                            {{ payout.bank_name|default:"-" }}{% if payout.branch_name %}, {{ payout.branch_name }}{%
-                            endif %}<br>
+                            {{ payout.bank_name|default:"-" }}{% if payout.branch_name %}, {{ payout.branch_name }}{% endif %}<br>
                             A/C: {{ payout.account_number|default:"-" }}<br>
                             IFSC: {{ payout.ifsc_code|default:"-" }}<br>
                             UPI: {{ payout.upi_id|default:"-" }}
@@ -1749,29 +2303,394 @@
     function toggleForm(formId) {
         const form = document.getElementById(formId);
         if (!form) return;
-        const isHidden = window.getComputedStyle(form).display === 'none';
-
-        document.querySelectorAll('.hidden-form').forEach(f => f.style.display = 'none');
-
-        if (isHidden) {
-            form.style.display = 'block';
-            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        const isOpen = form.classList.contains('open');
+        
+        // Close all first
+        document.querySelectorAll('.hidden-form').forEach(f => {
+            f.classList.remove('open');
+            f.style.display = 'none'; // for compat
+        });
+        
+        if (!isOpen) {
+            form.style.display = ''; // reset display block if set
+            form.classList.add('open');
+            if (form.resetStepForm) {
+                form.resetStepForm();
+            }
         }
     }
 
-    // ── Dynamic Marking Parameters ──
+    // ── Multi-Step Form Navigation ──
+    function initMultiStepForm(formId) {
+        const formEl = document.getElementById(formId);
+        if (!formEl) return;
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const stepPanes = formEl.querySelectorAll('.form-step-pane');
+        const stepDots = formEl.querySelectorAll('.step-dot');
+        const prevBtn = formEl.querySelector('.btn-step-prev');
+        const nextBtn = formEl.querySelector('.btn-step-next');
+        const submitGroup = formEl.querySelector('.submit-group');
+        
+        function updateFormUI() {
+            // Update panes
+            stepPanes.forEach(pane => {
+                pane.classList.toggle('active', parseInt(pane.dataset.step) === currentStep);
+            });
+            
+            // Update dots
+            stepDots.forEach(dot => {
+                const stepNum = parseInt(dot.dataset.step);
+                dot.classList.toggle('active', stepNum === currentStep);
+                dot.classList.toggle('completed', stepNum < currentStep);
+            });
+            
+            // Update buttons
+            if (prevBtn) {
+                prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+            }
+            if (currentStep === totalSteps) {
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (submitGroup) submitGroup.style.display = 'flex';
+            } else {
+                if (nextBtn) nextBtn.style.display = 'block';
+                if (submitGroup) submitGroup.style.display = 'none';
+            }
+        }
+        
+        if (nextBtn) {
+            nextBtn.onclick = function() {
+                // Perform validation on current step inputs before moving forward
+                const activePane = formEl.querySelector('.form-step-pane.active');
+                const inputs = activePane.querySelectorAll('input[required], select[required]');
+                let valid = true;
+                inputs.forEach(input => {
+                    if (!input.value) {
+                        input.reportValidity();
+                        valid = false;
+                    }
+                });
+                if (!valid) return;
+                
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        if (prevBtn) {
+            prevBtn.onclick = function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateFormUI();
+                    formEl.querySelector('.modal-body').scrollTop = 0;
+                }
+            };
+        }
+        
+        // Expose reset to external triggers
+        formEl.resetStepForm = function() {
+            currentStep = 1;
+            updateFormUI();
+        };
+
+        // Initialize UI
+        updateFormUI();
+    }
+
+    /* ── Creation form: date chaining ── */
+    function chainDates_create() {
+        var ids = [
+            'c_poster_launching_date',
+            'c_website_launching_date',
+            'c_registration_open',
+            'c_registration_close',
+            'c_round_1_start_date','c_round_1_end_date',
+            'c_round_2_start_date','c_round_2_end_date',
+            'c_round_3_start_date','c_round_3_end_date',
+            'c_round_4_start_date','c_round_4_end_date',
+            'c_round_5_start_date','c_round_5_end_date',
+        ];
+        var prev = null;
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (prev) el.min = prev;
+            if (el.value) prev = el.value;
+        });
+    }
+
+    /* ── Creation form: show/hide rounds based on count ── */
+    function updateRoundVisibility_create(count) {
+        count = parseInt(count) || 1;
+        for (var i = 1; i <= 5; i++) {
+            var card = document.getElementById('c_round_card_' + i);
+            if (card) card.style.display = i <= count ? '' : 'none';
+        }
+    }
+
+    /* ── Creation form: toggle venue field ── */
+    function toggleVenue_create(roundNum) {
+        var sel = document.getElementById('c_round_' + roundNum + '_type');
+        var grp = document.getElementById('c_venue_group_' + roundNum);
+        var inp = document.getElementById('c_round_' + roundNum + '_venue');
+        if (!sel || !grp) return;
+        if (sel.value === 'Offline') {
+            grp.style.display = '';
+            if (inp) inp.required = true;
+        } else {
+            grp.style.display = 'none';
+            if (inp) { inp.required = false; inp.value = ''; }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initMultiStepForm('hackathonForm');
+        
+        // Run validation on load for each round
+        for (let r = 1; r <= 5; r++) {
+            validateMarkingTotals(r);
+        }
+
+        // Add input listener on form for auto validation
+        const form = document.getElementById('hackathonForm');
+        if (form) {
+            form.addEventListener('input', (e) => {
+                if (e.target.name && (e.target.name.includes('_total_marks') || e.target.name.includes('_cutoff'))) {
+                    const match = e.target.name.match(/round_(\d+)_/);
+                    if (match) {
+                        validateMarkingTotals(parseInt(match[1]));
+                    }
+                }
+            });
+        }
+    });
+
+    function validateMarkingTotals(roundNum) {
+        const totalMarkInput = document.querySelector(`input[name="round_${roundNum}_total_marks"]`);
+        if (!totalMarkInput) return;
+
+        const roundTotal = parseFloat(totalMarkInput.value) || 0;
+        
+        // Find all parameter cutoff inputs for this round
+        const paramCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        let paramsSum = 0;
+        paramCutoffInputs.forEach(input => {
+            paramsSum += parseFloat(input.value) || 0;
+        });
+
+        const isRoundEqual = (roundTotal.toFixed(2) === paramsSum.toFixed(2) && roundTotal > 0);
+
+        // Apply color styling to round total mark input and parameter mark inputs
+        const roundInputsToStyle = [totalMarkInput, ...Array.from(paramCutoffInputs)];
+        roundInputsToStyle.forEach(input => {
+            if (isRoundEqual) {
+                input.style.border = '2px solid #10b981';
+                input.style.backgroundColor = '#ecfdf5';
+                input.style.color = '#065f46';
+            } else {
+                input.style.border = '2px solid #ef4444';
+                input.style.backgroundColor = '#fef2f2';
+                input.style.color = '#991b1b';
+            }
+        });
+
+        // Validate each parameter's total marks vs sum of its sub-parameters
+        const numParamsInput = document.querySelector(`input[name="round_${roundNum}_num_params"]`);
+        const numParams = numParamsInput ? parseInt(numParamsInput.value) || 0 : paramCutoffInputs.length;
+
+        for (let j = 1; j <= numParams; j++) {
+            const paramInput = document.querySelector(`input[name="round_${roundNum}_param_${j}_cutoff"]`);
+            if (!paramInput) continue;
+
+            const paramTotal = parseFloat(paramInput.value) || 0;
+            
+            // Find sub-parameter cutoff inputs under this parameter
+            const subCutoffInputs = document.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            
+            if (subCutoffInputs.length > 0) {
+                let subsSum = 0;
+                subCutoffInputs.forEach(input => {
+                    subsSum += parseFloat(input.value) || 0;
+                });
+
+                const isParamEqual = (paramTotal.toFixed(2) === subsSum.toFixed(2));
+
+                const subInputsToStyle = [paramInput, ...Array.from(subCutoffInputs)];
+                subInputsToStyle.forEach(input => {
+                    const isFullyValid = isRoundEqual && isParamEqual;
+                    if (isFullyValid) {
+                        input.style.border = '2px solid #10b981';
+                        input.style.backgroundColor = '#ecfdf5';
+                        input.style.color = '#065f46';
+                    } else {
+                        input.style.border = '2px solid #ef4444';
+                        input.style.backgroundColor = '#fef2f2';
+                        input.style.color = '#991b1b';
+                    }
+                });
+            }
+        }
+    }
+
+    // ── Dynamic Marking Parameters (with optional sub-parameters) ──
     function updateMarkingParams(inputElem, roundNum) {
         const count = parseInt(inputElem.value) || 0;
         const container = document.getElementById(`round_${roundNum}_params_container`);
         if (!container) return;
 
+        // Preserve existing values
+        const existingNames = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_name"]:not([name*="_sub_"])`);
+        const existingCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_"][name$="_cutoff"]:not([name*="_sub_"])`);
+        const nameValues = Array.from(existingNames).map(input => input.value);
+        const cutoffValues = Array.from(existingCutoffs).map(input => input.value);
+
+        // Preserve existing sub-params per parameter
+        const existingSubs = {};
+        for (let j = 1; j <= nameValues.length; j++) {
+            const subInputs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_name"]`);
+            const subCutoffs = container.querySelectorAll(`input[name^="round_${roundNum}_param_${j}_sub_"][name$="_cutoff"]`);
+            existingSubs[j] = Array.from(subInputs).map((input, idx) => ({
+                name: input.value,
+                cutoff: subCutoffs[idx] ? subCutoffs[idx].value : '0.00'
+            }));
+        }
+
         container.innerHTML = '';
         for (let j = 1; j <= count; j++) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'grid-column: 1 / -1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 8px; background: #f8fafc;';
+
+            const nameVal = nameValues[j - 1] ? `value="${nameValues[j - 1]}"` : '';
+            const cutoffVal = cutoffValues[j - 1] ? `value="${cutoffValues[j - 1]}"` : 'value="0.00"';
+
+            // Main param row: Name + Total Marks + Add Sub-Parameter button
+            const paramRow = document.createElement('div');
+            paramRow.className = 'form-grid-compact';
+            paramRow.style.cssText = 'grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; margin-bottom: 0;';
+            paramRow.innerHTML = `
+                <div class="form-group-compact">
+                    <label>Parameter ${j} Name</label>
+                    <input type="text" name="round_${roundNum}_param_${j}_name" required ${nameVal} placeholder="e.g. Innovation">
+                </div>
+                <div class="form-group-compact">
+                    <label>Total Marks</label>
+                    <input type="number" name="round_${roundNum}_param_${j}_cutoff" step="0.01" min="0" ${cutoffVal} required oninput="validateMarkingTotals(${roundNum})">
+                </div>
+                <div class="form-group-compact">
+                    <button type="button" onclick="addSubParam(${roundNum}, ${j})" style="padding: 0 14px; font-size: 12px; font-weight: 700; color: #4f46e5; background: #eef2ff; border: 1.5px dashed #a5b4fc; border-radius: 8px; cursor: pointer; white-space:nowrap; height:40px; transition: all 0.2s;">+ Add Sub-Parameter</button>
+                </div>
+            `;
+            wrapper.appendChild(paramRow);
+
+            // Sub-parameters section
+            const subSection = document.createElement('div');
+            subSection.style.cssText = 'margin-top: 8px; padding-left: 10px; border-left: 3px solid #c7d2fe;';
+
+            const subContainer = document.createElement('div');
+            subContainer.id = `round_${roundNum}_param_${j}_subs_container`;
+            subContainer.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;';
+
+            // Restore existing sub-params
+            const subs = existingSubs[j] || [];
+            subs.forEach((sub, idx) => {
+                const k = idx + 1;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+                row.innerHTML = `
+                    <div style="flex:2; min-width:0;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                        <input type="text" name="round_${roundNum}_param_${j}_sub_${k}_name" value="${sub.name}" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+                    </div>
+                    <div style="width:65px;">
+                        <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                        <input type="number" name="round_${roundNum}_param_${j}_sub_${k}_cutoff" value="${sub.cutoff}" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${j}">
+                    </div>
+                    <button type="button" onclick="removeSubParam(this, ${roundNum}, ${j})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+                `;
+                subContainer.appendChild(row);
+            });
+
+            const subCounter = document.createElement('input');
+            subCounter.type = 'hidden';
+            subCounter.name = `round_${roundNum}_param_${j}_num_subs`;
+            subCounter.value = subs.length.toString();
+
+            subSection.appendChild(subContainer);
+            subSection.appendChild(subCounter);
+            wrapper.appendChild(subSection);
+
+            container.appendChild(wrapper);
+        }
+        validateMarkingTotals(roundNum);
+    }
+
+    function addSubParam(roundNum, paramIdx) {
+        const container = document.getElementById(`round_${roundNum}_param_${paramIdx}_subs_container`);
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        if (!container || !counter) return;
+
+        const currentCount = parseInt(counter.value) || 0;
+        const k = currentCount + 1;
+        counter.value = k;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:end; gap:6px; background:#fff; border:1px solid #e2e8f0; padding:6px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02);';
+        row.innerHTML = `
+            <div style="flex:2; min-width:0;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Sub ${k} Name</label>
+                <input type="text" name="round_${roundNum}_param_${paramIdx}_sub_${k}_name" placeholder="Sub-param" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;">
+            </div>
+            <div style="width:65px;">
+                <label style="font-size:9px; color:#6366f1; font-weight:600; display:block; margin-bottom:2px;">Marks</label>
+                <input type="number" name="round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff" value="0.00" step="0.01" min="0" oninput="validateMarkingTotals(${roundNum})" style="width:100%; box-sizing:border-box; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; outline:none;" class="sub-param-mark" data-param="${paramIdx}">
+            </div>
+            <button type="button" onclick="removeSubParam(this, ${roundNum}, ${paramIdx})" style="padding:4px 6px; font-size:10px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; cursor:pointer; margin-bottom:2px;" title="Remove">✕</button>
+        `;
+        container.appendChild(row);
+        validateMarkingTotals(roundNum);
+    }
+
+    function removeSubParam(btn, roundNum, paramIdx) {
+        const row = btn.parentElement;
+        const container = row.parentElement;
+        row.remove();
+
+        // Re-index remaining sub-params
+        const counter = document.querySelector(`input[name="round_${roundNum}_param_${paramIdx}_num_subs"]`);
+        const rows = container.querySelectorAll(':scope > div');
+        rows.forEach((r, idx) => {
+            const k = idx + 1;
+            const label = r.querySelector('label');
+            if (label) label.textContent = `Sub ${k} Name`;
+            const nameInput = r.querySelector('input[name*="_name"]');
+            if (nameInput) nameInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_name`;
+            const cutoffInput = r.querySelector('input[name*="_cutoff"]');
+            if (cutoffInput) cutoffInput.name = `round_${roundNum}_param_${paramIdx}_sub_${k}_cutoff`;
+        });
+        if (counter) counter.value = rows.length;
+        validateMarkingTotals(roundNum);
+    }
+
+
+    // ── Dynamic Problem Statement Domain Fields ──
+    function updateDomainFields(inputElem) {
+        const count = parseInt(inputElem.value) || 0;
+        const container = document.getElementById('domainsContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        for (let d = 1; d <= count; d++) {
             const div = document.createElement('div');
             div.className = 'form-group';
             div.style.marginBottom = '0';
-            div.innerHTML = `<label style="font-size:11px;">Parameter ${j}</label>
-                             <input type="text" name="round_${roundNum}_param_${j}_name" required placeholder="e.g. Innovation">`;
+            div.innerHTML = `<label style="font-size:11px;">Domain ${d} Name</label>
+                             <input type="text" name="domain_${d}_name" required placeholder="e.g. Agriculture, Healthcare">`;
             container.appendChild(div);
         }
     }
@@ -1884,39 +2803,250 @@
         if (form) form.submit();
     }
 
-    // ── Dashboard charts (overview only) ──
-    {% if tab == 'overview' %}
-    document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data|safe }};
-    const domainData = {{ domain_chart_data|safe }};
+    // ══════════════════════════════════════════
+    //  EVENT LAUNCH CEREMONY FUNCTIONS
+    // ══════════════════════════════════════════
 
-    new Chart(document.getElementById('statusChart').getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: statusData.labels,
-            datasets: [{ data: statusData.data, backgroundColor: ['#ea580c', '#2563eb', '#7c3aed', '#059669', '#fcd34d'], borderWidth: 0 }]
-        },
-        options: { cutout: '65%', plugins: { legend: { display: false } } }
+    function openLaunchModal(hackathonId, hackathonName) {
+        document.getElementById('launchHackathonId').value = hackathonId;
+        document.getElementById('launchHackathonName').value = hackathonName;
+        document.getElementById('launchModalTitle').textContent = 'Launch: ' + hackathonName;
+        document.getElementById('launchDate').value = '';
+        document.getElementById('launchPerson').value = '';
+        const modal = document.getElementById('launchModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeLaunchModal() {
+        document.getElementById('launchModal').style.display = 'none';
+    }
+
+    // Close modal on backdrop click
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('launchModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeLaunchModal();
+            });
+        }
     });
 
-    new Chart(document.getElementById('domainChart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: domainData.labels,
-            datasets: [{ data: domainData.data, backgroundColor: '#6366f1', borderRadius: 8 }]
-        },
-        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } } }
-    });
-    });
-    {% endif %}
+    function openLaunchCeremony() {
+        const launchDate = document.getElementById('launchDate').value;
+        const launchPerson = document.getElementById('launchPerson').value.trim();
+        const eventName = document.getElementById('launchHackathonName').value;
+
+        if (!launchDate) {
+            alert('Please select a launch date.');
+            return;
+        }
+        if (!launchPerson) {
+            alert('Please enter the name of the person who will launch this event.');
+            return;
+        }
+
+        // Close the modal
+        closeLaunchModal();
+
+        // Format the date nicely
+        const dateObj = new Date(launchDate + 'T00:00:00');
+        const options = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+        const formattedDate = dateObj.toLocaleDateString('en-US', options);
+
+        // Populate ceremony screen
+        document.getElementById('ceremonyEventName').textContent = eventName;
+        document.getElementById('ceremonyDate').textContent = formattedDate;
+        document.getElementById('ceremonyPerson').textContent = launchPerson;
+
+        // Reset state
+        document.getElementById('launchBtnContainer').style.display = '';
+        document.getElementById('launchSuccess').style.display = 'none';
+        const rocketEmoji = document.getElementById('rocketEmoji');
+        rocketEmoji.style.animation = 'rocketFloat 3s ease-in-out infinite';
+        const rocketContainer = document.getElementById('rocketContainer');
+        rocketContainer.style.display = '';
+
+        // Show ceremony
+        const ceremony = document.getElementById('launchCeremony');
+        ceremony.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Initialize stars canvas
+        initStars();
+    }
+
+    function closeLaunchCeremony() {
+        document.getElementById('launchCeremony').style.display = 'none';
+        document.body.style.overflow = '';
+        // Remove confetti
+        document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+        window.location.reload();
+    }
+
+    function setEventToDraft(hackathonId, name) {
+        if (!confirm('Are you sure you want to revert "' + name + '" to Draft status?')) {
+            return;
+        }
+        fetch('/events/draft-event/' + hackathonId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            }
+        }).then(function(response) {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to set event to Draft.'));
+                }).catch(() => {
+                    alert('Failed to set event to Draft. Status code ' + response.status);
+                });
+            }
+        }).catch(function(err) {
+            alert('Network error: ' + err.message);
+        });
+    }
+
+    function executeEventLaunch() {
+        const hackathonId = document.getElementById('launchHackathonId').value;
+        const btn = document.getElementById('launchTheEventBtn');
+
+        // Disable button
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'not-allowed';
+
+        // Rocket launch animation
+        const rocketContainer = document.getElementById('rocketContainer');
+        const rocketEmoji = document.getElementById('rocketEmoji');
+        rocketEmoji.style.animation = 'rocketLaunch 1.2s cubic-bezier(.5,0,.75,.15) forwards';
+
+        // Change background to launch colors after delay
+        setTimeout(function() {
+            const ceremonyBg = document.getElementById('ceremonyBg');
+            if (ceremonyBg) {
+                ceremonyBg.style.background = 'linear-gradient(135deg,#0a0a2e 0%,#1a0530 30%,#2d1050 50%,#1a0530 70%,#0a0a2e 100%)';
+            }
+        }, 600);
+
+        // Make the AJAX call to change status to Live
+        fetch('/events/launch-event/' + hackathonId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                launch_date: document.getElementById('launchDate').value,
+                launched_by: document.getElementById('launchPerson').value.trim(),
+            })
+        }).then(function(response) {
+            if (response.ok) {
+                // Show success + confetti after rocket launches (minimum delay of 1.4s for animation to complete)
+                setTimeout(function() {
+                    rocketContainer.style.display = 'none';
+                    document.getElementById('launchBtnContainer').style.display = 'none';
+                    document.getElementById('launchSuccess').style.display = 'block';
+                    spawnConfetti();
+                }, 1000);
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to launch event. Please try again.'));
+                }).catch(() => {
+                    alert('Failed to launch event. Server returned status code ' + response.status);
+                });
+                // Reset animation & button
+                rocketEmoji.style.animation = '';
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor = '';
+            }
+        }).catch(function(err) {
+            alert('Network error: ' + err.message);
+            // Reset animation & button
+            rocketEmoji.style.animation = '';
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.cursor = '';
+        });
+    }
+
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let c of cookies) {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) return c.substring('csrftoken='.length);
+        }
+        // Fallback: get from meta tag or hidden input
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) return meta.content;
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input) return input.value;
+        return '';
+    }
+
+    function spawnConfetti() {
+        const colors = ['#f97316','#ea580c','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6','#fb7185','#22d3ee'];
+        const ceremony = document.getElementById('launchCeremony');
+        for (let i = 0; i < 80; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-piece';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const left = Math.random() * 100;
+            const delay = Math.random() * 2;
+            const duration = 2 + Math.random() * 3;
+            const size = 6 + Math.random() * 10;
+            const shapes = ['50%','0','4px'];
+            confetti.style.cssText = `left:${left}%; background:${color}; width:${size}px; height:${size}px; border-radius:${shapes[Math.floor(Math.random()*shapes.length)]}; animation-delay:${delay}s; animation-duration:${duration}s; z-index:3;`;
+            ceremony.appendChild(confetti);
+        }
+    }
+
+    function initStars() {
+        const canvas = document.getElementById('starsCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.8 + 0.3,
+                opacity: Math.random() * 0.7 + 0.3,
+                speed: Math.random() * 0.015 + 0.005,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        function animate() {
+            if (document.getElementById('launchCeremony').style.display === 'none') return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const time = Date.now() * 0.001;
+            stars.forEach(s => {
+                const twinkle = 0.5 + 0.5 * Math.sin(time * s.speed * 60 + s.phase);
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${s.opacity * twinkle})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+
     {% if tab == 'overview' or tab == 'analytics' %}
     document.addEventListener('DOMContentLoaded', () => {
-        const statusData = {{ status_chart_data|safe }};
-    const registrationData = {{ registration_chart_data|safe }};
-    const roleData = {{ role_chart_data|safe }};
-    const growthData = {{ growth_chart_data|safe }};
+        const statusData = {{ status_chart_data| safe }};
+    const registrationData = {{ registration_chart_data| safe }};
+    const roleData = {{ role_chart_data| safe }};
+    const growthData = {{ growth_chart_data| safe }};
 
-    const domainData = {{ domain_chart_data|safe }};
+    const domainData = {{ domain_chart_data| safe }};
 
     Chart.defaults.font.family = "'Outfit', sans-serif";
     Chart.defaults.color = '#64748b';

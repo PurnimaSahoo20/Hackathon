@@ -1,30 +1,316 @@
 {% extends "team/base.html" %}
-{% block title %}Podcast and Media{% endblock %}
+{% block title %}Podcast & Media{% endblock %}
+
+{% block extra_css %}
+<style>
+.podcast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.podcast-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.podcast-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-5px);
+    box-shadow: 0 16px 36px rgba(234, 88, 12, 0.08);
+}
+
+.podcast-thumbnail-wrapper {
+    position: relative;
+    width: 100%;
+    height: 168px;
+    background: linear-gradient(135deg, #1e3a8a, #ea580c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.podcast-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+}
+
+.podcast-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 2;
+    transition: transform 0.2s ease;
+}
+
+.podcast-card:hover .podcast-play-btn {
+    transform: scale(1.1);
+}
+
+.podcast-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-grow: 1;
+}
+
+.podcast-category {
+    display: inline-block;
+    width: fit-content;
+    background: rgba(234, 88, 12, 0.08);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-mono);
+}
+
+.podcast-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.podcast-speaker {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 2px 0 0;
+}
+
+.podcast-desc {
+    font-size: 12px;
+    color: var(--muted2);
+    margin: 4px 0 0;
+    line-height: 1.45;
+}
+
+/* Modal Player styles */
+.player-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.player-modal.active {
+    display: flex;
+    opacity: 1;
+}
+.player-modal-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 640px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.player-modal.active .player-modal-content {
+    transform: scale(1);
+}
+.player-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--border);
+    color: var(--muted2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+.player-close-btn:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+.video-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+.video-container iframe, .video-container video {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.player-info {
+    padding: 20px;
+}
+.player-info-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 4px;
+}
+.player-info-speaker {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 8px;
+}
+.player-info-desc {
+    font-size: 13px;
+    color: var(--muted2);
+    margin: 0;
+    line-height: 1.5;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header"><div><div class="page-title">Podcast and Media</div><div class="page-subtitle">Published podcast and media content</div></div></div>
-<div class="two-grid">
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Podcasts</div>
-        {% for podcast in podcasts %}
-        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
-            <strong>{{ podcast.title }}</strong>
-            <div style="font-size:12px;color:var(--muted);margin:6px 0">{{ podcast.description|default:"No description." }}</div>
-            {% if podcast.video_url %}<a href="{{ podcast.video_url }}" target="_blank" class="section-btn">Open Link</a>{% elif podcast.video_file %}<a href="{{ podcast.video_file.url }}" target="_blank" class="section-btn">Open Media</a>{% endif %}
-        </div>
-        {% empty %}
-        <div style="color:var(--muted)">No podcast content available.</div>
-        {% endfor %}
-    </div>
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:18px">Published Media Files</div>
-        {% for item in creatives %}
-        <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);margin-bottom:10px">
-            <strong>{{ item.title }}</strong>
-            <div style="margin-top:10px"><a href="{{ item.file.url }}" target="_blank" class="section-btn">Open File</a></div>
-        </div>
-        {% empty %}
-        <div style="color:var(--muted)">No media files available.</div>
-        {% endfor %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Podcast & Media</div>
+        <div class="page-subtitle">Browse talk shows and podcasts from experts and mentors</div>
     </div>
 </div>
+
+<div class="podcast-grid">
+    {% for podcast in podcasts %}
+    <div class="podcast-card" 
+         data-title="{{ podcast.title }}"
+         data-speaker="{{ podcast.speaker_name|default:'Guest Speaker' }}"
+         data-desc="{{ podcast.description|default:'' }}"
+         data-url="{% if podcast.video_url %}{{ podcast.video_url }}{% elif podcast.video_file %}{{ podcast.video_file.url }}{% endif %}"
+         data-is-file="{% if podcast.video_file %}true{% else %}false{% endif %}"
+         onclick="playPodcast(this)">
+        
+        <div class="podcast-thumbnail-wrapper">
+            {% if podcast.thumbnail %}
+            <img class="podcast-img" src="{{ podcast.thumbnail.url }}" alt="{{ podcast.title }}" />
+            {% endif %}
+            <div class="podcast-play-btn">
+                <ion-icon name="play-outline" style="margin-left: 2px;"></ion-icon>
+            </div>
+        </div>
+
+        <div class="podcast-body">
+            <span class="podcast-category">Podcast</span>
+            <h3 class="podcast-title">{{ podcast.title }}</h3>
+            {% if podcast.speaker_name %}
+            <p class="podcast-speaker">🎤 {{ podcast.speaker_name }}</p>
+            {% endif %}
+            {% if podcast.description %}
+            <p class="podcast-desc">{{ podcast.description|truncatechars:100 }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: var(--muted)">
+        <div style="font-size: 48px; margin-bottom: 12px">🎙️</div>
+        <h3 style="color: var(--text)">No Podcasts Available</h3>
+        <p>No expert talks or podcast episodes have been published yet.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Lightbox Player Modal -->
+<div class="player-modal" id="podcastModal" onclick="closePlayer(event)">
+    <div class="player-modal-content">
+        <button type="button" class="player-close-btn" onclick="closePlayerDirect()">
+            <ion-icon name="close-outline"></ion-icon>
+        </button>
+        <div class="video-container" id="playerWrapper">
+            <!-- Iframe or Video elements populated dynamically -->
+        </div>
+        <div class="player-info">
+            <h4 class="player-info-title" id="playerTitle"></h4>
+            <p class="player-info-speaker" id="playerSpeaker"></p>
+            <p class="player-info-desc" id="playerDesc"></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function playPodcast(card) {
+    const title = card.dataset.title;
+    const speaker = card.dataset.speaker;
+    const desc = card.dataset.desc;
+    const url = card.dataset.url;
+    const isFile = card.dataset.isFile === 'true';
+
+    const modal = document.getElementById('podcastModal');
+    const wrapper = document.getElementById('playerWrapper');
+    
+    document.getElementById('playerTitle').textContent = title;
+    document.getElementById('playerSpeaker').textContent = speaker ? '🎤 ' + speaker : '';
+    document.getElementById('playerDesc').textContent = desc;
+
+    if (isFile) {
+        wrapper.innerHTML = `<video src="${url}" controls autoplay class="video-player"></video>`;
+    } else {
+        // Convert YouTube URL to Embed if necessary
+        let embedUrl = url;
+        if (url.includes('youtube.com/watch?v=')) {
+            const videoId = url.split('v=')[1].split('&')[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        } else if (url.includes('youtu.be/')) {
+            const videoId = url.split('youtu.be/')[1].split('?')[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        }
+        wrapper.innerHTML = `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    }
+
+    modal.classList.add('active');
+}
+
+function closePlayerDirect() {
+    const modal = document.getElementById('podcastModal');
+    const wrapper = document.getElementById('playerWrapper');
+    modal.classList.remove('active');
+    wrapper.innerHTML = '';
+}
+
+function closePlayer(event) {
+    const modal = document.getElementById('podcastModal');
+    if (event.target === modal) {
+        closePlayerDirect();
+    }
+}
+</script>
 {% endblock %}

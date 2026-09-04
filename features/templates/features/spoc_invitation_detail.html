@@ -98,6 +98,46 @@
             <div><div class="info-label">Logo</div><img src="{{ invite.institution_logo.url }}" style="height:58px;border-radius:8px;border:1px solid #f3f4f6;"></div>
             {% endif %}
         </div>
+
+        <hr class="divider">
+
+        <div class="section-title">Review & Resubmission History</div>
+        {% if invite.review_history.all %}
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+                <thead>
+                    <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Attempt</th>
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Action</th>
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Status</th>
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Reviewed By</th>
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Date & Time</th>
+                        <th style="padding:10px 12px;font-size:12px;text-align:left;color:#4b5563;">Reason / Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in invite.review_history.all %}
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:12px;font-weight:700;color:#111827;">Attempt #{{ log.attempt_number }}</td>
+                        <td style="padding:12px;">
+                            <span class="badge {% if log.action == 'approved' %}b-approved{% elif log.action == 'rejected' %}b-rejected{% elif log.action == 'resubmitted' %}b-pending{% else %}b-invited{% endif %}">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td style="padding:12px;font-size:13px;color:#374151;">{{ log.new_status|title }}</td>
+                        <td style="padding:12px;font-size:13px;color:#4b5563;">{{ log.reviewed_by.get_full_name|default:log.reviewed_by.username|default:"System / Applicant" }}</td>
+                        <td style="padding:12px;font-size:13px;color:#6b7280;">{{ log.created_at|date:"d M Y, H:i" }}</td>
+                        <td style="padding:12px;font-size:13px;color:{% if log.action == 'rejected' %}#dc2626{% else %}#374151{% endif %};max-width:280px;word-break:break-word;">
+                            {{ log.rejection_reason|default:log.admin_remarks|default:"—" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:#6b7280;font-size:13px;margin-top:8px;">No review history recorded yet.</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

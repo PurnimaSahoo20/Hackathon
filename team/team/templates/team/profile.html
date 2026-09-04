@@ -1,67 +1,252 @@
 {% extends "team/base.html" %}
 {% block title %}Profile{% endblock %}
+
 {% block extra_css %}
 <style>
-.password-wrap{position:relative}
-.password-wrap input{padding-right:46px}
-.password-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0}
-.password-toggle:hover{color:#2563eb}
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.profile-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-header-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(251, 146, 60, 0.15);
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-header-title ion-icon {
+    color: var(--accent);
+    font-size: 18px;
+}
+
+.password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrap input {
+    padding-right: 42px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: var(--accent);
+}
+
+/* Account Info Cards */
+.account-badge-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.account-badge {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 16px;
+}
+
+.account-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(234, 88, 12, 0.08);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.account-badge-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.account-badge-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+}
+
+.account-badge-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+@media(max-width: 900px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 {% endblock %}
+
 {% block content %}
-<div class="page-header"><div><div class="page-title">Profile</div><div class="page-subtitle">Your team lead account</div></div></div>
-<div class="two-grid">
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:20px">Update Profile</div>
-        <form method="POST" enctype="multipart/form-data">{% csrf_token %}
-            <input type="hidden" name="form_type" value="profile">
-            <div class="field"><label>First Name</label><input type="text" name="first_name" value="{{ request.user.first_name }}"></div>
-            <div class="field"><label>Last Name</label><input type="text" name="last_name" value="{{ request.user.last_name }}"></div>
-            <div class="field"><label>Phone</label><input type="text" name="phone_number" value="{{ request.user.phone_number|default:'' }}"></div>
-            <div class="field"><label>Profile Photo</label><input type="file" name="profile_image" accept="image/*"></div>
-            <button type="submit" class="section-btn primary" style="width:100%;padding:12px">Save</button>
+<div class="page-header">
+    <div>
+        <div class="page-title">Profile Settings</div>
+        <div class="page-subtitle">Manage your personal details and secure your account</div>
+    </div>
+</div>
+
+<div class="profile-grid">
+    <!-- Left Column: Profile Info & Update -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+        <!-- Account Info Summary -->
+        <div class="profile-card">
+            <div class="profile-header-title">
+                <ion-icon name="information-circle-outline"></ion-icon> Account Info
+            </div>
+            
+            <div class="account-badge-grid">
+                <div class="account-badge">
+                    <div class="account-badge-icon"><ion-icon name="mail-outline"></ion-icon></div>
+                    <div class="account-badge-details">
+                        <span class="account-badge-label">Email Address</span>
+                        <span class="account-badge-val">{{ request.user.email }}</span>
+                    </div>
+                </div>
+                <div class="account-badge">
+                    <div class="account-badge-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
+                    <div class="account-badge-details">
+                        <span class="account-badge-label">System Role</span>
+                        <span class="account-badge-val" style="color:var(--accent)">Team Lead</span>
+                    </div>
+                </div>
+                {% if reg %}
+                <div class="account-badge">
+                    <div class="account-badge-icon"><ion-icon name="people-outline"></ion-icon></div>
+                    <div class="account-badge-details">
+                        <span class="account-badge-label">Team Workspace</span>
+                        <span class="account-badge-val">{{ reg.team_name }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Update Profile Details -->
+        <div class="profile-card">
+            <div class="profile-header-title">
+                <ion-icon name="person-outline"></ion-icon> Personal Details
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="profile">
+                <div class="field">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" value="{{ request.user.first_name }}">
+                </div>
+                <div class="field">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" value="{{ request.user.last_name }}">
+                </div>
+                <div class="field">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone_number" value="{{ request.user.phone_number|default:'' }}">
+                </div>
+                <div class="field">
+                    <label>Profile Image</label>
+                    <input type="file" name="profile_image" accept="image/*">
+                </div>
+                <button type="submit" class="section-btn primary" style="width:100%; padding:12px; border-radius:12px; margin-top:10px">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Change Password -->
+    <div class="profile-card">
+        <div class="profile-header-title">
+            <ion-icon name="lock-closed-outline"></ion-icon> Change Password
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="password">
+            
+            <div class="field">
+                <label>Current Password</label>
+                <div class="password-wrap">
+                    <input type="password" name="current_password" id="team-current-password" required>
+                    <button type="button" class="password-toggle" data-target="team-current-password" aria-label="Show password">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label>New Password</label>
+                <div class="password-wrap">
+                    <input type="password" name="new_password" id="team-new-password" required>
+                    <button type="button" class="password-toggle" data-target="team-new-password" aria-label="Show password">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label>Confirm New Password</label>
+                <div class="password-wrap">
+                    <input type="password" name="confirm_password" id="team-confirm-password" required>
+                    <button type="button" class="password-toggle" data-target="team-confirm-password" aria-label="Show password">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </button>
+                </div>
+            </div>
+            
+            <div style="font-size:11px; color:var(--muted); margin-bottom:20px; line-height:1.45">
+                {{ password_help_text }}
+            </div>
+            
+            <button type="submit" class="section-btn primary" style="width:100%; padding:12px; border-radius:12px;">Update Password</button>
         </form>
     </div>
-    <div class="table-wrap" style="padding:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:20px">Account Info</div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Email</div><div style="font-size:14px;font-weight:700">{{ request.user.email }}</div></div>
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Role</div><div style="font-size:14px;font-weight:700;color:#2563eb">Team Lead</div></div>
-            {% if reg %}<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Team</div><div style="font-size:14px;font-weight:700">{{ reg.team_name }}</div></div>{% endif %}
-        </div>
-    </div>
-</div>
-<div class="table-wrap" style="padding:24px;margin-top:24px">
-    <div style="font-size:15px;font-weight:800;margin-bottom:20px">Change Password</div>
-    <form method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="form_type" value="password">
-        <div class="field">
-            <label>Current Password</label>
-            <div class="password-wrap">
-                <input type="password" name="current_password" id="team-current-password" required>
-                <button type="button" class="password-toggle" data-target="team-current-password" aria-label="Show password">👁</button>
-            </div>
-        </div>
-        <div class="field">
-            <label>New Password</label>
-            <div class="password-wrap">
-                <input type="password" name="new_password" id="team-new-password" required>
-                <button type="button" class="password-toggle" data-target="team-new-password" aria-label="Show password">👁</button>
-            </div>
-        </div>
-        <div class="field">
-            <label>Confirm New Password</label>
-            <div class="password-wrap">
-                <input type="password" name="confirm_password" id="team-confirm-password" required>
-                <button type="button" class="password-toggle" data-target="team-confirm-password" aria-label="Show password">👁</button>
-            </div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">{{ password_help_text }}</div>
-        <button type="submit" class="section-btn primary" style="padding:12px 18px">Update Password</button>
-    </form>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
 document.querySelectorAll('.password-toggle').forEach(function(button) {
@@ -70,7 +255,12 @@ document.querySelectorAll('.password-toggle').forEach(function(button) {
         if (!input) return;
         const show = input.type === 'password';
         input.type = show ? 'text' : 'password';
-        button.textContent = show ? '🙈' : '👁';
+        
+        // Toggle the IonIcon name
+        const icon = button.querySelector('ion-icon');
+        if (icon) {
+            icon.setAttribute('name', show ? 'eye-off-outline' : 'eye-outline');
+        }
         button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
     });
 });

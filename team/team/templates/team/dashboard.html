@@ -5,7 +5,7 @@
 <style>
 .dash-shell{display:grid;gap:20px}
 .dash-hero{background:linear-gradient(135deg,rgba(255,255,255,.96) 0%,rgba(255,251,248,.96) 50%,rgba(255,249,240,.94) 100%);border:1px solid rgba(251,146,60,.20);border-radius:30px;padding:32px 32px 28px;position:relative;overflow:hidden;box-shadow:0 24px 48px rgba(234,88,12,.08)}
-.dash-hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:24px;align-items:start}
+.dash-hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:28px;align-items:stretch}
 .dash-kicker{font-size:11px;font-weight:800;color:#ea580c;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
 .dash-title{font-size:clamp(28px,3.4vw,40px);font-weight:900;letter-spacing:-.05em;line-height:1.02;color:#152238;max-width:11ch}
 .dash-subtitle{font-size:15px;color:#5b6476;margin-top:10px}
@@ -15,6 +15,172 @@
 .dash-pill.status-green{background:#effaf4;border-color:#b7ecd4;color:#059669}
 .dash-pill.status-amber{background:#fff6e7;border-color:#f7cf7a;color:#d97706}
 .dash-pill.status-red{background:#fff1f2;border-color:#fecdd3;color:#dc2626}
+
+/* Mini Timeline and News Styles */
+.dash-right-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+}
+.mini-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(251, 146, 60, 0.15);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 10px 24px rgba(234, 88, 12, 0.03);
+    backdrop-filter: blur(10px);
+}
+.mini-panel-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #152238;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid rgba(251, 146, 60, 0.1);
+    padding-bottom: 8px;
+}
+.mini-panel-title ion-icon {
+    color: #ea580c;
+    font-size: 15px;
+}
+.mini-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.mini-info-grid::-webkit-scrollbar {
+    display: none;
+}
+.mini-info-item {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(251, 146, 60, 0.08);
+    border-radius: 12px;
+    padding: 6px 10px;
+    transition: transform 0.2s;
+}
+.mini-info-item:hover {
+    transform: translateX(2px);
+    border-color: rgba(251, 146, 60, 0.2);
+}
+.mini-info-icon {
+    font-size: 12px;
+    text-align: center;
+}
+.mini-info-label {
+    font-size: 8px;
+    font-weight: 800;
+    color: #8a94a6;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1px;
+}
+.mini-info-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mini-news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.mini-news-list::-webkit-scrollbar {
+    display: none;
+}
+.mini-news-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 12px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.mini-news-card:hover {
+    transform: translateX(2px);
+    border-color: var(--orange);
+}
+.mini-news-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8px;
+    color: #8a94a6;
+    font-family: var(--font-mono);
+}
+.mini-news-type {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 99px;
+    font-weight: 800;
+    font-size: 8px;
+}
+.mini-news-type.news {
+    background: rgba(255, 107, 26, 0.1);
+    color: var(--orange);
+}
+.mini-news-type.announcement {
+    background: rgba(17, 24, 39, 0.08);
+    color: #111827;
+}
+.mini-news-title {
+    margin: 0;
+}
+.mini-news-title a {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none;
+    line-height: 1.2;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mini-news-title a:hover {
+    color: var(--orange);
+}
+.mini-news-empty {
+    text-align: center;
+    padding: 20px 10px;
+    color: #8a94a6;
+}
+.mini-news-empty p {
+    margin: 0;
+    font-size: 11px;
+}
+
 .dash-actions{display:flex;flex-direction:column;gap:16px;align-items:flex-end}
 .dash-icon-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .dash-icon-card{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 16px 28px rgba(15,23,42,.12)}
@@ -63,8 +229,8 @@
 .submission-score{font-size:24px;font-weight:900;color:#ef6c00;line-height:1}
 .submission-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
 .empty-card{background:rgba(255,255,255,.78);border:1px dashed rgba(148,163,184,.30);border-radius:22px;padding:24px;color:#5e6b80;font-size:12px}
-@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid{grid-template-columns:1fr}.dash-hero-grid{grid-template-columns:1fr}.dash-actions{align-items:flex-start}.dash-icon-row{justify-content:flex-start}}
-@media(max-width:760px){.dash-hero{padding:22px 18px}.journey-card{padding:18px 14px}.stats-grid{grid-template-columns:1fr}.dash-quick-links{grid-template-columns:1fr}.member-row,.submission-row{flex-direction:column;align-items:flex-start}.submission-right{width:100%;justify-content:space-between}.dash-title{font-size:30px}.snapshot-value{font-size:34px}.snapshot-label{font-size:18px}}
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid{grid-template-columns:1fr}.dash-hero-grid{grid-template-columns:1fr;gap:20px}.dash-actions{align-items:flex-start}.dash-icon-row{justify-content:flex-start}}
+@media(max-width:760px){.dash-hero{padding:22px 18px}.journey-card{padding:18px 14px}.stats-grid{grid-template-columns:1fr}.dash-quick-links{grid-template-columns:1fr}.member-row,.submission-row{flex-direction:column;align-items:flex-start}.submission-right{width:100%;justify-content:space-between}.dash-title{font-size:30px}.snapshot-value{font-size:34px}.snapshot-label{font-size:18px}.mini-grid{grid-template-columns:1fr}}
 </style>
 {% endblock %}
 
@@ -75,35 +241,136 @@
 </div>
 {% else %}
 <div class="dash-shell">
+    {% if reg.status == 'rejected' %}
+    <div style="background: linear-gradient(135deg, #fef2f2, #fff1f2); border: 1px solid #fecdd3; border-radius: 20px; padding: 24px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 25px rgba(220, 38, 38, 0.05);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(220, 38, 38, 0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #dc2626;">✕</div>
+            <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #991b1b;">Registration Not Approved</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #7f1d1d;">Your registration has been rejected by the SPOC.</p>
+            </div>
+        </div>
+        <div style="background: rgba(225, 29, 72, 0.04); border-left: 4px solid #dc2626; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #9f1239;">
+            <strong>Rejection Reason:</strong> {{ reg.rejection_note|default:"No reason provided. Please contact your SPOC." }}
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+            <form method="POST" action="{% url 'team_resubmit_registration' %}">
+                {% csrf_token %}
+                <button type="submit" class="cta-link" style="border: none; cursor: pointer; padding: 12px 24px; border-radius: 12px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #dc2626, #f43f5e); color: white; box-shadow: 0 10px 20px rgba(220, 38, 38, 0.15); transition: transform 0.2s;">
+                    Resubmit Registration
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if reg.created_team and reg.created_team.current_round > 1 %}
+    <div style="background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1px solid #a7f3d0; border-radius: 20px; padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.05);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #10b981;">🎉</div>
+            <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #065f46;">Congratulations!</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #047857;">Your team has qualified Round {{ reg.created_team.current_round|add:"-1" }} and has been promoted to Round {{ reg.created_team.current_round }}!</p>
+            </div>
+        </div>
+        <span style="font-size: 11px; background: #10b981; color: white; font-weight: 800; padding: 6px 14px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em;">Promoted</span>
+    </div>
+    {% endif %}
+
     <section class="dash-hero">
         <div class="dash-hero-grid">
-            <div>
+            <div style="display: flex; flex-direction: column; justify-content: center;">
                 <div class="dash-kicker">HackNexus Team Dashboard</div>
                 <h1 class="dash-title">{{ reg.hackathon.name }}</h1>
                 <div class="dash-subtitle">Team Dashboard &middot; {{ reg.team_name }}</div>
                 <div class="dash-meta">
-                    <span class="dash-pill team"><ion-icon name="pricetag-outline"></ion-icon> {{ reg.team_name }}</span>
-                    {% if reg.status == 'approved' %}
-                    <span class="dash-pill status-green"><ion-icon name="checkmark-circle-outline"></ion-icon> Dashboard Active</span>
-                    {% elif reg.status == 'pending' %}
-                    <span class="dash-pill status-amber"><ion-icon name="time-outline"></ion-icon> Pending Approval</span>
+                    {% if reg.created_team %}
+                    <span class="dash-pill team" style="background:#f0fdf4; border-color:#a7f3d0; color:#047857;"><ion-icon name="ribbon-outline"></ion-icon> Team Round: {{ reg.created_team.current_round }}</span>
+                    {% endif %}
+                    {% if active_round %}
+                    <span class="dash-pill team"><ion-icon name="disc-outline"></ion-icon> Event Active: {{ active_round.name }}</span>
+                    <span class="dash-pill status-green"><ion-icon name="play-circle-outline"></ion-icon> Active</span>
+                    <span class="dash-pill status-amber"><ion-icon name="calendar-outline"></ion-icon> {{ active_round.start_date|date:"d M" }} - {{ active_round.end_date|date:"d M Y" }}</span>
                     {% else %}
-                    <span class="dash-pill status-red"><ion-icon name="alert-circle-outline"></ion-icon> {{ reg.status|title }}</span>
+                        {% if rounds %}
+                            {% for r in rounds %}
+                                {% if forloop.first %}
+                                    <span class="dash-pill team"><ion-icon name="disc-outline"></ion-icon> {{ r.name }}</span>
+                                    <span class="dash-pill status-red"><ion-icon name="pause-circle-outline"></ion-icon> Inactive</span>
+                                    {% if r.start_date and r.end_date %}
+                                    <span class="dash-pill status-amber"><ion-icon name="calendar-outline"></ion-icon> {{ r.start_date|date:"d M" }} - {{ r.end_date|date:"d M Y" }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="dash-pill status-amber"><ion-icon name="alert-circle-outline"></ion-icon> No Round Defined</span>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
-            <div class="dash-actions">
-                <div class="dash-icon-row">
-                    <div class="dash-icon-card orange"><ion-icon name="business-outline"></ion-icon></div>
-                    <div class="dash-icon-card blue"><ion-icon name="people-circle-outline"></ion-icon></div>
-                    <div class="dash-icon-card green"><ion-icon name="laptop-outline"></ion-icon></div>
-                    <div class="dash-icon-card purple"><ion-icon name="rocket-outline"></ion-icon></div>
-                </div>
-                <div class="dash-quick-links">
-                    <a href="{% url 'team_details' %}" class="dash-quick-link">Team Members</a>
-                    <a href="{% url 'team_invite_mentor' %}" class="dash-quick-link">Mentor</a>
-                    <a href="{% url 'team_submission' %}" class="dash-quick-link">Submit Solution</a>
-                    <a href="{% url 'team_communication' %}" class="dash-quick-link">Communication</a>
+            <div class="dash-right-content">
+                <div class="mini-grid">
+                    <!-- Dates & Timeline -->
+                    <div class="mini-panel">
+                        <h3 class="mini-panel-title"><ion-icon name="calendar-outline"></ion-icon> Dates & Timeline</h3>
+                        <div class="mini-info-grid">
+                            <div class="mini-info-item">
+                                <div class="mini-info-icon">📅</div>
+                                <div>
+                                    <div class="mini-info-label">Registration Window</div>
+                                    <div class="mini-info-value">
+                                        {% if reg.hackathon.registration_open or reg.hackathon.registration_close %}
+                                        {{ reg.hackathon.registration_open|date:"d M" }} - {{ reg.hackathon.registration_close|date:"d M Y" }}
+                                        {% else %}
+                                        TBD
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% for r in rounds %}
+                            <div class="mini-info-item">
+                                <div class="mini-info-icon">
+                                    {% if r.number == 1 %}🚀{% elif r.number == 2 %}⚡{% elif r.number == 3 %}🏁{% else %}🏆{% endif %}
+                                </div>
+                                <div>
+                                    <div class="mini-info-label">{{ r.name }}</div>
+                                    <div class="mini-info-value">
+                                        {% if r.start_date or r.end_date %}
+                                        {{ r.start_date|date:"d M" }} - {{ r.end_date|date:"d M Y" }}
+                                        {% else %}
+                                        TBD
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- News & Announcements -->
+                    <div class="mini-panel">
+                        <h3 class="mini-panel-title"><ion-icon name="megaphone-outline"></ion-icon> News & Updates</h3>
+                        {% if news_items %}
+                        <div class="mini-news-list">
+                            {% for news in news_items %}
+                            <article class="mini-news-card">
+                                <div class="mini-news-top">
+                                    <span>{{ news.item.created_at|date:"d M, h:i A" }}</span>
+                                    <span class="mini-news-type {{ news.type }}">{{ news.type_label }}</span>
+                                </div>
+                                <h4 class="mini-news-title">
+                                    <a href="{{ news.link }}" {% if news.link != "#" %} target="_blank" rel="noopener noreferrer" {% endif %}>{{ news.title }}</a>
+                                </h4>
+                            </article>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="mini-news-empty">
+                            <div style="font-size: 24px; margin-bottom: 6px">📰</div>
+                            <p>No announcements yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

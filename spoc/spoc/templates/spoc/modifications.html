@@ -10,7 +10,7 @@
 <div class="info-box">Teams can request member replacements, additions, or detail changes. Review each request carefully. After approving modifications, upload a fresh <strong>Authorization Letter</strong> if membership changed.</div>
 <div class="section">
     <div class="section-header">
-        <div class="section-title">⏳ Pending Requests</div>
+        <div class="section-title">⏳ Unlock Requests (Pending Edit Access)</div>
         <span class="badge badge-amber">{{ pending.count }} Pending</span>
     </div>
     <div class="table-wrap">
@@ -23,20 +23,57 @@
                     <td>{{ mod.requested_change }}</td>
                     <td style="color:var(--muted)">{{ mod.reason|truncatechars:50 }}</td>
                     <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ mod.requested_at|date:"M j, Y" }}</td>
-                    <td><span class="badge badge-amber">Pending</span></td>
+                    <td><span class="badge badge-amber">Pending Unlock</span></td>
                     <td>
-                        <button class="act-btn act-view" onclick="openMod({{ mod.id }}, '{{ mod.team_name }}')">Details</button>
+                        <button class="act-btn act-view" onclick="openMod({{ mod.id }}, '{{ mod.team_name|escapejs }}', '{{ mod.requested_change|escapejs }}', 'pending')">Details</button>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No pending modification requests 🎉</td></tr>
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No pending unlock requests 🎉</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<div class="section" style="margin-top: 24px;">
+    <div class="section-header">
+        <div class="section-title">📝 Submitted Modifications (Pending Final Approval)</div>
+        <span class="badge badge-blue">{{ submitted.count }} Pending Approval</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Team</th><th>Requested Change</th><th>Reason</th><th>Submitted On</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for mod in submitted %}
+                <tr>
+                    <td>
+                        <strong>{{ mod.team_name }}</strong>
+                        {% if mod.registration %}
+                        <br>
+                        <a href="/spoc/teams/{{ mod.registration.id }}/" style="font-size: 11px; color: var(--spoc); font-weight: bold; text-decoration: underline;">
+                            Inspect Team details
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>{{ mod.requested_change }}</td>
+                    <td style="color:var(--muted)">{{ mod.reason|truncatechars:50 }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ mod.requested_at|date:"M j, Y" }}</td>
+                    <td><span class="badge badge-blue">Pending Final Approval</span></td>
+                    <td>
+                        <button class="act-btn act-view" style="background:var(--spoc); border-color:var(--spoc); color:white;" onclick="openMod({{ mod.id }}, '{{ mod.team_name|escapejs }}', '{{ mod.requested_change|escapejs }}', 'submitted')">Review Changes</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No submitted modifications pending approval 🎉</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% if resolved %}
-<div class="section">
+<div class="section" style="margin-top: 24px;">
     <div class="section-header"><div class="section-title">✅ Recently Resolved</div></div>
     <div class="table-wrap">
         <table>
@@ -46,7 +83,7 @@
                 <tr>
                     <td>{{ mod.team_name }}</td>
                     <td>{{ mod.requested_change }}</td>
-                    <td>{% if mod.status == 'approved' %}<span class="badge badge-green">✓ Approved</span>{% else %}<span class="badge badge-red">✗ Rejected</span>{% endif %}</td>
+                    <td>{% if mod.status == 'resolved' or mod.status == 'approved' %}<span class="badge badge-green">✓ Approved</span>{% else %}<span class="badge badge-red">✗ Rejected</span>{% endif %}</td>
                     <td style="font-family:'JetBrains Mono',monospace;font-size:12px">{{ mod.decided_at|date:"M j, Y"|default:"—" }}</td>
                 </tr>
                 {% endfor %}
@@ -65,12 +102,12 @@
         </div>
         <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px" id="mod-team-name">—</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="mod-change-text">—</div>
-        <div class="info-box">If the modification affects team membership, upload a new <strong>Authorization Letter</strong> after approving.</div>
+        <div class="info-box" id="modal-action-tip">If the modification affects team membership, upload a new <strong>Authorization Letter</strong> after approving.</div>
         <div class="two-grid">
             <form method="POST" id="approve-form" action="" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div style="font-size:14px;font-weight:700;color:#059669;margin-bottom:8px">✅ Approve</div>
-                <div class="field"><label>Auth Letter (optional for non-member changes)</label><input type="file" name="auth_letter" accept=".pdf"></div>
+                <div class="field" id="auth-letter-field-group"><label>Auth Letter (optional for non-member changes)</label><input type="file" name="auth_letter" accept=".pdf"></div>
                 <button type="submit" class="section-btn primary" style="width:100%">Approve Modification</button>
             </form>
             <form method="POST" id="reject-form" action="">
@@ -83,10 +120,22 @@
     </div>
 </div>
 <script>
-function openMod(id, name) {
+function openMod(id, name, requestedChange, status) {
     document.getElementById('mod-team-name').textContent = name;
+    document.getElementById('mod-change-text').textContent = "Requested Change: " + requestedChange;
     document.getElementById('approve-form').action = `/spoc/modifications/${id}/approve/`;
     document.getElementById('reject-form').action = `/spoc/modifications/${id}/reject/`;
+    
+    const authLetterField = document.getElementById('auth-letter-field-group');
+    const modalTip = document.getElementById('modal-action-tip');
+    if (status === 'submitted') {
+        if (authLetterField) authLetterField.style.display = 'none';
+        if (modalTip) modalTip.innerHTML = "Final approval of the modified team details. <strong>No letter upload needed here</strong>; you can download the template and upload the final authorization letter on the team's details page.";
+    } else {
+        if (authLetterField) authLetterField.style.display = 'block';
+        if (modalTip) modalTip.innerHTML = "If the modification affects team membership, upload a new <strong>Authorization Letter</strong> after approving.";
+    }
+    
     document.getElementById('mod-modal').classList.add('open');
 }
 </script>

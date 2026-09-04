@@ -1,9 +1,87 @@
 {% extends "mentor/base.html" %}
-{% block title %}Messages{% endblock %}
+{% block title %}Messages — HackNexus Mentor{% endblock %}
 {% block content %}
 <div class="page-header">
-    <div><div class="page-title">Messages</div><div class="page-subtitle">Conversations with your teams</div></div>
+    <div>
+        <div class="page-title">Team Messages & Communication</div>
+        <div class="page-subtitle">View support messages from your assigned teams and reply directly.</div>
+    </div>
 </div>
+
+<div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; flex-wrap: wrap;">
+    <a href="?tab=teams" class="section-btn {% if active_tab == 'teams' or not active_tab %}primary{% endif %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 13px; font-weight: 800; border-radius: 10px;">
+        <span>👥 Team Support Messages</span>
+        {% if team_support_messages %}
+        <span class="badge badge-amber" style="background: rgba(255,255,255,0.25); color: inherit; border: none; font-size: 11px;">{{ team_support_messages.count }}</span>
+        {% endif %}
+    </a>
+    <a href="?tab=direct" class="section-btn {% if active_tab == 'direct' %}primary{% endif %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 13px; font-weight: 800; border-radius: 10px;">
+        <span>💬 Direct Conversations</span>
+    </a>
+</div>
+
+{% if active_tab == 'teams' or not active_tab %}
+<!-- TEAM SUPPORT MESSAGES -->
+<div class="stack">
+    {% for msg in team_support_messages %}
+    <div class="table-wrap" style="padding: 22px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div>
+                <span class="badge badge-purple" style="margin-right: 6px;">{{ msg.get_category_display }}</span>
+                <strong style="font-size: 16px; color: var(--text);">{{ msg.subject }}</strong>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 6px;">
+                    Team: <strong>{{ msg.registration.team_name }}</strong> | Leader: {{ msg.sender.get_full_name|default:msg.sender.email }} ({{ msg.sender.phone_number|default:"No phone" }}) | Date: {{ msg.created_at|date:"M j, Y H:i" }}
+                </div>
+            </div>
+            <span class="badge {% if msg.status == 'resolved' %}badge-green{% elif msg.status == 'reviewed' %}badge-blue{% else %}badge-amber{% endif %}" style="font-size: 12px; padding: 6px 14px;">
+                {{ msg.get_status_display }}
+            </span>
+        </div>
+
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 14px;">
+            {{ msg.message|linebreaksbr }}
+            {% if msg.attachment %}
+            <div style="margin-top: 10px;">
+                <a href="/media/{{ msg.attachment }}" target="_blank" class="section-btn" style="font-size: 11px;">
+                    📎 View Attachment
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if msg.admin_reply %}
+        <div style="background: rgba(5, 150, 105, 0.08); border: 1px solid rgba(5, 150, 105, 0.2); border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #047857; margin-bottom: 14px;">
+            <strong>Latest Response:</strong> {{ msg.admin_reply }}
+        </div>
+        {% endif %}
+
+        <!-- Reply Form -->
+        <form method="POST" action="{% url 'mentor_reply_team_message' msg.id %}" style="background: rgba(248, 250, 252, 0.8); border: 1px dashed var(--border); border-radius: 14px; padding: 16px;">
+            {% csrf_token %}
+            <div style="font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 8px; text-transform: uppercase;">Reply to {{ msg.registration.team_name }}</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <textarea name="reply" rows="2" placeholder="Write your mentor guidance/response to {{ msg.registration.team_name }}..." style="flex: 1; min-width: 260px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px;" required></textarea>
+                <div style="display: flex; flex-direction: column; gap: 8px; min-width: 160px;">
+                    <select name="status" style="padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 700;">
+                        <option value="reviewed" {% if msg.status == 'reviewed' %}selected{% endif %}>Mark Reviewed</option>
+                        <option value="resolved" {% if msg.status == 'resolved' %}selected{% endif %}>Mark Resolved</option>
+                        <option value="open" {% if msg.status == 'open' %}selected{% endif %}>Keep Open</option>
+                    </select>
+                    <button type="submit" class="section-btn primary" style="padding: 10px 14px; font-size: 12px; font-weight: 800; text-align: center;">Send Reply to Team</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% empty %}
+    <div class="table-wrap" style="text-align:center;padding:56px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:12px;opacity:0.4">💬</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No team support messages yet</div>
+        <div style="font-size:13px">Messages sent by your assigned team(s) will appear here.</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- DIRECT CONVERSATIONS -->
 <div class="table-wrap" style="padding:24px">
     {% if conv_users %}
     <div style="display:flex;flex-direction:column;gap:2px">
@@ -25,9 +103,10 @@
     {% else %}
     <div style="text-align:center;padding:56px;color:var(--muted)">
         <div style="font-size:48px;margin-bottom:12px;opacity:0.4">💬</div>
-        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No conversations yet</div>
-        <div style="font-size:13px">Messages from team leads will appear here once your account is active.</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No direct conversations yet</div>
+        <div style="font-size:13px">Direct messages will appear here once initiated.</div>
     </div>
     {% endif %}
 </div>
+{% endif %}
 {% endblock %}

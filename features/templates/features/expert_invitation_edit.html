@@ -35,12 +35,15 @@
 
     <div class="section-label">Personal Information</div>
     <div class="form-row">
-      <div class="fg"><label>First Name</label><input type="text" name="first_name" value="{{ invite.first_name }}"></div>
-      <div class="fg"><label>Last Name</label><input type="text" name="last_name" value="{{ invite.last_name }}"></div>
+      <div class="fg"><label>First Name *</label><input type="text" name="first_name" required minlength="2" value="{{ invite.first_name }}"></div>
+      <div class="fg"><label>Last Name *</label><input type="text" name="last_name" required minlength="2" value="{{ invite.last_name }}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label>Email</label><input type="email" name="email" value="{{ invite.email }}"></div>
-      <div class="fg"><label>Phone Number</label><input type="text" name="phone_number" value="{{ invite.phone_number }}"></div>
+      <div class="fg"><label>Email *</label><input type="email" name="email" required value="{{ invite.email }}"></div>
+      <div class="fg">
+        <label>Phone Number *</label>
+        <input type="tel" name="phone_number" required pattern="^\+91\s[6-9]\d{9}$" title="Please enter a valid 10-digit Indian mobile number prefixed with +91 (e.g. +91 9876543210)" placeholder="+91 9XXXXXXXXX" value="{% if invite.phone_number %}{{ invite.phone_number }}{% else %}+91 {% endif %}">
+      </div>
     </div>
     <div class="form-row">
       <div class="fg">
@@ -53,15 +56,29 @@
           <option value="Prefer not to say" {% if invite.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
         </select>
       </div>
-      <div class="fg"><label>Date of Birth</label><input type="date" name="date_of_birth" value="{{ invite.date_of_birth|default:'' }}"></div>
+      <div class="fg"><label>Date of Birth</label><input type="date" name="date_of_birth" value="{{ invite.date_of_birth|date:'Y-m-d' }}"></div>
     </div>
 
     <div class="section-label">Professional Details</div>
     <div class="form-row">
-      <div class="fg"><label>Organization / Institution</label><input type="text" name="organization" value="{{ invite.organization }}"></div>
-      <div class="fg"><label>Designation / Title</label><input type="text" name="designation" value="{{ invite.designation }}"></div>
+      <div class="fg"><label>Organization / Institution *</label><input type="text" name="organization" required minlength="3" value="{{ invite.organization }}"></div>
+      <div class="fg"><label>Designation / Title *</label><input type="text" name="designation" required minlength="2" value="{{ invite.designation }}"></div>
     </div>
-    <div class="fg"><label>Domain / Expertise</label><input type="text" name="domain" value="{{ invite.domain }}"></div>
+    <div class="fg">
+      <label>Domain / Expertise</label>
+      {% if available_domains %}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+          {% for dom in available_domains %}
+          <label style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #cbd5e1;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;color:#334155;cursor:pointer;user-select:none;transition:all .15s;">
+            <input type="checkbox" name="domain" value="{{ dom }}" {% if dom in selected_domains %}checked{% endif %} style="width:auto;accent-color:#7c3aed;">
+            {{ dom }}
+          </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <input type="text" name="domain" value="{{ invite.domain }}" placeholder="e.g. AI/ML, Cybersecurity, IoT">
+      {% endif %}
+    </div>
     <div class="fg"><label>LinkedIn URL</label><input type="url" name="linkedin_url" value="{{ invite.linkedin_url }}"></div>
     <div class="fg"><label>Bio</label><textarea name="bio" rows="4">{{ invite.bio }}</textarea></div>
 
@@ -83,4 +100,60 @@
     </div>
   </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ── DOB Adult Constraint ──
+    const dobInput = document.querySelector('input[name="date_of_birth"]');
+    if (dobInput) {
+        const today = new Date();
+        const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+        const maxDateStr = eighteenYearsAgo.toISOString().split('T')[0];
+        dobInput.max = maxDateStr;
+    }
+
+    // ── Phone Input Formatter ──
+    const phoneInput = document.querySelector('input[name="phone_number"]');
+    if (phoneInput) {
+        // Enforce prefix on type
+        phoneInput.addEventListener('input', function() {
+            let val = this.value;
+            if (!val.startsWith('+91')) {
+                if (val.startsWith('91')) {
+                    val = '+' + val;
+                } else {
+                    val = '+91 ' + val.replace(/^\+?9?1?\s*/, '');
+                }
+            }
+            
+            if (val.startsWith('+91') && val.charAt(3) !== ' ') {
+                val = '+91 ' + val.substring(3);
+            }
+            
+            const prefix = val.substring(0, 4);
+            let rest = val.substring(4).replace(/\D/g, '');
+            if (rest.length > 10) {
+                rest = rest.substring(0, 10);
+            }
+            this.value = prefix + rest;
+        });
+
+        // Clear if only "+91 " remains when leaving focus
+        phoneInput.addEventListener('blur', function() {
+            if (this.value.trim() === '+91') {
+                this.value = '';
+            }
+        });
+    }
+
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (phoneInput && phoneInput.value.trim() === '+91') {
+                phoneInput.value = '';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

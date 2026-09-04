@@ -14,9 +14,11 @@ urlpatterns = [
 
     # Teams
     path('teams/',                          views.spoc_teams,           name='spoc_teams'),
-    path('teams/<int:reg_id>/',             views.spoc_team_detail,     name='spoc_team_detail'),
-    path('teams/<int:reg_id>/approve/',     views.spoc_approve_team,    name='spoc_approve_team'),
-    path('teams/<int:reg_id>/reject/',      views.spoc_reject_team,     name='spoc_reject_team'),
+    path('teams/<str:token>/',              views.spoc_team_detail,     name='spoc_team_detail'),
+    path('teams/<str:token>/approve/',      views.spoc_approve_team,    name='spoc_approve_team'),
+    path('teams/<str:token>/reject/',       views.spoc_reject_team,     name='spoc_reject_team'),
+    path('teams/<str:token>/download-template/', views.spoc_download_approval_template, name='spoc_download_approval_template'),
+    path('teams/<str:token>/final-letter/', views.spoc_submit_final_letter, name='spoc_submit_final_letter'),
 
     # Modifications
     path('modifications/',                          views.spoc_modifications,           name='spoc_modifications'),
@@ -30,6 +32,7 @@ urlpatterns = [
     path('messages/',                       views.spoc_messages,        name='spoc_messages'),
     path('messages/<int:user_id>/',         views.spoc_conversation,    name='spoc_conversation'),
     path('messages/send/',                  views.spoc_send_message,    name='spoc_send_message'),
+    path('messages/reply-team/<int:message_id>/', views.spoc_reply_team_message, name='spoc_reply_team_message'),
 
     # Announcements & Activity
     path('announcements/',  views.spoc_announcements, name='spoc_announcements'),
@@ -43,6 +46,7 @@ urlpatterns = [
     path('mentors/<int:invite_id>/approve/', views.spoc_approve_mentor,    name='spoc_approve_mentor'),
     path('mentors/<int:invite_id>/reject/',  views.spoc_reject_mentor,     name='spoc_reject_mentor'),
 
-    # Notifications AJAX
+    # Notifications
+    path('notifications/', views.spoc_notifications, name='spoc_notifications'),
     path('notifications/read/', views.spoc_mark_notifications_read, name='spoc_mark_notifications_read'),
 ]

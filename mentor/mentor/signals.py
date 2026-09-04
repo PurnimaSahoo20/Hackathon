@@ -100,7 +100,7 @@ def _send_mentor_welcome_email(user, plain_pw, invite):
                     <tr><td style="padding:6px 0;color:#6b7280;font-size:13px;">Password</td><td style="font-weight:900;color:#059669;font-family:monospace;font-size:15px;">{plain_pw}</td></tr>
                 </table>
             </div>
-            <a href="http://127.0.0.1:8000/mentor/login/"
+            <a href="https://hackathon.okcl.org/mentor/login/"
                style="background:#059669;color:white;padding:12px 24px;border-radius:8px;
                       text-decoration:none;font-weight:700;display:inline-block;">
                 Login to Mentor Portal →
