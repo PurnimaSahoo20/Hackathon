@@ -1,107 +1,264 @@
 """
 OneDrive (Microsoft Graph) media storage backend — delegated auth, proxied serving.
- 
-Files are stored under ``ONEDRIVE_BASE_FOLDER`` (default: ``assetMonitoringMediaFiles/media``)
+
+Files are stored under ``ONEDRIVE_BASE_FOLDER`` (default: ``hackathonMediaFiles/media``)
 inside the signed-in user's OneDrive for Business drive. A Django ``FileField`` ``name``
 (a relative path such as ``site_readiness/project_2/.../x.jpg``) maps 1:1 to the OneDrive
 item path ``<base>/<name>`` — so existing DB values keep resolving once the bytes are
 migrated to the same relative path.
- 
+
 Auth is delegated OAuth2 with a refresh token, managed by MSAL with a persistent token
 cache file. Bootstrap the cache once with::
- 
+
     python manage.py onedrive_auth
- 
+
+Token lifecycle (fully automatic after initial bootstrap):
+    1. Access tokens expire after ~1 hour
+    2. MSAL's acquire_token_silent() uses the cached refresh token to obtain
+       new access tokens — no user interaction needed
+    3. Refresh tokens are rolling (~90 days) — each use extends the lifetime
+    4. Only if the refresh token itself expires does re-authentication occur,
+       which is handled automatically via interactive browser login
+
 Serving is proxied: ``url(name)`` returns ``<MEDIA_URL><name>``, handled by the media
 proxy view, so existing frontend code using ``.url`` works unchanged.
 """
 from __future__ import annotations
- 
+
+import logging
 import os
+import shutil
 import threading
 import time
+from pathlib import Path
 from urllib.parse import quote
- 
+
 import msal
 import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.utils.deconstruct import deconstructible
- 
+
+logger = logging.getLogger(__name__)
+
 GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
 # Microsoft Graph allows a simple upload up to 4 MiB; larger files need an upload session.
 SIMPLE_UPLOAD_LIMIT = 4 * 1024 * 1024
 # Upload-session chunks must be multiples of 320 KiB; 10 MiB is a safe, aligned size.
 UPLOAD_CHUNK = 10 * 1024 * 1024
- 
- 
+
+
 class OneDriveError(Exception):
     """Raised for any non-success response from Microsoft Graph."""
- 
- 
+
+
 class OneDriveClient:
     """Thin Microsoft Graph client with a cached, auto-refreshing delegated token.
- 
+
     The access token is cached process-wide (class attributes) so concurrent requests
     share one token; refreshes happen transparently via the MSAL token cache on disk.
+
+    Token acquisition flow:
+        Request → get_token()
+            → Step 1: Check in-memory cache (valid for ~1 hour)
+            → Step 2: acquire_token_silent() — MSAL uses cached refresh token
+                       to get a new access token (no user interaction)
+            → Step 3: acquire_token_interactive() — opens browser for re-auth
+                       (only when refresh token itself has expired)
+            → Each successful acquisition saves the cache to disk
     """
- 
+
     _lock = threading.Lock()
     _token = None          # cached access token (class-wide)
     _token_expiry = 0.0    # epoch seconds when the cached token expires
- 
+
     def __init__(self):
         self.tenant_id = settings.ONEDRIVE_TENANT_ID
         self.client_id = settings.ONEDRIVE_CLIENT_ID
         self.scopes = settings.ONEDRIVE_SCOPES
-        self.cache_path = settings.ONEDRIVE_TOKEN_CACHE
+        self.cache_path = Path(settings.ONEDRIVE_TOKEN_CACHE)
         self.base_folder = settings.ONEDRIVE_BASE_FOLDER.strip("/")
- 
+
     # --- token / cache ---------------------------------------------------
     def _load_cache(self):
+        """Load the MSAL token cache from disk.
+
+        The cache contains refresh tokens, account info, and (possibly stale)
+        access tokens. MSAL uses the refresh token to silently acquire new
+        access tokens without user interaction.
+        """
         cache = msal.SerializableTokenCache()
-        if os.path.exists(self.cache_path):
-            with open(self.cache_path, "r") as fh:
-                cache.deserialize(fh.read())
+        if self.cache_path.exists():
+            try:
+                cache.deserialize(
+                    self.cache_path.read_text(encoding="utf-8")
+                )
+            except Exception:
+                logger.warning(
+                    "OneDrive token cache is corrupted or unreadable. "
+                    "A fresh authentication will be attempted."
+                )
+                # Return a fresh cache — the fallback auth flow will populate it
+                cache = msal.SerializableTokenCache()
         return cache
- 
+
     def _save_cache(self, cache):
+        """Persist the MSAL token cache to disk with backup.
+
+        Called after every successful token acquisition so the updated
+        refresh token (rolling lifetime) is preserved. A backup copy is
+        kept in case the write is interrupted.
+        """
         if cache.has_state_changed:
-            directory = os.path.dirname(self.cache_path)
-            if directory:
-                os.makedirs(directory, exist_ok=True)
-            with open(self.cache_path, "w") as fh:
-                fh.write(cache.serialize())
- 
+            try:
+                # Create a backup before overwriting
+                if self.cache_path.exists():
+                    backup_path = self.cache_path.with_suffix('.backup.json')
+                    shutil.copy2(str(self.cache_path), str(backup_path))
+
+                directory = self.cache_path.parent
+                if directory and not directory.exists():
+                    directory.mkdir(parents=True, exist_ok=True)
+
+                self.cache_path.write_text(
+                    cache.serialize(), encoding="utf-8"
+                )
+                logger.debug("OneDrive token cache saved successfully.")
+            except Exception as e:
+                logger.error(f"Failed to save OneDrive token cache: {e}")
+
     def _build_app(self, cache):
         authority = f"https://login.microsoftonline.com/{self.tenant_id}"
         return msal.PublicClientApplication(
             self.client_id, authority=authority, token_cache=cache
         )
- 
+
+    def _update_token(self, result):
+        """Store the new access token in the class-level in-memory cache."""
+        OneDriveClient._token = result["access_token"]
+        OneDriveClient._token_expiry = time.time() + int(
+            result.get("expires_in", 3600)
+        )
+
     def get_token(self):
+        """Get a valid access token, refreshing automatically if needed.
+
+        MSAL handles the full token lifecycle:
+        - If a valid access token is in memory → use it (fast path)
+        - If expired → MSAL uses the cached refresh token to get a new one
+        - If refresh token is also expired → interactive browser login
+        """
         # Fast path: reuse the in-memory token until ~1 min before expiry.
         if self._token and time.time() < self._token_expiry - 60:
             return self._token
+
         with self._lock:
+            # Double-check after acquiring lock (another thread may have refreshed)
             if self._token and time.time() < self._token_expiry - 60:
                 return self._token
+
             cache = self._load_cache()
             app = self._build_app(cache)
             accounts = app.get_accounts()
-            result = None
+
+            # ----- Step 1: Silent acquisition (uses refresh token) -----
+            # This is the normal path. MSAL checks the cache for a valid
+            # access token; if expired, it uses the refresh token to obtain
+            # a new one from Microsoft. No user interaction required.
             if accounts:
-                result = app.acquire_token_silent(self.scopes, account=accounts[0])
-            self._save_cache(cache)
-            if not result or "access_token" not in result:
-                raise OneDriveError(
-                    "No valid OneDrive token. Run `python manage.py onedrive_auth` "
-                    "to sign in and create the token cache."
+                result = app.acquire_token_silent(
+                    scopes=self.scopes,
+                    account=accounts[0],
                 )
-            OneDriveClient._token = result["access_token"]
-            OneDriveClient._token_expiry = time.time() + int(result.get("expires_in", 3600))
-            return self._token
+                if result and "access_token" in result:
+                    self._save_cache(cache)
+                    self._update_token(result)
+                    logger.debug(
+                        "OneDrive access token refreshed silently via MSAL cache."
+                    )
+                    return self._token
+                else:
+                    error_info = result.get("error_description", "") if result else ""
+                    logger.warning(
+                        "MSAL silent token acquisition failed. "
+                        "The refresh token may have expired. "
+                        f"Attempting re-authentication... ({error_info})"
+                    )
+
+            # ----- Step 2: Interactive login (opens browser) -----
+            # This runs only when the refresh token has expired or the cache
+            # has no accounts. It opens a browser window for the user to
+            # sign in. Works on dev machines with a browser available.
+            # Note: Requires http://localhost as a redirect URI in the
+            # Azure AD app registration (Platform: Mobile & desktop apps).
+            result = self._attempt_interactive_login(app)
+            if result and "access_token" in result:
+                self._save_cache(cache)
+                self._update_token(result)
+                account_name = (
+                    result.get("id_token_claims", {})
+                    .get("preferred_username", "unknown")
+                )
+                logger.info(
+                    f"OneDrive re-authenticated via interactive login as {account_name}. "
+                    f"Token cache updated."
+                )
+                return self._token
+
+            # ----- Step 3: All automatic methods failed -----
+            raise OneDriveError(
+                "OneDrive authentication failed. All automatic refresh methods "
+                "have been exhausted.\n"
+                "This means:\n"
+                "  - No valid refresh token exists in the cache\n"
+                "  - Interactive browser login was not possible\n\n"
+                "To fix this, run:\n"
+                "  python manage.py onedrive_auth\n\n"
+                "This will open a device-code or browser flow to re-authenticate."
+            )
+
+    def _attempt_interactive_login(self, app):
+        """Attempt interactive browser login for re-authentication.
+
+        Opens a browser window for the user to sign in with their Microsoft
+        account. MSAL starts a temporary local HTTP server to receive the
+        OAuth redirect callback.
+
+        This works on development machines with a browser available.
+        On headless servers, this will fail gracefully and the error message
+        will direct the admin to use the management command instead.
+        """
+        try:
+            logger.info(
+                "Opening browser for OneDrive re-authentication..."
+            )
+            print(
+                "\n" + "=" * 60 + "\n"
+                "ONEDRIVE RE-AUTHENTICATION REQUIRED\n"
+                "A browser window will open for you to sign in.\n"
+                "=" * 60 + "\n"
+            )
+            result = app.acquire_token_interactive(scopes=self.scopes)
+
+            if result and "access_token" in result:
+                return result
+            else:
+                error = result.get("error", "unknown_error") if result else "no_result"
+                description = (
+                    result.get("error_description", "Authentication failed.")
+                    if result else "No result returned."
+                )
+                logger.warning(
+                    f"Interactive authentication failed: {error}: {description}"
+                )
+                return None
+        except Exception as e:
+            logger.warning(
+                f"Interactive authentication not available (possibly headless "
+                f"environment): {e}"
+            )
+            return None
  
     def _headers(self, extra=None):
         headers = {"Authorization": f"Bearer {self.get_token()}"}

@@ -72,7 +72,7 @@
             {% if request.user.is_superuser or request.user.role.name == 'Super Admin' or 'spoc_college_mgt' in permissions %}
             <a href="{% url 'spoc_college_management' %}" class="nav-item {% if request.resolver_match.url_name == 'spoc_college_management' %}active{% endif %}">
                 <div class="nav-icon-wrap"><ion-icon name="school-outline"></ion-icon></div>
-                SPOC & College Mgt
+                Institute & College Mgt
             </a>
             {% endif %}
 

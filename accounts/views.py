@@ -998,9 +998,8 @@ def create_user(request):
             role_name = role.name if role else 'User'
             rn = role.name.lower() if role else ''
 
-            # For Admin role: username MUST equal the email address so the
-            # welcome email credential matches exactly what they type at login.
-            if rn == 'admin' and email:
+            # Use email as username when username is not provided
+            if not username and email:
                 username = email.strip().lower()
 
             user = User.objects.create_user(

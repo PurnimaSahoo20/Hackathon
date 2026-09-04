@@ -804,12 +804,10 @@ def delete_problem_statement(request, ps_id):
     if request.method == 'POST':
         try:
             ps = ProblemStatement.objects.get(id=ps_id)
-            if ps.is_published:
-                messages.error(request, 'Published problem statements cannot be suspended.')
-            else:
-                ps.is_suspended = True
-                ps.save()
-                messages.success(request, 'Problem statement suspended.')
+            ps.is_suspended = True
+            ps.is_published = False
+            ps.save()
+            messages.success(request, f'Problem statement "{ps.title}" suspended.')
         except ProblemStatement.DoesNotExist:
             messages.error(request, 'Problem statement not found.')
     return redirect('/accounts/dashboard/?tab=problem_statements')
@@ -1560,9 +1558,9 @@ def landing_page(request):
                 {'icon': 'flag-outline', 'text': f'{themes_count or len(top_tracks)} Themes'},
                 {'icon': 'mic-outline', 'text': f'{len(expert_talks)} Expert Talks'},
             ],
-            'primary_label': 'View Tracks',
+            'primary_label': 'Register',
             'primary_target': '#tracksSection',
-            'secondary_label': 'Browse Problems',
+            'secondary_label': 'Browse Problem Statements',
             'secondary_target': '#tracksSection',
             'primary_type': 'orange',
         },
@@ -1576,7 +1574,7 @@ def landing_page(request):
                 {'icon': 'trending-up-outline', 'text': 'Launch Visibility'},
                 {'icon': 'star-outline', 'text': 'Recognition'},
             ],
-            'primary_label': 'Browse Problems',
+            'primary_label': 'Browse Problem Statements',
             'primary_target': '#tracksSection',
             'secondary_label': 'Explore Talks',
             'secondary_target': '#podcasts',
@@ -1594,7 +1592,7 @@ def landing_page(request):
             ],
             'primary_label': 'Register Now',
             'primary_target': '#registerModal',
-            'secondary_label': 'View Tracks',
+            'secondary_label': 'View Problem Statement',
             'secondary_target': '#tracksSection',
             'primary_type': 'orange',
         },

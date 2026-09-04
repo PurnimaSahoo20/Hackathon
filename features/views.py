@@ -1174,6 +1174,37 @@ def _send_rejection_correction_email(email, form_link, role_label, reason, hacka
         logger.exception("Failed to send rejection correction email to %s", email)
 
 
+def _record_invitation_review_history(invitation, role_type, action, new_status, previous_status='', rejection_reason='', admin_remarks='', reviewed_by=None):
+    """Creates a historical record tracking review, rejection, resubmission, or approval."""
+    from accounts.models import InvitationReviewHistory
+    try:
+        fk_field = f"{role_type}_invitation"
+        prior_cycles = InvitationReviewHistory.objects.filter(
+            **{fk_field: invitation, 'action__in': ['initial_submission', 'resubmitted']}
+        ).count()
+        if action == 'initial_submission':
+            attempt_number = 1
+        elif action == 'resubmitted':
+            attempt_number = prior_cycles + 1
+        else:  # rejected or approved
+            attempt_number = max(1, prior_cycles)
+
+        return InvitationReviewHistory.objects.create(
+            **{fk_field: invitation},
+            role_type=role_type,
+            attempt_number=attempt_number,
+            action=action,
+            rejection_reason=rejection_reason or '',
+            admin_remarks=admin_remarks or '',
+            reviewed_by=reviewed_by,
+            previous_status=previous_status or '',
+            new_status=new_status or '',
+        )
+    except Exception:
+        logger.exception("Failed to record invitation review history for %s id=%s", role_type, getattr(invitation, 'id', None))
+        return None
+
+
 def spoc_register_form(request, token):
     from accounts.models import SpocInvitation
     try:
@@ -1294,10 +1325,20 @@ def spoc_register_form(request, token):
             if 'id_proof' in request.FILES:
                 invitation.id_proof = request.FILES['id_proof']
                 
+            prev_status = invitation.status
             invitation.status = 'pending'
-            invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
             invitation.save()
+
+            action = 'resubmitted' if prev_status == 'rejected' else 'initial_submission'
+            _record_invitation_review_history(
+                invitation=invitation,
+                role_type='spoc',
+                action=action,
+                new_status='pending',
+                previous_status=prev_status,
+            )
+
             return render(request, 'features/spoc_register_success.html',
                           {'email': invitation.email})
         except Exception as exc:
@@ -1482,23 +1523,35 @@ def approve_spoc_invitation(request, invite_id):
     try:
         invite = SpocInvitation.objects.get(id=invite_id)
         if invite.status != 'pending':
-            messages.warning(request, f"Invitation is '{invite.status}'.")
-            return render_route(request, '/features/spoc/?sub=invitations')
+            messages.warning(request, f"Invitation is '{invite.status}'. Only pending applications can be approved.")
+            return redirect('/features/spoc/?sub=invitations')
         invite.institution_name = ' '.join((invite.institution_name or '').split())
         if not invite.institution_name:
             messages.error(request, "Institution name is required before approval.")
-            return render_route(request, 'edit_spoc_invitation', invite.id)
+            return redirect(reverse('edit_spoc_invitation', args=[invite.id]))
+        
+        prev_status = invite.status
         invite.status = 'approved'
         invite.approved_by = request.user
         invite.approved_at = timezone.now()
         invite.save(update_fields=['institution_name', 'status', 'approved_by', 'approved_at'])
+
+        _record_invitation_review_history(
+            invitation=invite,
+            role_type='spoc',
+            action='approved',
+            new_status='approved',
+            previous_status=prev_status,
+            reviewed_by=request.user
+        )
+
         messages.success(request, f"SPOC '{invite.email}' approved. Account created.")
     except SpocInvitation.DoesNotExist:
         messages.error(request, "Invitation not found.")
     except Exception as exc:
         logger.error(f"Approve invite {invite_id}: {exc}", exc_info=True)
         messages.error(request, f"Failed: {exc}")
-    return render_route(request, '/features/spoc/?sub=invitations')
+    return redirect('/features/spoc/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -1513,7 +1566,7 @@ def suspend_spoc_invitation(request, invite_id):
         invite = SpocInvitation.objects.get(id=invite_id)
         if invite.status == 'approved':
             messages.warning(request, "Approved SPOCs must be suspended from the SPOC profile.")
-            return render_route(request, '/features/spoc/?sub=invitations')
+            return redirect('/features/spoc/?sub=invitations')
 
         if invite.status == 'suspended':
             invite.status = 'pending' if invite.submitted_at else 'invited'
@@ -1529,7 +1582,7 @@ def suspend_spoc_invitation(request, invite_id):
     except Exception as exc:
         logger.error(f"Suspend invite {invite_id}: {exc}", exc_info=True)
         messages.error(request, f"Failed: {exc}")
-    return render_route(request, '/features/spoc/?sub=invitations')
+    return redirect('/features/spoc/?sub=invitations')
 
 @login_required(login_url='/accounts/')
 @require_POST
@@ -1538,7 +1591,7 @@ def reject_spoc_invitation(request, invite_id):
     from django.urls import reverse
 
     if request.method != 'POST':
-        return render_route(request, '/features/spoc/?sub=invitations')
+        return redirect('/features/spoc/?sub=invitations')
     denied = _feature_permission_required(request, 'spoc_college_mgt')
     if denied:
         return denied
@@ -1546,14 +1599,27 @@ def reject_spoc_invitation(request, invite_id):
         invite = SpocInvitation.objects.get(id=invite_id)
         if invite.status != 'pending':
             messages.warning(request, f"Only pending SPOC applications can be rejected. Current status: {invite.status}.")
-            return render_route(request, '/features/spoc/?sub=invitations')
+            return redirect('/features/spoc/?sub=invitations')
         reason = request.POST.get('rejection_reason', '').strip()
         if not reason:
             messages.error(request, "Rejection reason is required.")
-            return render_route(request, 'view_spoc_invitation', invite.id)
+            return redirect(reverse('view_spoc_invitation', args=[invite.id]))
+        
+        prev_status = invite.status
         invite.status = 'rejected'
         invite.rejection_reason = reason
         invite.save(update_fields=['status', 'rejection_reason'])
+
+        _record_invitation_review_history(
+            invitation=invite,
+            role_type='spoc',
+            action='rejected',
+            new_status='rejected',
+            previous_status=prev_status,
+            rejection_reason=reason,
+            reviewed_by=request.user
+        )
+
         form_link = request.build_absolute_uri(reverse('spoc_register_form', args=[invite.token]))
         _send_rejection_correction_email(invite.email, form_link, 'SPOC', reason, invite.hackathon)
         messages.success(request, f'Invitation for {invite.email} rejected.')
@@ -1562,7 +1628,7 @@ def reject_spoc_invitation(request, invite_id):
     except Exception as exc:
         logger.error(f"Reject SPOC invite {invite_id}: {exc}", exc_info=True)
         messages.error(request, f"Failed: {exc}")
-    return render_route(request, '/features/spoc/?sub=invitations')
+    return redirect('/features/spoc/?sub=invitations')
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1625,12 +1691,7 @@ def team_event_monitoring(request):
                 Q(team_leader__email__icontains=query)
             )
 
-        paginator = Paginator(regs, 15)
-        page = request.GET.get('page')
-        try:
-            context['pending_regs'] = paginator.page(page)
-        except (EmptyPage, PageNotAnInteger):
-            context['pending_regs'] = paginator.page(1)
+        context['pending_regs'] = regs
 
     elif sub == 'live_teams':
         teams = Team.objects.select_related(
@@ -1648,12 +1709,7 @@ def team_event_monitoring(request):
                 Q(team_leader__email__icontains=query)
             )
 
-        paginator = Paginator(teams, 15)
-        page = request.GET.get('page')
-        try:
-            context['teams'] = paginator.page(page)
-        except (EmptyPage, PageNotAnInteger):
-            context['teams'] = paginator.page(1)
+        context['teams'] = teams
 
         if active_hackathon:
             ht = Team.objects.filter(hackathon=active_hackathon)
@@ -3024,6 +3080,26 @@ def _send_jury_welcome_email(user, password, hackathon=None):
     msg.send(fail_silently=True)
 
 
+def _send_expert_welcome_email(user, password, hackathon=None):
+    hn = hackathon.name if hackathon else "the Hackathon"
+    html = f"""<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+        <h2 style="color:#059669;">Welcome, {user.get_full_name() or user.username}!</h2>
+        <p>Your expert account for <strong>{hn}</strong> has been approved.</p>
+        <table style="background:#f9fafb;padding:16px;border-radius:8px;width:100%;margin:16px 0;">
+            <tr><td style="font-weight:700;padding:4px 8px;">Username:</td><td style="padding:4px 8px;font-family:monospace;">{user.username}</td></tr>
+            <tr><td style="font-weight:700;padding:4px 8px;">Password:</td><td style="padding:4px 8px;font-family:monospace;">{password}</td></tr>
+        </table>
+        <p style="color:#dc2626;font-size:13px;font-weight:700;">Please change your password after first login.</p>
+    </div>"""
+    msg = EmailMultiAlternatives(
+        f"Expert Account Approved — {hn}",
+        f"Username: {user.username}  |  Password: {password}",
+        settings.DEFAULT_FROM_EMAIL, [user.email]
+    )
+    msg.attach_alternative(html, "text/html")
+    msg.send(fail_silently=True)
+
+
 def sync_automatic_team_assignments(hackathon, round_number=None):
     """
     Automatically maps student Teams to JuryTeams based on their Problem Statement.
@@ -4340,10 +4416,20 @@ def jury_register_form(request, token):
             if 'photo' in request.FILES:
                 invitation.photo = request.FILES['photo']
                 
+            prev_status = invitation.status
             invitation.status       = 'pending'
-            invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
             invitation.save()
+
+            action = 'resubmitted' if prev_status == 'rejected' else 'initial_submission'
+            _record_invitation_review_history(
+                invitation=invitation,
+                role_type='jury',
+                action=action,
+                new_status='pending',
+                previous_status=prev_status,
+            )
+
             return render(request, 'features/jury_register_success.html',
                           {'email': invitation.email})
         except Exception as exc:
@@ -4528,12 +4614,12 @@ def approve_jury_invitation(request, invite_id):
     invite = get_object_or_404(JuryInvitation, id=invite_id)
     if invite.status != 'pending':
         messages.warning(request, f"Invitation status is '{invite.status}'. Only pending applications can be approved.")
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
 
     jury_role = Role.objects.filter(name__iexact='Jury').first()
     if not jury_role:
         messages.error(request, "The 'Jury' role is missing. Please create it in the admin panel first.")
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
 
     try:
         with transaction.atomic():
@@ -4552,18 +4638,29 @@ def approve_jury_invitation(request, invite_id):
                 is_verified=True,
             )
             JuryProfile.objects.create(user=user, domain=invite.domain)
+            prev_status = invite.status
             invite.status      = 'approved'
             invite.approved_by = request.user
             invite.approved_at = timezone.now()
             invite.created_user = user
             invite.save(update_fields=['status', 'approved_by', 'approved_at', 'created_user'])
+
+            _record_invitation_review_history(
+                invitation=invite,
+                role_type='jury',
+                action='approved',
+                new_status='approved',
+                previous_status=prev_status,
+                reviewed_by=request.user
+            )
+
             _send_jury_welcome_email(user, password, invite.hackathon)
         messages.success(request, f"Jury member '{user.get_full_name() or user.email}' approved and account created.")
     except Exception as exc:
         logger.error(f'Approve jury invitation {invite_id}: {exc}', exc_info=True)
         messages.error(request, f'Approval failed: {exc}')
 
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -4577,18 +4674,31 @@ def reject_jury_invitation(request, invite_id):
     invite = get_object_or_404(JuryInvitation, id=invite_id)
     if invite.status != 'pending':
         messages.warning(request, f"Only pending jury applications can be rejected. Current status: {invite.status}.")
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
     reason = request.POST.get('rejection_reason', '').strip()
     if not reason:
         messages.error(request, 'Rejection reason is required.')
-        return render_route(request, 'view_jury_invitation', invite.id)
+        return redirect(reverse('view_jury_invitation', args=[invite.id]))
+    
+    prev_status = invite.status
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
+
+    _record_invitation_review_history(
+        invitation=invite,
+        role_type='jury',
+        action='rejected',
+        new_status='rejected',
+        previous_status=prev_status,
+        rejection_reason=reason,
+        reviewed_by=request.user
+    )
+
     form_link = request.build_absolute_uri(reverse('jury_register_form', args=[invite.token]))
     _send_rejection_correction_email(invite.email, form_link, 'Jury', reason, invite.hackathon)
     messages.success(request, f"Jury application for '{invite.email}' rejected.")
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -4601,7 +4711,7 @@ def suspend_jury_invitation(request, invite_id):
     invite = get_object_or_404(JuryInvitation, id=invite_id)
     if invite.status == 'approved':
         messages.warning(request, 'Approved members must be suspended from the jury roster.')
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
 
     if invite.status == 'suspended':
         invite.status = 'pending' if invite.submitted_at else 'invited'
@@ -4612,7 +4722,7 @@ def suspend_jury_invitation(request, invite_id):
 
     invite.save(update_fields=['status'])
     messages.success(request, f"Jury application for '{invite.email}' {word}.")
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -4956,10 +5066,20 @@ def expert_register_form(request, token):
             if 'photo' in request.FILES:
                 invitation.photo = request.FILES['photo']
                 
+            prev_status = invitation.status
             invitation.status       = 'pending'
-            invitation.rejection_reason = ''
             invitation.submitted_at = timezone.now()
             invitation.save()
+
+            action = 'resubmitted' if prev_status == 'rejected' else 'initial_submission'
+            _record_invitation_review_history(
+                invitation=invitation,
+                role_type='expert',
+                action=action,
+                new_status='pending',
+                previous_status=prev_status,
+            )
+
             return render(request, 'features/expert_register_success.html',
                           {'email': invitation.email})
         except Exception as exc:
@@ -5151,18 +5271,29 @@ def approve_expert_invitation(request, invite_id):
                 is_verified=True,
             )
             ExpertProfile.objects.create(user=user, domain=invite.domain)
+            prev_status = invite.status
             invite.status      = 'approved'
             invite.approved_by = request.user
             invite.approved_at = timezone.now()
             invite.created_user = user
             invite.save(update_fields=['status', 'approved_by', 'approved_at', 'created_user'])
-            _send_jury_welcome_email(user, password, invite.hackathon)
+
+            _record_invitation_review_history(
+                invitation=invite,
+                role_type='expert',
+                action='approved',
+                new_status='approved',
+                previous_status=prev_status,
+                reviewed_by=request.user
+            )
+
+            _send_expert_welcome_email(user, password, invite.hackathon)
         messages.success(request, f"Expert member '{user.get_full_name() or user.email}' approved and account created.")
     except Exception as exc:
         logger.error(f'Approve expert invitation {invite_id}: {exc}', exc_info=True)
         messages.error(request, f'Approval failed: {exc}')
 
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -5176,18 +5307,31 @@ def reject_expert_invitation(request, invite_id):
     invite = get_object_or_404(ExpertInvitation, id=invite_id)
     if invite.status != 'pending':
         messages.warning(request, f"Only pending expert applications can be rejected. Current status: {invite.status}.")
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
     reason = request.POST.get('rejection_reason', '').strip()
     if not reason:
         messages.error(request, 'Rejection reason is required.')
-        return render_route(request, 'view_expert_invitation', invite.id)
+        return redirect(reverse('view_expert_invitation', args=[invite.id]))
+    
+    prev_status = invite.status
     invite.status           = 'rejected'
     invite.rejection_reason = reason
     invite.save(update_fields=['status', 'rejection_reason'])
+
+    _record_invitation_review_history(
+        invitation=invite,
+        role_type='expert',
+        action='rejected',
+        new_status='rejected',
+        previous_status=prev_status,
+        rejection_reason=reason,
+        reviewed_by=request.user
+    )
+
     form_link = request.build_absolute_uri(reverse('expert_register_form', args=[invite.token]))
     _send_rejection_correction_email(invite.email, form_link, 'Expert', reason, invite.hackathon)
     messages.success(request, f"Expert application for '{invite.email}' rejected.")
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -5200,7 +5344,7 @@ def suspend_expert_invitation(request, invite_id):
     invite = get_object_or_404(ExpertInvitation, id=invite_id)
     if invite.status == 'approved':
         messages.warning(request, 'Approved members must be suspended from the expert roster.')
-        return render_route(request, '/features/jury/?sub=invitations')
+        return redirect('/features/jury/?sub=invitations')
 
     if invite.status == 'suspended':
         invite.status = 'pending' if invite.submitted_at else 'invited'
@@ -5211,7 +5355,7 @@ def suspend_expert_invitation(request, invite_id):
 
     invite.save(update_fields=['status'])
     messages.success(request, f"Expert application for '{invite.email}' {word}.")
-    return render_route(request, '/features/jury/?sub=invitations')
+    return redirect('/features/jury/?sub=invitations')
 
 
 @login_required(login_url='/accounts/')
@@ -6044,6 +6188,82 @@ def _notify_team_not_qualified(team, round_number):
         logger.error(f"Failed to notify unqualified team {team.id}: {exc}", exc_info=True)
 
 
+def _send_bank_details_reminder(team):
+    """Send email + in-app notification to team leader to fill bank details when they reach the final round."""
+    try:
+        from features.models import TeamRegistration
+        from team.team.models import TeamNotification
+        from django.core.mail import EmailMultiAlternatives
+        from django.conf import settings
+
+        reg = TeamRegistration.objects.filter(
+            team_leader=team.team_leader, hackathon=team.hackathon
+        ).first()
+        if not reg or reg.bank_reminder_sent:
+            return
+
+        # In-app notification
+        TeamNotification.objects.create(
+            team_leader=team.team_leader,
+            registration=reg,
+            notif_type='system',
+            title='🎉 Congratulations! Please fill your Bank Details',
+            body=(
+                f"Your team '{team.team_name}' has qualified for the final round of "
+                f"'{team.hackathon.name}'! Please log in to your Team Dashboard → Details "
+                f"and fill in all bank account details (Account Holder Name, Account Number, "
+                f"IFSC, Bank Name, and Passbook proof) for prize disbursement."
+            ),
+        )
+
+        # Email
+        leader_name = team.team_leader.get_full_name() or team.team_leader.username
+        dashboard_url = f"{settings.SITE_URL}/team/details/" if hasattr(settings, 'SITE_URL') else "/team/details/"
+        subject = f"Action Required: Fill Bank Details — {team.hackathon.name}"
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;
+                    padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+            <div style="background:linear-gradient(135deg,#059669,#10b981);padding:22px 26px;border-radius:10px;margin-bottom:24px;">
+                <h2 style="color:#fff;margin:0;font-size:20px;">🎉 Final Round Qualified!</h2>
+            </div>
+            <p>Hello <strong>{leader_name}</strong>,</p>
+            <p>Congratulations! Your team <strong>{team.team_name}</strong> has qualified for the
+               <strong>final round</strong> of <strong>{team.hackathon.name}</strong>.</p>
+            <div style="background:#fff7ed;border-left:4px solid #f97316;padding:14px 18px;border-radius:6px;margin:20px 0;">
+                <strong style="color:#ea580c;">⚠ Action Required</strong>
+                <p style="margin:6px 0 0;font-size:14px;color:#374151;">
+                    Please log in to your Team Dashboard and fill in your <strong>Bank Account details</strong>
+                    (Account Holder Name, Account Number, IFSC Code, Bank Name, and Bank Passbook Front Page)
+                    for all team members. This information is required for prize money disbursement.
+                </p>
+            </div>
+            <div style="text-align:center;margin:24px 0;">
+                <a href="{dashboard_url}" style="background:#ea580c;color:#fff;padding:12px 28px;
+                   border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;display:inline-block;">
+                   Fill Bank Details Now →
+                </a>
+            </div>
+            <p style="font-size:13px;color:#6b7280;">If you have any questions, please contact the event organizers.</p>
+        </div>"""
+
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=f"Congratulations! Your team '{team.team_name}' has qualified for the final round. Please log in and fill your bank details for prize disbursement.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[team.team_leader.email],
+        )
+        msg.attach_alternative(html, "text/html")
+        msg.send(fail_silently=True)
+
+        # Mark as sent
+        reg.bank_reminder_sent = True
+        reg.save(update_fields=['bank_reminder_sent'])
+
+    except Exception as exc:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to send bank details reminder to team {team.id}: {exc}", exc_info=True)
+
 @login_required(login_url='/accounts/')
 @never_cache
 def results_reporting_management(request):
@@ -6100,11 +6320,12 @@ def results_reporting_management(request):
                     if cutoff_val_raw:
                         try:
                             cutoff_val = Decimal(cutoff_val_raw)
-                            if Decimal('0') <= cutoff_val <= Decimal('100'):
+                            param_max = param.max_marks if param.max_marks else Decimal('100')
+                            if Decimal('0') <= cutoff_val <= param_max:
                                 param.cutoff_score = cutoff_val
                                 param.save(update_fields=['cutoff_score'])
                             else:
-                                messages.error(request, f"Cutoff for {param.name} must be between 0 and 100.")
+                                messages.error(request, f"Cutoff for {param.name} must be between 0 and {param_max}.")
                         except (ValueError, Exception):
                             messages.error(request, f"Invalid cutoff score for {param.name}.")
 
@@ -6169,6 +6390,10 @@ def results_reporting_management(request):
                         active_hackathon.save(update_fields=['current_jury_round'])
 
                     messages.success(request, f"Successfully promoted team '{team_to_promote.team_name}' to Round {team_to_promote.current_round}!")
+
+                    # Send bank details reminder if team reached the final round
+                    if team_to_promote.current_round == active_hackathon.number_of_rounds:
+                        _send_bank_details_reminder(team_to_promote)
                 redirect_url = f"{request.path}?hackathon={hackathon_filter}&round={selected_round}"
                 if show_qualified: redirect_url += "&show_qualified=true"
                 if show_top_10: redirect_url += "&top_10=true"
@@ -6202,6 +6427,10 @@ def results_reporting_management(request):
                             note=f"Promoted from Round {old_round} to Round {team.current_round} via bulk promotion threshold."
                         )
                         promoted_count += 1
+
+                        # Send bank details reminder if team reached the final round
+                        if team.current_round == active_hackathon.number_of_rounds:
+                            _send_bank_details_reminder(team)
                     else:
                         # Suspend dashboard and notify team lead
                         old_status = team.status
@@ -6333,6 +6562,10 @@ def results_reporting_management(request):
 
     total_rounds_range = range(1, (active_hackathon.number_of_rounds if active_hackathon else 5) + 1)
 
+    # Calculate total max marks and total cutoff from all parameters
+    total_max_marks = sum(p.max_marks for p in params) if params else Decimal('0')
+    total_cutoff = sum(p.cutoff_score for p in params) if params else Decimal('0')
+
     context = _feature_context(
         request,
         tab='results_ops',
@@ -6348,6 +6581,8 @@ def results_reporting_management(request):
         qualified_teams_count=qualified_teams_count,
         total_teams_count=teams.count() if active_hackathon else 0,
         is_round_completed=is_round_completed,
+        total_max_marks=total_max_marks,
+        total_cutoff=total_cutoff,
     )
     return render(request, 'features/results_reporting.html', context)
 

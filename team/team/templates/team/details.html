@@ -536,21 +536,59 @@
 
                 <!-- SECTION 3: Bank info -->
                 <div class="form-section-divider">Bank Account details</div>
-                <div class="fields-grid-2">
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:20px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div>
+                        <div style="font-weight:800;font-size:13px;color:#1e40af;">Bank details locked</div>
+                        <div style="font-size:12px;color:#3b82f6;margin-top:2px;">Bank details will be unlocked after your team qualifies for the final round. You'll receive an email reminder when it's time to fill these in.</div>
+                    </div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Prize Money Recipient (Account Holder Name)</label>
+                        <input type="text" name="leader_bank_holder_name" value="{{ leader_details.bank_holder_name|default:'' }}" placeholder="Full name of account holder" disabled>
+                    </div>
                     <div class="field">
                         <label>Bank Account Number</label>
-                        <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number" required>
+                        <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number" disabled>
                     </div>
                     <div class="field">
                         <label>IFSC Code</label>
-                        <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234" required>
+                        <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234" disabled>
                     </div>
                     <div class="field">
                         <label>Bank Name</label>
-                        <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name" required>
+                        <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name" disabled>
                     </div>
                     <div class="field">
                         <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="leader_passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="fields-grid-2">
+                    <div class="field">
+                        <label>Prize Money Recipient (Account Holder Name) *</label>
+                        <input type="text" name="leader_bank_holder_name" value="{{ leader_details.bank_holder_name|default:'' }}" placeholder="Full name of account holder" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Account Number *</label>
+                        <input type="text" name="leader_bank_account" value="{{ leader_details.bank_account|default:'' }}" placeholder="Account Number" required>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code *</label>
+                        <input type="text" name="leader_ifsc" value="{{ leader_details.ifsc|default:'' }}" placeholder="SBIN0001234" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name *</label>
+                        <input type="text" name="leader_bank_name" value="{{ leader_details.bank_name|default:'' }}" placeholder="Bank Name" required>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page *</label>
                         <div class="modern-upload-box">
                             <input type="file" name="leader_passbook_proof" accept=".pdf,.jpg,.jpeg,.png">
                             <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
@@ -562,6 +600,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
             </fieldset>
 
@@ -720,6 +759,33 @@
             <!-- SECTION 3: Bank info -->
             <div class="form-section-card">
                 <div class="form-section-divider" style="margin-top: 0;">Bank Account details</div>
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:18px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div style="font-size:12px;color:#2563eb;font-weight:600;">Bank details will be unlocked after the team qualifies for the final round.</div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account" placeholder="Account Number" disabled>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc" placeholder="SBIN0001234" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" placeholder="Bank Name" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
                 <div class="fields-grid-2">
                     <div class="field">
                         <label>Bank Account Number</label>
@@ -741,6 +807,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <div style="margin-top:24px">
@@ -908,6 +975,38 @@
 
             <div class="form-section-card">
                 <div class="form-section-divider" style="margin-top: 0;">Bank Account details</div>
+                {% if not is_final_round %}
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+                    <ion-icon name="lock-closed-outline" style="font-size:18px;color:#2563eb;flex-shrink:0;margin-top:2px;"></ion-icon>
+                    <div style="font-size:12px;color:#2563eb;font-weight:600;">Bank details will be unlocked after the team qualifies for the final round.</div>
+                </div>
+                <div class="fields-grid-2" style="opacity:0.5;pointer-events:none;">
+                    <div class="field">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account" value="{{ m.bank_account|default:'' }}" placeholder="Account Number" disabled>
+                    </div>
+                    <div class="field">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc" value="{{ m.ifsc|default:'' }}" placeholder="SBIN0001234" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ m.bank_name|default:'' }}" placeholder="Bank Name" disabled>
+                    </div>
+                    <div class="field">
+                        <label>Bank Passbook Front Page</label>
+                        <div class="modern-upload-box">
+                            <input type="file" name="passbook_proof" accept=".pdf,.jpg,.jpeg,.png" disabled>
+                            <div class="field-tip">PDF, JPG, JPEG, PNG. Max: 2MB.</div>
+                            {% if m.passbook_proof %}
+                            <a href="/media/{{ m.passbook_proof }}" target="_blank" class="file-preview-badge">
+                                <ion-icon name="document-outline"></ion-icon> View Passbook
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
                 <div class="fields-grid-2">
                     <div class="field">
                         <label>Bank Account Number *</label>
@@ -934,6 +1033,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <div style="margin-top:24px">

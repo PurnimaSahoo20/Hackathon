@@ -829,28 +829,64 @@
       box-sizing: border-box;
     }
     .info-item {
-      display: grid;
-      grid-template-columns: 18px minmax(0, 1fr);
-      gap: 4px;
+      display: flex;
+      flex-direction: column;
       padding: 8px 14px;
       border-radius: 16px;
       background: rgba(255, 255, 255, 0.86);
       border: 1px solid rgba(255, 107, 26, 0.1);
       position: relative;
     }
+    .info-item-row {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+      gap: 4px;
+      align-items: start;
+    }
     .info-mode-badge {
-      position: absolute;
-      top: 8px;
-      right: 14px;
       font-size: 11px;
       font-weight: 700;
       color: var(--orange);
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
     }
     .info-mode-badge ion-icon {
       font-size: 13px;
+    }
+    .info-venue-row {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .info-venue-content {
+      font-size: 11px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .info-venue-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .info-venue-text {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .info-venue-icon {
+      color: var(--orange);
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
     }
     .info-icon {
       width: 18px;
@@ -3870,10 +3906,6 @@
       .info-item {
         padding: 12px 13px;
       }
-      .info-mode-badge {
-        top: 12px;
-        right: 13px;
-      }
       .info-value {
         font-size: 13px;
       }
@@ -4453,66 +4485,83 @@
             {% endif %}
             <div class="info-grid">
               <div class="info-item">
-                <div class="info-icon"><ion-icon name="calendar-outline"></ion-icon></div>
-                <div>
-                  <div class="info-label">Registration Window</div>
-                  <div class="info-value">
-                    {% if active_hackathon %}
-                    {{ active_hackathon.registration_open|date:"d M Y"|default:"TBD" }}
-                    -
-                    {{ active_hackathon.registration_close|date:"d M Y"|default:"TBD" }}
-                    {% else %}
-                    TBD
-                    {% endif %}
+                <div class="info-item-row">
+                  <div class="info-icon"><ion-icon name="calendar-outline"></ion-icon></div>
+                  <div>
+                    <div class="info-label">Registration Window</div>
+                    <div class="info-value">
+                      {% if active_hackathon %}
+                      {{ active_hackathon.registration_open|date:"d M Y"|default:"TBD" }}
+                      -
+                      {{ active_hackathon.registration_close|date:"d M Y"|default:"TBD" }}
+                      {% else %}
+                      TBD
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               </div>
               {% if active_hackathon %}
               {% for r in active_hackathon.get_rounds %}
               <div class="info-item">
-                <div class="info-icon">
-                  {% if forloop.first %}
-                  <ion-icon name="rocket-outline"></ion-icon>
-                  {% elif forloop.last %}
-                  <ion-icon name="flag-outline"></ion-icon>
-                  {% else %}
-                  <ion-icon name="flash-outline"></ion-icon>
-                  {% endif %}
-                </div>
-                <div>
-                  <div class="info-label">{{ r.name }}</div>
-                  <div class="info-value">
-                    {% if r.start_date or r.end_date %}
-                    {{ r.start_date|date:"d M Y"|default:"TBD" }}
-                    -
-                    {{ r.end_date|date:"d M Y"|default:"TBD" }}
+                <div class="info-item-row">
+                  <div class="info-icon">
+                    {% if forloop.first %}
+                    <ion-icon name="rocket-outline"></ion-icon>
+                    {% elif forloop.last %}
+                    <ion-icon name="flag-outline"></ion-icon>
                     {% else %}
-                    TBD
+                    <ion-icon name="flash-outline"></ion-icon>
                     {% endif %}
                   </div>
+                  <div>
+                    <div class="info-label">{{ r.name }}</div>
+                    <div class="info-value">
+                      {% if r.start_date or r.end_date %}
+                      {{ r.start_date|date:"d M Y"|default:"TBD" }}
+                      -
+                      {{ r.end_date|date:"d M Y"|default:"TBD" }}
+                      {% else %}
+                      TBD
+                      {% endif %}
+                    </div>
+                  </div>
+                  <span class="info-mode-badge">
+                    {% if r.type == 'Offline' %}
+                    <ion-icon name="business-outline"></ion-icon> Offline
+                    {% else %}
+                    <ion-icon name="globe-outline"></ion-icon> Online
+                    {% endif %}
+                  </span>
                 </div>
-                <span class="info-mode-badge">
-                  {% if r.type == 'Offline' %}
-                  <ion-icon name="business-outline"></ion-icon> Offline {% if r.venue %}({{ r.venue }}){% endif %}
-                  {% else %}
-                  <ion-icon name="globe-outline"></ion-icon> Online
-                  {% endif %}
-                </span>
+                {% if r.type == 'Offline' and r.venue %}
+                <div class="info-venue-row">
+                  <div class="info-venue-icon"><ion-icon name="location-outline"></ion-icon></div>
+                  <div class="info-venue-content">
+                    <span class="info-venue-label">Venue:</span>
+                    <span class="info-venue-text">{{ r.venue }}</span>
+                  </div>
+                </div>
+                {% endif %}
               </div>
               {% endfor %}
               {% else %}
               <div class="info-item">
-                <div class="info-icon"><ion-icon name="rocket-outline"></ion-icon></div>
-                <div>
-                  <div class="info-label">Round 1</div>
-                  <div class="info-value">TBD</div>
+                <div class="info-item-row">
+                  <div class="info-icon"><ion-icon name="rocket-outline"></ion-icon></div>
+                  <div>
+                    <div class="info-label">Round 1</div>
+                    <div class="info-value">TBD</div>
+                  </div>
                 </div>
               </div>
               <div class="info-item">
-                <div class="info-icon"><ion-icon name="flash-outline"></ion-icon></div>
-                <div>
-                  <div class="info-label">Round 2</div>
-                  <div class="info-value">TBD</div>
+                <div class="info-item-row">
+                  <div class="info-icon"><ion-icon name="flash-outline"></ion-icon></div>
+                  <div>
+                    <div class="info-label">Round 2</div>
+                    <div class="info-value">TBD</div>
+                  </div>
                 </div>
               </div>
               {% endif %}
@@ -4573,10 +4622,9 @@
             <div class="gallery-empty" style="padding: 40px 20px; text-align: center;">
               <div style="font-size: 42px; margin-bottom: 12px">📰</div>
               <h3 class="card-title"
-                style="font-family: var(--font-head); font-weight: 900; color: var(--text); margin-bottom: 8px;">No News
-                Published Yet</h3>
+                style="font-family: var(--font-head); font-weight: 900; color: var(--text); margin-bottom: 8px;">News to be added shortly</h3>
               <p class="card-text" style="color: var(--muted); font-size: 14px;">
-                Once news items are published in the content manager, they will show up here automatically.
+                Stay tuned for the latest updates and announcements.
               </p>
             </div>
             {% endif %}
@@ -4786,7 +4834,7 @@
       <div class="section-header">
         <span class="section-badge">Innovation Areas</span>
         <h2 class="section-title">
-          Hackathon <span class="grad-text">Tracks</span>
+          Hackathon <span class="grad-text">Problem Statements</span>
         </h2>
         <p class="section-subtitle">
           Problem Statement belongs to different domain presented here
@@ -6457,6 +6505,13 @@
             btn.disabled = true;
             btn.style.opacity = '0.6';
             btn.style.cursor = 'not-allowed';
+          });
+        }, 10);
+      });
+    });
+  </script>
+</body>
+</html>     btn.style.cursor = 'not-allowed';
           });
         }, 10);
       });

@@ -435,3 +435,75 @@ class ExpertInvitation(models.Model):
 
     def __str__(self):
         return f"Expert Invite → {self.email} [{self.status}]"
+
+
+class InvitationReviewHistory(models.Model):
+    """
+    Maintains a complete audit history of all onboarding submissions,
+    admin rejections, resubmissions, and approvals for SPOC, Jury, and Expert invitations.
+    """
+    ACTION_CHOICES = [
+        ('initial_submission', 'Initial Submission'),
+        ('rejected',           'Rejected'),
+        ('resubmitted',        'Resubmitted'),
+        ('approved',           'Approved'),
+    ]
+
+    ROLE_CHOICES = [
+        ('spoc',   'SPOC'),
+        ('jury',   'Jury'),
+        ('expert', 'Expert'),
+    ]
+
+    spoc_invitation = models.ForeignKey(
+        'SpocInvitation',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='review_history'
+    )
+    jury_invitation = models.ForeignKey(
+        'JuryInvitation',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='review_history'
+    )
+    expert_invitation = models.ForeignKey(
+        'ExpertInvitation',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='review_history'
+    )
+
+    role_type = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    attempt_number = models.PositiveIntegerField(default=1)
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    rejection_reason = models.TextField(blank=True)
+    admin_remarks = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invitation_reviews'
+    )
+    previous_status = models.CharField(max_length=30, blank=True)
+    new_status = models.CharField(max_length=30)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['role_type', 'created_at']),
+            models.Index(fields=['spoc_invitation']),
+            models.Index(fields=['jury_invitation']),
+            models.Index(fields=['expert_invitation']),
+        ]
+
+    def __str__(self):
+        target = self.spoc_invitation or self.jury_invitation or self.expert_invitation
+        email = target.email if target else 'Unknown'
+        return f"{self.get_role_type_display()} [Attempt {self.attempt_number}] {self.get_action_display()} - {email}"
+

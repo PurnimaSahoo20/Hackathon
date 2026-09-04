@@ -611,6 +611,7 @@ def team_details(request):
                 'bank_account': request.POST.get('leader_bank_account', leader_details_ctx.get('bank_account', '')),
                 'ifsc': request.POST.get('leader_ifsc', leader_details_ctx.get('ifsc', '')),
                 'bank_name': request.POST.get('leader_bank_name', leader_details_ctx.get('bank_name', '')),
+                'bank_holder_name': request.POST.get('leader_bank_holder_name', leader_details_ctx.get('bank_holder_name', '')),
                 'cast': request.POST.get('leader_cast', leader_details_ctx.get('cast', '')),
                 'tshirt_size': request.POST.get('leader_tshirt_size', leader_details_ctx.get('tshirt_size', '')),
             })
@@ -664,12 +665,16 @@ def team_details(request):
             validation_errors.append('T-Shirt Size is required.')
         if not leader_aadhaar_raw:
             validation_errors.append('Aadhaar Card Number is required.')
-        if not leader_bank_raw:
-            validation_errors.append('Bank Account Number is required.')
-        if not leader_ifsc_raw:
-            validation_errors.append('IFSC Code is required.')
-        if not leader_bank_name_raw:
-            validation_errors.append('Bank Name is required.')
+
+        # Bank fields only required if team is in final round
+        is_final = _is_final_round(request.user)
+        if is_final:
+            if not leader_bank_raw:
+                validation_errors.append('Bank Account Number is required.')
+            if not leader_ifsc_raw:
+                validation_errors.append('IFSC Code is required.')
+            if not leader_bank_name_raw:
+                validation_errors.append('Bank Name is required.')
 
         # File uploads: required only if not already uploaded
         existing_leader = dict(reg.leader_details or {})
@@ -679,7 +684,7 @@ def team_details(request):
             validation_errors.append('College ID Proof is required.')
         if not request.FILES.get('leader_aadhaar_proof') and not existing_leader.get('aadhaar_proof'):
             validation_errors.append('Aadhaar Proof Document is required.')
-        if not request.FILES.get('leader_passbook_proof') and not existing_leader.get('passbook_proof'):
+        if is_final and not request.FILES.get('leader_passbook_proof') and not existing_leader.get('passbook_proof'):
             validation_errors.append('Bank Passbook Front Page is required.')
 
         if validation_errors:
@@ -830,6 +835,7 @@ def team_details(request):
             'bank_account': leader_bank_acc,
             'ifsc': leader_ifsc,
             'bank_name': request.POST.get('leader_bank_name', leader_details.get('bank_name', '')).strip(),
+            'bank_holder_name': request.POST.get('leader_bank_holder_name', leader_details.get('bank_holder_name', '')).strip(),
         })
 
         if leader_photo:
@@ -998,13 +1004,16 @@ def team_add_member(request):
     aadhaar_raw = request.POST.get('aadhaar_number', '').strip().replace(' ', '').replace('-', '')
     if not aadhaar_raw:
         add_errors.append('Aadhaar Card Number is required.')
+    # Bank fields only required if team is in final round
     bank_acc_raw = request.POST.get('bank_account', '').strip()
-    if not bank_acc_raw:
-        add_errors.append('Bank Account Number is required.')
-    if not request.POST.get('ifsc', '').strip():
-        add_errors.append('IFSC Code is required.')
-    if not request.POST.get('bank_name', '').strip():
-        add_errors.append('Bank Name is required.')
+    is_final = _is_final_round(request.user)
+    if is_final:
+        if not bank_acc_raw:
+            add_errors.append('Bank Account Number is required.')
+        if not request.POST.get('ifsc', '').strip():
+            add_errors.append('IFSC Code is required.')
+        if not request.POST.get('bank_name', '').strip():
+            add_errors.append('Bank Name is required.')
 
     # File upload checks
     if not request.FILES.get('photo'):
@@ -1013,7 +1022,7 @@ def team_add_member(request):
         add_errors.append('College ID Proof is required.')
     if not request.FILES.get('aadhaar_proof'):
         add_errors.append('Aadhaar Proof Document is required.')
-    if not request.FILES.get('passbook_proof'):
+    if is_final and not request.FILES.get('passbook_proof'):
         add_errors.append('Bank Passbook Front Page is required.')
 
     if add_errors:
@@ -1340,12 +1349,15 @@ def team_edit_member(request, member_index):
     if not aadhaar_raw:
         edit_errors.append('Aadhaar Card Number is required.')
     bank_acc_raw = request.POST.get('bank_account', '').strip()
-    if not bank_acc_raw:
-        edit_errors.append('Bank Account Number is required.')
-    if not request.POST.get('ifsc', '').strip():
-        edit_errors.append('IFSC Code is required.')
-    if not request.POST.get('bank_name', '').strip():
-        edit_errors.append('Bank Name is required.')
+    # Bank fields only required if team is in final round
+    is_final = _is_final_round(request.user)
+    if is_final:
+        if not bank_acc_raw:
+            edit_errors.append('Bank Account Number is required.')
+        if not request.POST.get('ifsc', '').strip():
+            edit_errors.append('IFSC Code is required.')
+        if not request.POST.get('bank_name', '').strip():
+            edit_errors.append('Bank Name is required.')
 
     # File uploads: required if not already present
     if not request.FILES.get('photo') and not existing.get('photo'):
@@ -1354,7 +1366,7 @@ def team_edit_member(request, member_index):
         edit_errors.append('College ID Proof is required.')
     if not request.FILES.get('aadhaar_proof') and not existing.get('aadhaar_proof'):
         edit_errors.append('Aadhaar Proof Document is required.')
-    if not request.FILES.get('passbook_proof') and not existing.get('passbook_proof'):
+    if is_final and not request.FILES.get('passbook_proof') and not existing.get('passbook_proof'):
         edit_errors.append('Bank Passbook Front Page is required.')
 
     if edit_errors:

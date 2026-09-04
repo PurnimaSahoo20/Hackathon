@@ -153,6 +153,7 @@ class TeamRegistration(models.Model):
         related_name='from_registration'
     )
     registration_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    bank_reminder_sent = models.BooleanField(default=False)
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
